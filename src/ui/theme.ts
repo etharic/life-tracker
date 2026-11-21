@@ -18,7 +18,7 @@ const light = {
   accentPressed: '#B5573A',
   accentSoft: '#F5E9E2',
   onAccent: '#FFFFFF',
-  good: '#3F8A4F', // a yes on the Rejection list
+  good: '#3F8A4F', // a yes on a challenge list
   goodSoft: '#E5F0E3',
   scrim: 'rgba(20,20,19,0.05)',
   edge: 'rgba(20,20,19,0.08)', // the thin edge around colour swatches

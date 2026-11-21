@@ -19,7 +19,8 @@ HOW THE FOLDER IS ORGANISED
     viewer.html         open in a browser to read the journal without the app
     bank.md             ideas for daily goals and monthly hobbies, by category
     achievements.md     earned achievements, with the date they were earned
-    challenges/rejections.md   the Rejection list: each attempt, its date, outcome and notes
+    challenges/         the Rejection list and the Bucket list: each item, its date, whether it
+                        was started, how it ended, and notes
     settings.md         app settings (when a new day starts, last backup)
     2026/               one folder per year
       year.md           the Misogi Ritual of that year

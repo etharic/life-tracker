@@ -40,16 +40,16 @@ NEXT=$(python3 -c 'import datetime; d = datetime.date.today().replace(day=28) + 
 PREV=$(python3 -c 'import datetime; d = datetime.date.today().replace(day=1) - datetime.timedelta(days=1); print(d.strftime("%Y-%m"))')
 
 fresh; shot 01-today
-for r in "(tabs)/(month)/month:02-month" "(tabs)/(lookback)/lookback:03-lookback" "(tabs)/(plan)/plan:04-plan" "past/feelings:05-feelings" "past/titles:06-titles" "past/archive:07-archive" "past/rejections:08-rejections"; do
+for r in "(tabs)/(month)/month:02-month" "(tabs)/(lookback)/lookback:03-lookback" "(tabs)/(plan)/plan:04-plan" "past/feelings:05-feelings" "past/titles:06-titles" "past/archive:07-archive" "past/rejections:08-rejections" "past/bucket:09-bucket"; do
   fresh "${r%%:*}"; shot "${r#*:}"
 done
-for r in "close-day/$TODAY:10-close-day" "setup/$NEXT:11-setup" "week-start/$WEEK:12-week-start" "week-close/$LASTWEEK:13-week-close" "month-close/$PREV:14-month-close" "drive:15-drive" "rejection/r2:09-rejection" "backup:16-backup" "bank/goals:17-bank" "record/$TODAY:18-record" "day/$(python3 -c 'import datetime; print((datetime.date.today() - datetime.timedelta(days=1)).isoformat())'):19-day"; do
+for r in "close-day/$TODAY:10-close-day" "setup/$NEXT:11-setup" "week-start/$WEEK:12-week-start" "week-close/$LASTWEEK:13-week-close" "month-close/$PREV:14-month-close" "drive:15-drive" "challenge/bucket/b1:20-challenge" "backup:16-backup" "bank/goals:17-bank" "record/$TODAY:18-record" "day/$(python3 -c 'import datetime; print((datetime.date.today() - datetime.timedelta(days=1)).isoformat())'):19-day"; do
   fresh "${r%%:*}"; shot "${r#*:}" 4
 done
 # The same main screens at night.
 xcrun simctl ui "$UDID" appearance dark || true
 fresh; shot 21-today-dark
-for r in "(tabs)/(month)/month:22-month-dark" "(tabs)/(lookback)/lookback:23-lookback-dark" "(tabs)/(plan)/plan:24-plan-dark" "close-day/$TODAY:25-close-day-dark" "past/titles:26-titles-dark" "past/rejections:27-rejections-dark"; do
+for r in "(tabs)/(month)/month:22-month-dark" "(tabs)/(lookback)/lookback:23-lookback-dark" "(tabs)/(plan)/plan:24-plan-dark" "close-day/$TODAY:25-close-day-dark" "past/titles:26-titles-dark" "past/rejections:27-rejections-dark" "past/bucket:28-bucket-dark"; do
   fresh "${r%%:*}"; shot "${r#*:}"
 done
 xcrun simctl ui "$UDID" appearance light || true

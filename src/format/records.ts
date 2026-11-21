@@ -11,7 +11,8 @@ import {
   type BankEntry,
   type Category,
   type DefiningIncident,
-  type Rejection,
+  type ChallengeItem,
+  type ChallengeKind,
   type Settings,
   type YearRecord,
 } from '../domain/types';
@@ -173,34 +174,49 @@ export function serializeSettings(s: Settings): string {
   });
 }
 
-// ---------- challenges/rejections.md ----------
+// ---------- challenges/*.md ----------
 
-export function parseRejections(text: string): Rejection[] {
+const CHALLENGE_NOTE: Record<ChallengeKind, string> = {
+  rejections: 'Rejection list: things done expecting to be turned down.',
+  bucket: 'Bucket list: things to do in a lifetime.',
+};
+
+export function parseChallenges(text: string): ChallengeItem[] {
   const { data } = parseFrontmatter(text);
   return arr(data.items)
-    .map((x): Rejection | null => {
+    .map((x): ChallengeItem | null => {
       const o = obj(x);
-      const outcome = str(o.outcome);
       if (!str(o.id) || !str(o.title).trim()) return null;
+      const raw = str(o.outcome);
+      // 1.10 wrote waiting / rejected / accepted.
+      const outcome =
+        raw === 'failed' || raw === 'rejected'
+          ? 'failed'
+          : raw === 'succeeded' || raw === 'accepted'
+            ? 'succeeded'
+            : 'open';
       return {
         id: str(o.id),
         title: str(o.title).trim(),
         date: isISODate(o.date) ? o.date : null,
-        outcome: outcome === 'rejected' || outcome === 'accepted' ? outcome : 'waiting',
+        // Before the active box existed, everything logged had been attempted.
+        started: 'started' in o ? bool(o.started) : true,
+        outcome,
         notes: str(o.notes),
         added: isISODate(o.added) ? o.added : '2000-01-01',
       };
     })
-    .filter((r): r is Rejection => r !== null);
+    .filter((r): r is ChallengeItem => r !== null);
 }
 
-export function serializeRejections(list: Rejection[]): string {
+export function serializeChallenges(kind: ChallengeKind, list: ChallengeItem[]): string {
   const data = {
     format: FORMAT,
     items: list.map((r) => ({
       id: r.id,
       title: r.title,
       ...(r.date ? { date: r.date } : {}),
+      started: r.started,
       outcome: r.outcome,
       added: r.added,
       ...(r.notes.trim() ? { notes: r.notes.trim() } : {}),
@@ -208,6 +224,6 @@ export function serializeRejections(list: Rejection[]): string {
   };
   return serializeFrontmatter(
     data,
-    'Rejection list: things done expecting to be turned down. outcome is waiting, rejected or accepted.',
+    `${CHALLENGE_NOTE[kind]} started: an active challenge. outcome: open, failed or succeeded.`,
   );
 }

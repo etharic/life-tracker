@@ -165,26 +165,43 @@ export interface Achievement {
   earned: ISODate;
 }
 
-/** Rejection list: something done expecting a no. Waiting until the answer comes. */
-export type RejectionOutcome = 'waiting' | 'rejected' | 'accepted';
+/** The lists under Look back > Challenges. */
+export type ChallengeKind = 'rejections' | 'bucket';
+export const CHALLENGE_KINDS: readonly ChallengeKind[] = ['rejections', 'bucket'];
 
-export interface Rejection {
+/** open: not concluded yet; failed: rejected (or did not happen); succeeded: accepted (or done). */
+export type ChallengeOutcome = 'open' | 'failed' | 'succeeded';
+
+/** One item on a challenge list: logged, then started (active), then concluded either way. */
+export interface ChallengeItem {
   id: string;
   title: string;
-  /** When it was sent or done (optional). */
+  /** When it was done or is planned (optional). */
   date: ISODate | null;
-  outcome: RejectionOutcome;
+  /** Started: an active challenge. */
+  started: boolean;
+  outcome: ChallengeOutcome;
   notes: string;
   /** The day it was logged, for ordering. */
   added: ISODate;
 }
 
-export function rejectionCounts(list: Rejection[]): { total: number; rejected: number; accepted: number } {
+export function challengeCounts(list: ChallengeItem[]): {
+  total: number;
+  active: number;
+  failed: number;
+  succeeded: number;
+} {
   return {
     total: list.length,
-    rejected: list.filter((r) => r.outcome === 'rejected').length,
-    accepted: list.filter((r) => r.outcome === 'accepted').length,
+    active: list.filter((r) => r.outcome === 'open' && r.started).length,
+    failed: list.filter((r) => r.outcome === 'failed').length,
+    succeeded: list.filter((r) => r.outcome === 'succeeded').length,
   };
+}
+
+export function emptyChallenges(): Record<ChallengeKind, ChallengeItem[]> {
+  return { rejections: [], bucket: [] };
 }
 
 export interface Settings {

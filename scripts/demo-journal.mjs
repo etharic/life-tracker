@@ -195,23 +195,37 @@ for (const [d, x] of Object.entries(days)) {
     t += 'Long library day. The chapter finally clicked after lunch. Walked home the long way and called home.\n';
   write(`${d.slice(0, 4)}/${d.slice(0, 7)}/${d}.md`, t);
 }
+// Challenges: [title, date, started, outcome, notes]
 const REJ = [
-  ['Applied to a summer internship', addDays(today, -40), 'rejected', 'Asked for feedback afterwards. They said the case answer was too slow.'],
-  ['Asked the café for a student discount', addDays(today, -31), 'accepted', ''],
-  ['Cold email asking for a mentor', addDays(today, -22), 'rejected', ''],
-  ['Pitched a column to the student paper', addDays(today, -15), 'accepted', 'They want 600 words by Friday.'],
-  ['Asked a friend to review my CV', null, 'accepted', ''],
-  ['Applied to an insight day', addDays(today, -6), 'waiting', ''],
-  ['Asked for a later deadline on the problem set', addDays(today, -2), 'rejected', ''],
+  ['Applied to a summer internship', addDays(today, -40), true, 'failed', 'Asked for feedback afterwards. They said the case answer was too slow.'],
+  ['Asked the café for a student discount', addDays(today, -31), true, 'succeeded', ''],
+  ['Cold email asking for a mentor', addDays(today, -22), true, 'failed', ''],
+  ['Pitched a column to the student paper', addDays(today, -15), true, 'succeeded', 'They want 600 words by Friday.'],
+  ['Asked a friend to review my CV', null, true, 'succeeded', ''],
+  ['Applied to an insight day', addDays(today, -6), true, 'open', ''],
+  ['Ask to present at the department seminar', null, false, 'open', ''],
+  ['Asked for a later deadline on the problem set', addDays(today, -2), true, 'failed', ''],
+];
+const BUCKET = [
+  ['Run a marathon', null, true, 'open', 'Training plan: 16 weeks, four runs a week.'],
+  ['See the northern lights', null, false, 'open', ''],
+  ['Learn to play a whole album on the ukulele', null, true, 'open', ''],
+  ['Swim in all five oceans', null, false, 'open', ''],
+  ['Climb a 4,000 m peak', addDays(today, -60), true, 'succeeded', 'Started at 3 am. Worth every step.'],
+  ['Write a short story and send it out', addDays(today, -20), true, 'failed', ''],
 ];
 const NL = String.fromCharCode(10);
-const rj = ['---', 'format: journal-v1', 'items:'];
-REJ.forEach(([title, date, outcome, notes], i) => {
-  rj.push(`  - id: r${i + 1}`, `    title: ${q(title)}`);
-  if (date) rj.push(`    date: ${date}`);
-  rj.push(`    outcome: ${outcome}`, `    added: ${date ?? addDays(today, -10)}`);
-  if (notes) rj.push(`    notes: ${q(notes)}`);
-});
-rj.push('---', '');
-write('challenges/rejections.md', rj.join(NL));
+function challengeFile(items, prefix) {
+  const out = ['---', 'format: journal-v1', 'items:'];
+  items.forEach(([title, date, started, outcome, notes], i) => {
+    out.push(`  - id: ${prefix}${i + 1}`, `    title: ${q(title)}`);
+    if (date) out.push(`    date: ${date}`);
+    out.push(`    started: ${started}`, `    outcome: ${outcome}`, `    added: ${date ?? addDays(today, -10 - i)}`);
+    if (notes) out.push(`    notes: ${q(notes)}`);
+  });
+  out.push('---', '');
+  return out.join(NL);
+}
+write('challenges/rejections.md', challengeFile(REJ, 'r'));
+write('challenges/bucket-list.md', challengeFile(BUCKET, 'b'));
 console.log(`demo journal written to ${out}`);

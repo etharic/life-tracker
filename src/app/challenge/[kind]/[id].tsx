@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { ActionSheetIOS, StyleSheet, useColorScheme, View } from 'react-native';
 
 import { toISO } from '@/domain/dates';
-import type { ISODate, RejectionOutcome } from '@/domain/types';
+import type { ChallengeKind, ISODate } from '@/domain/types';
+import { CHALLENGE_COPY } from '@/features/past/challenges';
 import { useToday } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
 import { Button, Field, Segmented, TextAction } from '@/ui/controls';
@@ -14,26 +15,37 @@ import { ModalHeader } from '@/ui/modal';
 import { T } from '@/ui/text';
 import { colors, palette, space, TARGET } from '@/ui/theme';
 
+type Status = 'todo' | 'active' | 'failed' | 'succeeded';
+
 const toDate = (iso: ISODate) =>
   new Date(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
 const fromDate = (d: Date) => toISO(d.getFullYear(), d.getMonth() + 1, d.getDate());
 
-/** One attempt on the Rejection list: what it was, when (optional), how it went, and notes (optional). */
-export default function RejectionEditor() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+/** One item on a challenge list: what it is, when (optional), where it stands, and notes (optional). */
+export default function ChallengeEditor() {
+  const params = useLocalSearchParams<{ kind: string; id: string }>();
+  const kind: ChallengeKind = params.kind === 'bucket' ? 'bucket' : 'rejections';
+  const copy = CHALLENGE_COPY[kind];
   const today = useToday();
   const scheme = useColorScheme();
-  const existing = useJournal((s) => s.rejections.find((r) => r.id === id));
+  const existing = useJournal((s) => s.challenges[kind].find((r) => r.id === params.id));
   const [title, setTitle] = useState(existing?.title ?? '');
   const [date, setDate] = useState<ISODate | null>(existing?.date ?? null);
-  const [outcome, setOutcome] = useState<RejectionOutcome>(existing?.outcome ?? 'waiting');
+  const [status, setStatus] = useState<Status>(
+    !existing ? 'todo' : existing.outcome !== 'open' ? existing.outcome : existing.started ? 'active' : 'todo',
+  );
   const [notes, setNotes] = useState(existing?.notes ?? '');
 
   const save = () => {
     if (!title.trim()) return;
-    useJournal
-      .getState()
-      .saveRejection({ id: existing?.id, title: title.trim(), date, outcome, notes: notes.replace(/\s+$/, '') });
+    useJournal.getState().saveChallenge(kind, {
+      id: existing?.id,
+      title: title.trim(),
+      date,
+      started: status !== 'todo',
+      outcome: status === 'failed' || status === 'succeeded' ? status : 'open',
+      notes: notes.replace(/\s+$/, ''),
+    });
     haptic.success();
     router.back();
   };
@@ -41,7 +53,7 @@ export default function RejectionEditor() {
   const remove = () =>
     ActionSheetIOS.showActionSheetWithOptions(
       {
-        title: 'Delete this attempt?',
+        title: `Delete this ${copy.noun}?`,
         message: 'It is removed from the list and from the totals.',
         options: ['Delete', 'Cancel'],
         destructiveButtonIndex: 0,
@@ -49,7 +61,7 @@ export default function RejectionEditor() {
       },
       (i) => {
         if (i !== 0 || !existing) return;
-        useJournal.getState().removeRejection(existing.id);
+        useJournal.getState().removeChallenge(kind, existing.id);
         router.back();
       },
     );
@@ -58,12 +70,12 @@ export default function RejectionEditor() {
     <View style={styles.fill}>
       <ModalHeader title="" onClose={() => router.back()} />
       <Screen footer={<Button title="Save" onPress={save} disabled={!title.trim()} />}>
-        <ScreenHeader overline="Rejection list" title={existing ? 'Attempt' : 'New attempt'} />
+        <ScreenHeader overline={copy.title} title={existing ? `Edit ${copy.noun}` : `New ${copy.noun}`} />
         <Field
-          label="What did you go for?"
+          label={copy.question}
           value={title}
           onChangeText={setTitle}
-          placeholder="Applied to the summer internship at…"
+          placeholder={copy.placeholder}
           autoCapitalize="sentences"
           autoFocus={!existing}
           returnKeyType="done"
@@ -91,16 +103,17 @@ export default function RejectionEditor() {
         </Section>
         <View style={styles.gap}>
           <T variant="subhead" weight="600" tone="ink2">
-            How did it go?
+            Where it stands
           </T>
           <Segmented
             options={[
-              { value: 'waiting', label: 'Waiting' },
-              { value: 'rejected', label: 'Rejected' },
-              { value: 'accepted', label: 'Successful' },
+              { value: 'todo', label: 'Not started' },
+              { value: 'active', label: 'Active' },
+              { value: 'failed', label: copy.failed },
+              { value: 'succeeded', label: copy.succeeded },
             ]}
-            value={outcome}
-            onChange={setOutcome}
+            value={status}
+            onChange={setStatus}
           />
         </View>
         <Field
@@ -109,12 +122,16 @@ export default function RejectionEditor() {
           onChangeText={setNotes}
           multiline
           minHeight={160}
-          placeholder="Who you asked, what you said, what you learned."
+          placeholder={
+            kind === 'bucket'
+              ? 'Why it matters, what it takes, how it went.'
+              : 'Who you asked, what you said, what you learned.'
+          }
           autoCapitalize="sentences"
         />
         {existing ? (
           <Section flush>
-            <Row title="Delete attempt" onPress={remove} chevron={false} />
+            <Row title={`Delete ${copy.noun}`} onPress={remove} chevron={false} />
           </Section>
         ) : null}
       </Screen>

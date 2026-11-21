@@ -18,7 +18,8 @@ import {
   type ISODate,
   type MonthId,
   type MonthRecord,
-  type Rejection,
+  type ChallengeItem,
+  type ChallengeKind,
   type Settings,
   type WeekId,
   type WeekRecord,
@@ -26,12 +27,12 @@ import {
 } from '../domain/types';
 import { serializeDay } from '../format/day';
 import { serializeMonth } from '../format/month';
-import { ACHIEVEMENTS, BANK, dayPath, monthPath, README, REJECTIONS, SETTINGS, yearPath } from '../format/paths';
+import { ACHIEVEMENTS, BANK, dayPath, monthPath, README, CHALLENGE_FILES, SETTINGS, yearPath } from '../format/paths';
 import { readmeText } from '../format/readme';
 import {
   serializeAchievements,
   serializeBank,
-  serializeRejections,
+  serializeChallenges,
   serializeSettings,
   serializeYear,
 } from '../format/records';
@@ -93,8 +94,8 @@ export interface JournalState extends JournalData {
   updateYear(year: string, fn: (y: YearRecord) => void): void;
   updateBank(fn: (b: Bank) => void): void;
   updateSettings(fn: (s: Settings) => void): void;
-  saveRejection(r: Omit<Rejection, 'id' | 'added'> & { id?: string }): string;
-  removeRejection(id: string): void;
+  saveChallenge(kind: ChallengeKind, r: Omit<ChallengeItem, 'id' | 'added'> & { id?: string }): string;
+  removeChallenge(kind: ChallengeKind, id: string): void;
 
   togglePriority(week: WeekId, text: string, onDate: ISODate): void;
   addBankEntry(kind: BankKind, category: Category, text: string): BankEntry;
@@ -244,24 +245,24 @@ export const useJournal = create<JournalState>()((set, get) => ({
     if (settings.noteToReaders !== before.noteToReaders) void persist(README, readmeText(settings.noteToReaders));
   },
 
-  saveRejection(r) {
-    const list = clone(get().rejections);
+  saveChallenge(kind, r) {
+    const list = clone(get().challenges[kind]);
     const i = r.id ? list.findIndex((x) => x.id === r.id) : -1;
     let id = r.id ?? '';
     if (i >= 0) list[i] = { ...list[i], ...r, id: list[i].id };
     else {
-      id = newId('r', new Set(list.map((x) => x.id)));
+      id = newId(kind === 'bucket' ? 'b' : 'r', new Set(list.map((x) => x.id)));
       list.push({ ...r, id, added: get().today });
     }
-    set({ rejections: list });
-    void persist(REJECTIONS, serializeRejections(list));
+    set({ challenges: { ...get().challenges, [kind]: list } });
+    void persist(CHALLENGE_FILES[kind], serializeChallenges(kind, list));
     return id;
   },
 
-  removeRejection(id) {
-    const list = get().rejections.filter((x) => x.id !== id);
-    set({ rejections: list });
-    void persist(REJECTIONS, serializeRejections(list));
+  removeChallenge(kind, id) {
+    const list = get().challenges[kind].filter((x) => x.id !== id);
+    set({ challenges: { ...get().challenges, [kind]: list } });
+    void persist(CHALLENGE_FILES[kind], serializeChallenges(kind, list));
   },
 
   togglePriority(week, text, onDate) {

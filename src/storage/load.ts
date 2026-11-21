@@ -9,14 +9,16 @@ import {
   type ISODate,
   type MonthId,
   type MonthRecord,
-  type Rejection,
+  type ChallengeItem,
+  type ChallengeKind,
+  emptyChallenges,
   type Settings,
   type YearRecord,
 } from '../domain/types';
 import { parseDay } from '../format/day';
 import { parseMonth } from '../format/month';
 import { classify } from '../format/paths';
-import { parseAchievements, parseBank, parseRejections, parseSettings, parseYear } from '../format/records';
+import { parseAchievements, parseBank, parseChallenges, parseSettings, parseYear } from '../format/records';
 import type { Store } from './store';
 
 export interface JournalData {
@@ -26,7 +28,7 @@ export interface JournalData {
   bank: Bank;
   achievements: Achievement[];
   settings: Settings;
-  rejections: Rejection[];
+  challenges: Record<ChallengeKind, ChallengeItem[]>;
 }
 
 export function emptyJournal(): JournalData {
@@ -37,7 +39,7 @@ export function emptyJournal(): JournalData {
     bank: emptyBank(),
     achievements: [],
     settings: { ...DEFAULT_SETTINGS },
-    rejections: [],
+    challenges: emptyChallenges(),
   };
 }
 
@@ -48,7 +50,7 @@ type Parsed =
   | { t: 'bank'; v: Bank }
   | { t: 'achievements'; v: Achievement[] }
   | { t: 'settings'; v: Settings }
-  | { t: 'rejections'; v: Rejection[] };
+  | { t: 'challenges'; kind: ChallengeKind; v: ChallengeItem[] };
 
 function parseFile(path: string, text: string): Parsed | null {
   const kind = classify(path);
@@ -65,8 +67,8 @@ function parseFile(path: string, text: string): Parsed | null {
       return { t: 'achievements', v: parseAchievements(text) };
     case 'settings':
       return { t: 'settings', v: parseSettings(text) };
-    case 'rejections':
-      return { t: 'rejections', v: parseRejections(text) };
+    case 'challenges':
+      return { t: 'challenges', kind: kind.kind, v: parseChallenges(text) };
     default:
       return null;
   }
@@ -159,8 +161,8 @@ export async function loadJournal(store: Store): Promise<LoadReport> {
       case 'settings':
         data.settings = parsed.v;
         break;
-      case 'rejections':
-        data.rejections = parsed.v;
+      case 'challenges':
+        data.challenges[parsed.kind] = parsed.v;
         break;
     }
   }

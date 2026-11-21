@@ -1,12 +1,12 @@
 import { Stack } from 'expo-router';
 
-import { RejectionList } from '@/features/past/rejections';
+import { ChallengeList } from '@/features/past/challenges';
 
 export default function Screen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Rejection list', headerLargeTitleEnabled: true }} />
-      <RejectionList />
+      <ChallengeList kind="rejections" />
     </>
   );
 }

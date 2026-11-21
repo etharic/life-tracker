@@ -54,7 +54,7 @@ function useArchive(): { title: string; items: Item[] }[] {
   const months = useJournal((s) => s.months);
   const years = useJournal((s) => s.years);
   const achievements = useJournal((s) => s.achievements);
-  const rejections = useJournal((s) => s.rejections);
+  const challenges = useJournal((s) => s.challenges);
   const today = useToday();
   return useMemo(() => {
     const dayList = Object.values(days);
@@ -71,7 +71,15 @@ function useArchive(): { title: string; items: Item[] }[] {
     return [
       {
         title: 'Challenges',
-        items: [{ title: 'Rejection list', href: '/past/rejections', icon: 'xmark.seal', value: n(rejections.length) }],
+        items: [
+          {
+            title: 'Rejection list',
+            href: '/past/rejections',
+            icon: 'xmark.seal',
+            value: n(challenges.rejections.length),
+          },
+          { title: 'Bucket list', href: '/past/bucket', icon: 'list.star', value: n(challenges.bucket.length) },
+        ],
       },
       {
         title: 'Every day',
@@ -139,7 +147,7 @@ function useArchive(): { title: string; items: Item[] }[] {
         ],
       },
     ];
-  }, [days, months, years, achievements, rejections, today]);
+  }, [days, months, years, achievements, challenges, today]);
 }
 
 /** Look back: one search over everything written, three numbers, and the archive by how often it grows. */

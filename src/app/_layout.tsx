@@ -3,6 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { AppState, Settings, StyleSheet, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { nextDayBoundary } from '@/domain/dates';
 import { startSync } from '@/sync/scheduler';
@@ -78,7 +79,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <GestureHandlerRootView style={styles.fill}>
       <StatusBar style="auto" />
       <Stack screenOptions={{ contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -90,9 +91,9 @@ export default function RootLayout() {
         <Stack.Screen name="month-close/[month]" options={{ ...modal, presentation: 'fullScreenModal' }} />
         <Stack.Screen name="year-close/[year]" options={modal} />
         <Stack.Screen name="conflict/[id]" options={modal} />
-        <Stack.Screen name="rejection/[id]" options={modal} />
+        <Stack.Screen name="challenge/[kind]/[id]" options={modal} />
       </Stack>
-    </>
+    </GestureHandlerRootView>
   );
 }
 

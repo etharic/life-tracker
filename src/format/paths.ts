@@ -6,7 +6,10 @@ import type { ISODate, MonthId } from '../domain/types';
 export const BANK = 'bank.md';
 export const ACHIEVEMENTS = 'achievements.md';
 export const SETTINGS = 'settings.md';
-export const REJECTIONS = 'challenges/rejections.md';
+export const CHALLENGE_FILES = {
+  rejections: 'challenges/rejections.md',
+  bucket: 'challenges/bucket-list.md',
+} as const;
 export const README = 'README.txt';
 export const VIEWER = 'viewer.html';
 
@@ -38,14 +41,15 @@ export type JournalFile =
   | { type: 'bank' }
   | { type: 'achievements' }
   | { type: 'settings' }
-  | { type: 'rejections' }
+  | { type: 'challenges'; kind: 'rejections' | 'bucket' }
   | { type: 'other' };
 
 export function classify(path: string): JournalFile {
   if (path === BANK) return { type: 'bank' };
   if (path === ACHIEVEMENTS) return { type: 'achievements' };
   if (path === SETTINGS) return { type: 'settings' };
-  if (path === REJECTIONS) return { type: 'rejections' };
+  if (path === CHALLENGE_FILES.rejections) return { type: 'challenges', kind: 'rejections' };
+  if (path === CHALLENGE_FILES.bucket) return { type: 'challenges', kind: 'bucket' };
   let m = /^(\d{4})\/year\.md$/.exec(path);
   if (m) return { type: 'year', year: m[1] };
   m = /^(\d{4})\/(\d{4}-\d{2})\/month\.md$/.exec(path);
