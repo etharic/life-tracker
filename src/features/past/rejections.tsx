@@ -103,27 +103,29 @@ function Item({ r }: { r: Rejection }) {
     .join(' · ');
   return (
     <View style={styles.item}>
-      <Press
-        feedback="highlight"
-        onPress={() => router.push(`/rejection/${r.id}`)}
-        style={styles.itemText}
-        accessibilityLabel={[r.title, sub].filter(Boolean).join(', ')}
-        accessibilityHint="Opens the notes"
-      >
-        <T variant="body" weight="500" numberOfLines={2}>
-          {r.title}
-        </T>
-        {sub || r.notes ? (
-          <View style={styles.subRow}>
-            {sub ? (
-              <T variant="footnote" tone="ink2">
-                {sub}
-              </T>
-            ) : null}
-            {r.notes ? <Icon name="text.alignleft" size={11} color={colors.ink3} /> : null}
-          </View>
-        ) : null}
-      </Press>
+      <View style={styles.itemCell}>
+        <Press
+          feedback="highlight"
+          onPress={() => router.push(`/rejection/${r.id}`)}
+          style={styles.itemText}
+          accessibilityLabel={[r.title, sub].filter(Boolean).join(', ')}
+          accessibilityHint="Opens the notes"
+        >
+          <T variant="body" weight="500" numberOfLines={2}>
+            {r.title}
+          </T>
+          {sub || r.notes ? (
+            <View style={styles.subRow}>
+              {sub ? (
+                <T variant="footnote" tone="ink2">
+                  {sub}
+                </T>
+              ) : null}
+              {r.notes ? <Icon name="text.alignleft" size={11} color={colors.ink3} /> : null}
+            </View>
+          ) : null}
+        </Press>
+      </View>
       <View style={styles.marks}>
         <Mark kind="rejected" on={r.outcome === 'rejected'} onPress={() => set('rejected')} title={r.title} />
         <Mark kind="accepted" on={r.outcome === 'accepted'} onPress={() => set('accepted')} title={r.title} />
@@ -174,9 +176,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.track,
   },
   item: { flexDirection: 'row', alignItems: 'center', paddingRight: space.l },
-  itemText: { flex: 1, paddingLeft: space.l, paddingRight: space.m, paddingVertical: space.m, gap: 2 },
+  itemCell: { flex: 1, minWidth: 0 },
+  itemText: { paddingLeft: space.l, paddingRight: space.m, paddingVertical: space.m, gap: 2 },
   subRow: { flexDirection: 'row', alignItems: 'center', gap: space.s },
-  marks: { flexDirection: 'row', gap: space.s },
+  marks: { flexDirection: 'row', gap: space.s, flexShrink: 0 },
   mark: {
     width: 36,
     height: 36,
