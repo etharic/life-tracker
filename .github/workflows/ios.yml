@@ -1,0 +1,75 @@
+name: iPhone build
+
+# The same two builds as codemagic.yaml, used when Codemagic has no build minutes left.
+# Started and collected by scripts/ios-build.sh (gh workflow run / gh run download); on demand only,
+# since macOS minutes cost 10x on a private repository.
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: ios (unsigned IPA for SideStore) or screens (simulator screenshots)
+        required: true
+        default: ios
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 75
+    env:
+      CM_BUILD_DIR: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      # Continues after Codemagic's build numbers (100 + n), so SideStore always sees a newer build.
+      - name: Build number
+        run: echo "BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 20))" >> "$GITHUB_ENV"
+      - name: Newest Xcode
+        run: |
+          X=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$X"
+          xcodebuild -version
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - name: Install
+        run: npm ci
+      - name: Typecheck, lint and tests
+        run: |
+          npx tsc --noEmit
+          npx eslint src tests
+          npx jest --ci
+      - name: Native project
+        run: |
+          CI=1 npx expo prebuild --platform ios --clean --no-install
+          cd ios && (pod install || (sleep 15 && pod install) || (sleep 45 && pod install))
+
+      - name: Build app (unsigned)
+        if: inputs.kind == 'ios'
+        run: bash scripts/xcodebuild.sh device
+      - name: Package IPA
+        if: inputs.kind == 'ios'
+        run: |
+          APP=$(ls -d "$CM_BUILD_DIR"/derived/Build/Products/Release-iphoneos/*.app | head -1)
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' -c 'Print :CFBundleShortVersionString' -c 'Print :CFBundleVersion' "$APP/Info.plist"
+          test -f "$APP/main.jsbundle"
+          mkdir -p out/Payload && cp -R "$APP" out/Payload/
+          (cd out && zip -qry LifeTracker.ipa Payload && rm -rf Payload)
+
+      - name: Build for the simulator
+        if: inputs.kind == 'screens'
+        run: bash scripts/xcodebuild.sh simulator
+      - name: Screenshots
+        if: inputs.kind == 'screens'
+        run: bash scripts/screenshots.sh "$CM_BUILD_DIR/derived/Build/Products/Release-iphonesimulator" "$CM_BUILD_DIR/screens"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ inputs.kind }}
+          path: |
+            out/*.ipa
+            screens/*.png
+            screens/*.log
+            xcodebuild.log
+          if-no-files-found: ignore
