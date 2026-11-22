@@ -71,5 +71,6 @@ jobs:
             out/*.ipa
             screens/*.png
             screens/*.log
+            screens/*.pdf
             xcodebuild.log
           if-no-files-found: ignore

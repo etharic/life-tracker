@@ -8,7 +8,7 @@ const MIC = 'Record voice notes for a day in your journal.';
 const config: ExpoConfig = {
   name: 'Life-Tracker',
   slug: 'life-tracker',
-  version: '1.12.0',
+  version: '1.13.0',
   scheme: 'lifetracker',
   orientation: 'portrait',
   icon: './assets/icon.png',
@@ -45,6 +45,7 @@ const config: ExpoConfig = {
     'expo-sharing',
     ['expo-secure-store', { faceIDPermission: false }],
     'expo-web-browser',
+    'expo-video',
   ],
   experiments: { typedRoutes: true, reactCompiler: true },
 };

@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { formatFull } from '@/domain/dates';
-import { exportBook, exportZip } from '@/export/run';
+import { exportBook, exportBookWithSound, exportZip } from '@/export/run';
 import { useJournal } from '@/state/journal';
 import { Button } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
@@ -71,17 +71,30 @@ export default function BackupScreen() {
       <Section flush>
         {years.length ? (
           <Rows>
-            {years.map((y) => (
+            {years.flatMap((y) => [
               <Row
                 key={y}
                 title={`The ${y} book`}
                 detail={
-                  busy === `The ${y} book` ? 'Making the PDF' : 'Day titles, months, feelings and writing. Printable.'
+                  busy === `The ${y} book`
+                    ? 'Making the PDF'
+                    : 'Day titles, months, feelings, writing and photos. Printable.'
                 }
                 trailing={busy === `The ${y} book` ? <ActivityIndicator color={colors.accent} /> : undefined}
                 onPress={busy ? undefined : () => void run(`The ${y} book`, () => exportBook(y))}
-              />
-            ))}
+              />,
+              <Row
+                key={`${y}-sound`}
+                title={`The ${y} book with sound and video`}
+                detail={
+                  busy === `The ${y} book with sound`
+                    ? 'Gathering the voice notes and videos'
+                    : 'The same book as one page for any browser, playing every voice note and video.'
+                }
+                trailing={busy === `The ${y} book with sound` ? <ActivityIndicator color={colors.accent} /> : undefined}
+                onPress={busy ? undefined : () => void run(`The ${y} book with sound`, () => exportBookWithSound(y))}
+              />,
+            ])}
           </Rows>
         ) : (
           <View style={styles.pad}>

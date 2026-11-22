@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import type { SFSymbol } from 'expo-symbols';
 import { useMemo, useRef } from 'react';
 import { ActionSheetIOS, StyleSheet, View } from 'react-native';
@@ -60,6 +60,12 @@ export const CHALLENGE_COPY: Record<
     empty: 'Nothing on the list yet',
     emptyBody: 'Places to see, things to learn, things to try once.',
   },
+};
+
+/** Where each list lives. A new list needs a kind, its words above, a file and this route. */
+export const CHALLENGE_ROUTE: Record<ChallengeKind, Href> = {
+  rejections: '/past/rejections',
+  bucket: '/past/bucket',
 };
 
 /** Newest first: by the date given, or the day it was logged. */
@@ -156,7 +162,11 @@ function StatusBox({ item, kind, onPress }: { item: ChallengeItem; kind: Challen
   );
 }
 
-function Item({ item, kind }: { item: ChallengeItem; kind: ChallengeKind }) {
+/**
+ * One item: the status box, then the title. Swipe right for a success, left for a failure; tap to
+ * edit; long press for Edit or Delete. `caption` names its list where items from several lists meet.
+ */
+export function ChallengeRow({ item, kind, caption }: { item: ChallengeItem; kind: ChallengeKind; caption?: string }) {
   const copy = CHALLENGE_COPY[kind];
   const swiped = useRef(0);
   const save = (patch: Partial<ChallengeItem>) => useJournal.getState().saveChallenge(kind, { ...item, ...patch });
@@ -215,7 +225,7 @@ function Item({ item, kind }: { item: ChallengeItem; kind: ChallengeKind }) {
     );
   };
 
-  const sub = item.date ? formatFull(item.date) : null;
+  const sub = [caption, item.date ? formatFull(item.date) : null].filter(Boolean).join(', ') || null;
   return (
     <SwipeRow
       right={{
@@ -288,7 +298,7 @@ function Block({ label, items, kind }: { label: string; items: ChallengeItem[]; 
         {items.map((it, i) => (
           <View key={it.id}>
             {i > 0 ? <Divider inset={space.l + 30 + space.m} /> : null}
-            <Item item={it} kind={kind} />
+            <ChallengeRow item={it} kind={kind} />
           </View>
         ))}
       </Section>

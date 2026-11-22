@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { ActionSheetIOS, ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import type { MediaRef } from '@/domain/types';
-import { addAudio, addPhoto, type MediaOwner } from '@/state/media';
+import { addAudio, addPhoto, addVideo, type MediaOwner } from '@/state/media';
 import { Icon } from '@/ui/icon';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
@@ -46,6 +46,20 @@ export function MediaEditor({ owner, media }: { owner: MediaOwner; media: MediaR
     });
   };
 
+  const pickVideos = async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      allowsMultipleSelection: true,
+      selectionLimit: 5,
+      // Keep the original file: no re-encoding on the phone.
+      videoExportPreset: ImagePicker.VideoExportPreset.Passthrough,
+    });
+    if (res.canceled) return;
+    await run('video', async () => {
+      for (const a of res.assets) await addVideo(owner, { uri: a.uri });
+    });
+  };
+
   const pickAudio = async () => {
     const res = await DocumentPicker.getDocumentAsync({
       type: ['audio/*'],
@@ -60,11 +74,15 @@ export function MediaEditor({ owner, media }: { owner: MediaOwner; media: MediaR
 
   const addMedia = () =>
     ActionSheetIOS.showActionSheetWithOptions(
-      { options: ['Record audio', 'Photo from library', 'Audio file from Files', 'Cancel'], cancelButtonIndex: 3 },
+      {
+        options: ['Record audio', 'Photo from library', 'Video from library', 'Audio file from Files', 'Cancel'],
+        cancelButtonIndex: 4,
+      },
       (i) => {
         if (i === 0) router.push(`/record/${owner}`);
         if (i === 1) void pickPhotos();
-        if (i === 2) void pickAudio();
+        if (i === 2) void pickVideos();
+        if (i === 3) void pickAudio();
       },
     );
 
@@ -83,7 +101,12 @@ export function MediaEditor({ owner, media }: { owner: MediaOwner; media: MediaR
             Record
           </T>
         </Press>
-        <Press onPress={addMedia} disabled={busy} style={styles.add} accessibilityLabel="Add a photo or an audio file">
+        <Press
+          onPress={addMedia}
+          disabled={busy}
+          style={styles.add}
+          accessibilityLabel="Add a photo, a video or an audio file"
+        >
           {busy ? (
             <ActivityIndicator color={colors.accent} />
           ) : (
@@ -96,7 +119,7 @@ export function MediaEditor({ owner, media }: { owner: MediaOwner; media: MediaR
       </View>
       {media.length ? (
         <T variant="footnote" tone="ink2">
-          Long press a photo or recording to remove it.
+          Long press a photo, video or recording to remove it.
         </T>
       ) : null}
       {error ? (

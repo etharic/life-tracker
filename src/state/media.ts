@@ -70,6 +70,16 @@ export async function addAudio(owner: MediaOwner, file: { uri: string; name: str
   return ref;
 }
 
+/** Stores a video exactly as received (.mov or .mp4) next to its day. */
+export async function addVideo(owner: MediaOwner, file: { uri: string }): Promise<MediaRef> {
+  const ext = (/\.([a-z0-9]{1,5})(?:\?|$)/i.exec(file.uri)?.[1] ?? 'mov').toLowerCase();
+  const rel = nextName(owner, ext);
+  await journalStore().importFile(file.uri, mediaFile(owner, rel));
+  const ref: MediaRef = { kind: 'video', path: rel };
+  setMedia(owner, (m) => [...m, ref]);
+  return ref;
+}
+
 export async function removeMedia(owner: MediaOwner, ref: MediaRef): Promise<void> {
   setMedia(owner, (m) => m.filter((x) => x.path !== ref.path));
   await journalStore().remove(mediaFile(owner, ref.path));

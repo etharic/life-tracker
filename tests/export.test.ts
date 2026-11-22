@@ -48,6 +48,41 @@ describe('yearly book', () => {
     expect(html).toContain('November 2026');
     expect(html).toContain('Finished the &lt;/script&gt; chapter');
     expect(html).toContain('data:image/jpeg;base64,AAAA');
+    expect(html).toContain('print-color-adjust:exact');
+  });
+
+  const withSound = {
+    ...day,
+    media: [
+      ...day.media,
+      { kind: 'audio' as const, path: 'media/2026-11-19-2.m4a' },
+      { kind: 'video' as const, path: 'media/2026-11-19-3.mov' },
+    ],
+  };
+  const base = {
+    year: '2026',
+    days: [withSound],
+    months: [emptyMonth('2026-11')],
+    yearRec: undefined,
+    note: '',
+    photo: () => 'data:image/jpeg;base64,AAAA',
+  };
+
+  it('print edition: says which voice notes and videos a day has, and where', () => {
+    const html = bookHtml(base);
+    expect(html).toContain('1 voice note and 1 video');
+    expect(html).toContain('2026-11-19-3.mov');
+    expect(html).not.toContain('<audio');
+  });
+
+  it('player edition: plays them in place, and names any left out', () => {
+    const html = bookHtml({
+      ...base,
+      mode: 'player',
+      sound: (_d, m) => (m.kind === 'audio' ? 'data:audio/mp4;base64,BBBB' : undefined),
+    });
+    expect(html).toContain('<audio controls preload="metadata" src="data:audio/mp4;base64,BBBB">');
+    expect(html).toContain('too large for the book');
   });
 });
 

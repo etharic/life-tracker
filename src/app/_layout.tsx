@@ -1,3 +1,4 @@
+import { File, Paths } from 'expo-file-system';
 import { router, Stack, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { nextDayBoundary } from '@/domain/dates';
 import { startSync } from '@/sync/scheduler';
+import { makeBookPdf } from '@/export/run';
 import { useJournal } from '@/state/journal';
 import { Empty } from '@/ui/layout';
 import { colors } from '@/ui/theme';
@@ -40,6 +42,18 @@ export default function RootLayout() {
       const t = setTimeout(() => router.navigate(route as Href), 500);
       return () => clearTimeout(t);
     }
+  }, [status]);
+
+  // The simulator check of the yearly book: `-LTBook 2026` saves that year's PDF to Documents.
+  useEffect(() => {
+    if (status !== 'ready') return;
+    const year: unknown = Settings.get('LTBook');
+    if (typeof year !== 'string' || !/^\d{4}$/.test(year)) return;
+    void makeBookPdf(year).then((pdf) => {
+      const out = new File(Paths.document, 'book-check.pdf');
+      if (out.exists) out.delete();
+      pdf.copy(out);
+    });
   }, [status]);
 
   // The journal date changes at the day boundary (04:00 by default), also while the app is open.
@@ -92,6 +106,14 @@ export default function RootLayout() {
         <Stack.Screen name="year-close/[year]" options={modal} />
         <Stack.Screen name="conflict/[id]" options={modal} />
         <Stack.Screen name="challenge/[kind]/[id]" options={modal} />
+        <Stack.Screen
+          name="video/[owner]"
+          options={{
+            presentation: 'fullScreenModal',
+            headerShown: false,
+            contentStyle: { backgroundColor: '#000000' },
+          }}
+        />
       </Stack>
     </GestureHandlerRootView>
   );

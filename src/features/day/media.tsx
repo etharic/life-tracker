@@ -1,5 +1,6 @@
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { ActionSheetIOS, StyleSheet, View } from 'react-native';
 import Animated, { LayoutAnimationConfig, ZoomIn } from 'react-native-reanimated';
@@ -81,10 +82,25 @@ export function PhotoThumb({
   );
 }
 
+/** A video: a dark tile with a play mark; tapping plays it full screen. */
+export function VideoTile({ date, media, onRemove }: { date: ISODate; media: MediaRef; onRemove?: () => void }) {
+  return (
+    <Press
+      onPress={() => router.push({ pathname: '/video/[owner]', params: { owner: date, path: media.path } })}
+      onLongPress={onRemove}
+      accessibilityLabel="Play video"
+      accessibilityHint={onRemove ? 'Long press to remove' : undefined}
+      style={styles.video}
+    >
+      <Icon name="play.fill" size={20} color={colors.bg} />
+    </Press>
+  );
+}
+
 export function confirmRemove(date: ISODate, media: MediaRef) {
   ActionSheetIOS.showActionSheetWithOptions(
     {
-      title: media.kind === 'photo' ? 'Remove this photo?' : 'Remove this recording?',
+      title: `Remove this ${media.kind === 'photo' ? 'photo' : media.kind === 'video' ? 'video' : 'recording'}?`,
       options: ['Remove', 'Cancel'],
       destructiveButtonIndex: 0,
       cancelButtonIndex: 1,
@@ -110,6 +126,8 @@ export function MediaStrip({ date, media, editable }: { date: ISODate; media: Me
           >
             {m.kind === 'photo' ? (
               <PhotoThumb date={date} media={m} onRemove={editable ? () => confirmRemove(date, m) : undefined} />
+            ) : m.kind === 'video' ? (
+              <VideoTile date={date} media={m} onRemove={editable ? () => confirmRemove(date, m) : undefined} />
             ) : (
               <AudioChip date={date} media={m} onRemove={editable ? () => confirmRemove(date, m) : undefined} />
             )}
@@ -133,4 +151,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentSoft,
   },
   tabular: { fontVariant: ['tabular-nums'] },
+  video: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.control,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

@@ -12,10 +12,14 @@ import {
   HOUR_PER_TICK,
   type HobbyCategory,
   type ISODate,
+  CHALLENGE_KINDS,
+  type ChallengeItem,
+  type ChallengeKind,
 } from '@/domain/types';
 import { orderedGoals, orderedHobbies, useDay, useMonth, useStreaks, useWeek } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
-import { CheckRow } from '@/ui/controls';
+import { CHALLENGE_COPY, CHALLENGE_ROUTE, ChallengeRow } from '@/features/past/challenges';
+import { CheckRow, TextAction } from '@/ui/controls';
 import { FeelingDots } from '@/ui/feelings';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
@@ -58,15 +62,20 @@ export function NoSetupNote({ date }: { date: ISODate }) {
 
 // ---------- Goals and hobbies ----------
 
-/** Two pills, one per list: the open one is filled. The count is part of the pill, said once. */
+type ListKey = 'goals' | 'hobbies' | 'challenges';
+
+/**
+ * One pill per list: the open one is filled. The count is part of the pill, said once: done of four
+ * for goals and hobbies, the number under way for challenges.
+ */
 function ListSwitch({
   value,
   onChange,
   options,
 }: {
   value: string | null;
-  onChange: (k: 'goals' | 'hobbies') => void;
-  options: { key: 'goals' | 'hobbies'; label: string; done: number }[];
+  onChange: (k: ListKey) => void;
+  options: { key: ListKey; label: string; count: string; a11y: string }[];
 }) {
   return (
     <View style={styles.switch} accessibilityRole="tablist">
@@ -78,14 +87,14 @@ function ListSwitch({
             onPress={() => onChange(o.key)}
             accessibilityRole="tab"
             accessibilityState={{ selected: on, expanded: on }}
-            accessibilityLabel={`${o.label}, ${o.done} of 4 done`}
+            accessibilityLabel={`${o.label}, ${o.a11y}`}
             style={[styles.pill, on ? styles.pillOn : styles.pillOff]}
           >
             <T variant="subhead" weight="600" chrome style={{ color: on ? colors.bg : colors.ink }}>
               {o.label}
             </T>
             <T variant="subhead" chrome style={[styles.tabular, { color: on ? colors.bg : colors.ink2 }]}>
-              {o.done === 4 ? '✓' : `${o.done}/4`}
+              {o.count}
             </T>
           </Press>
         );
@@ -106,35 +115,37 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
   const setup = month.setup;
   const goalsDone = setup ? orderedGoals(setup).filter((c) => day.goals[c]).length : 0;
   const hobbiesDone = setup ? orderedHobbies(setup).filter((c) => day.hobbies[c]).length : 0;
-  const [open, setOpen] = useState<'goals' | 'hobbies' | null>(null);
+  const [open, setOpen] = useState<ListKey | null>(null);
+  const active = useActiveChallenges();
   const [timing, setTiming] = useState<HobbyCategory | null>(null);
   if (!setup) return null;
 
-  const rows = !open
-    ? []
-    : open === 'goals'
-      ? orderedGoals(setup).map((c) => ({
-          c,
-          text: setup.goals[c].text,
-          checked: day.goals[c],
-          caption: CATEGORY_LABEL[c],
-          star: c === setup.priority,
-          hobby: null,
-          toggle: () => useJournal.getState().updateDay(date, (d) => void (d.goals[c] = !d.goals[c])),
-        }))
-      : orderedHobbies(setup).map((c) => ({
-          c,
-          text: setup.hobbies[c].text,
-          checked: day.hobbies[c],
-          caption: CATEGORY_LABEL[c],
-          star: c === setup.skill,
-          hobby: c,
-          toggle: () =>
-            useJournal.getState().updateDay(date, (d) => {
-              d.hobbies[c] = !d.hobbies[c];
-              delete d.hobbyHours[c];
-            }),
-        }));
+  const rows =
+    !open || open === 'challenges'
+      ? []
+      : open === 'goals'
+        ? orderedGoals(setup).map((c) => ({
+            c,
+            text: setup.goals[c].text,
+            checked: day.goals[c],
+            caption: CATEGORY_LABEL[c],
+            star: c === setup.priority,
+            hobby: null,
+            toggle: () => useJournal.getState().updateDay(date, (d) => void (d.goals[c] = !d.goals[c])),
+          }))
+        : orderedHobbies(setup).map((c) => ({
+            c,
+            text: setup.hobbies[c].text,
+            checked: day.hobbies[c],
+            caption: CATEGORY_LABEL[c],
+            star: c === setup.skill,
+            hobby: c,
+            toggle: () =>
+              useJournal.getState().updateDay(date, (d) => {
+                d.hobbies[c] = !d.hobbies[c];
+                delete d.hobbyHours[c];
+              }),
+          }));
 
   return (
     <View style={styles.group}>
@@ -145,11 +156,51 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
           setOpen((o) => (o === k ? null : k));
         }}
         options={[
-          { key: 'goals', label: 'Goals', done: goalsDone },
-          { key: 'hobbies', label: 'Hobbies', done: hobbiesDone },
+          { key: 'goals', label: 'Goals', count: fourCount(goalsDone), a11y: `${goalsDone} of 4 done` },
+          { key: 'hobbies', label: 'Hobbies', count: fourCount(hobbiesDone), a11y: `${hobbiesDone} of 4 done` },
+          // Challenges are not tied to a day: a past day shows only what that day had.
+          ...(locked
+            ? []
+            : [
+                {
+                  key: 'challenges' as const,
+                  label: 'Challenges',
+                  count: String(active.length),
+                  a11y: `${active.length} active`,
+                },
+              ]),
         ]}
       />
-      {open ? (
+      {open === 'challenges' ? (
+        <Animated.View key={open} entering={enterSoft} exiting={exitSoft} layout={layoutMove} style={styles.card}>
+          <View style={styles.clip}>
+            {active.length ? (
+              active.map(({ kind, item }, i) => (
+                <Animated.View key={`${kind}/${item.id}`} exiting={exitSoft} layout={layoutMove}>
+                  {i > 0 ? <Divider inset={space.l + 26 + space.m} /> : null}
+                  <ChallengeRow item={item} kind={kind} caption={CHALLENGE_COPY[kind].title} />
+                </Animated.View>
+              ))
+            ) : (
+              <View style={styles.challengeEmpty}>
+                <T variant="subhead" tone="ink2">
+                  Nothing under way. Tap the box in front of an item on a list to start it.
+                </T>
+                <View style={styles.challengeLinks}>
+                  {CHALLENGE_KINDS.map((k) => (
+                    <TextAction
+                      key={k}
+                      title={CHALLENGE_COPY[k].title}
+                      onPress={() => router.push(CHALLENGE_ROUTE[k])}
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
+          </View>
+        </Animated.View>
+      ) : null}
+      {open && open !== 'challenges' ? (
         <Animated.View key={open} entering={enterSoft} exiting={exitSoft} layout={layoutMove} style={styles.card}>
           <View style={styles.clip}>
             {rows.map((r, i) => (
@@ -410,17 +461,33 @@ export function WeekGroup({ date, locked }: { date: ISODate; locked?: boolean })
   );
 }
 
+const fourCount = (n: number) => (n === 4 ? '✓' : `${n}/4`);
+
+/** Every active challenge, from every list there is, newest first. */
+function useActiveChallenges(): { kind: ChallengeKind; item: ChallengeItem }[] {
+  const challenges = useJournal((s) => s.challenges);
+  return useMemo(
+    () =>
+      CHALLENGE_KINDS.flatMap((kind) =>
+        challenges[kind].filter((it) => it.started && it.outcome === 'open').map((item) => ({ kind, item })),
+      ).sort((a, b) => ((a.item.date ?? a.item.added) < (b.item.date ?? b.item.added) ? 1 : -1)),
+    [challenges],
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  challengeEmpty: { padding: space.l, gap: space.s },
+  challengeLinks: { flexDirection: 'row', gap: space.l },
   tabular: { fontVariant: ['tabular-nums'] },
   group: { gap: space.m },
-  switch: { flexDirection: 'row', gap: space.s },
+  switch: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.s,
     minHeight: 36,
-    paddingHorizontal: space.l,
+    paddingHorizontal: space.m + 2,
     borderRadius: radius.pill,
   },
   pillOn: { backgroundColor: colors.ink },

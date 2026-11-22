@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { monthOf } from '@/domain/dates';
+import { CHALLENGE_KINDS } from '@/domain/types';
+import { CHALLENGE_COPY, CHALLENGE_ROUTE } from '@/features/past/challenges';
 import { useToday } from '@/features/hooks';
 import { EntryRow } from '@/features/past/entry-row';
 import { Insights } from '@/features/past/insights';
@@ -71,15 +73,13 @@ function useArchive(): { title: string; items: Item[] }[] {
     return [
       {
         title: 'Challenges',
-        items: [
-          {
-            title: 'Rejection list',
-            href: '/past/rejections',
-            icon: 'xmark.seal',
-            value: n(challenges.rejections.length),
-          },
-          { title: 'Bucket list', href: '/past/bucket', icon: 'list.star', value: n(challenges.bucket.length) },
-        ],
+        // Every challenge list there is, so a new one shows up here by itself.
+        items: CHALLENGE_KINDS.map((k) => ({
+          title: CHALLENGE_COPY[k].title,
+          href: CHALLENGE_ROUTE[k],
+          icon: CHALLENGE_COPY[k].icon,
+          value: n(challenges[k].length),
+        })),
       },
       {
         title: 'Every day',

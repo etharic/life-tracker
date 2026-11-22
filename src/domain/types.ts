@@ -37,7 +37,7 @@ export function kindOf(c: Category): BankKind {
 }
 
 export interface MediaRef {
-  kind: 'photo' | 'audio';
+  kind: 'photo' | 'audio' | 'video';
   /** Relative to the month folder, e.g. media/2026-11-19-1.jpg */
   path: string;
 }

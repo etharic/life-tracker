@@ -14,13 +14,16 @@ const KNOWN = ['format', 'date', 'title', 'feeling', 'goals', 'hobbies', 'hobby_
 
 const MEDIA_LINK = /(!?)\[([^\]]*)\]\((media\/[^)\s]+)\)/g;
 const AUDIO_EXT = /\.(m4a|mp3|aac|wav|caf|aif|aiff|ogg|opus|flac|mp4)$/i;
+/** .mp4 can be either: the app writes `[video](…)` for a video, so only unlabelled links are guessed. */
+const VIDEO_EXT = /\.(mov|m4v)$/i;
 
-export function mediaKind(path: string): MediaRef['kind'] {
+export function mediaKind(path: string, label = ''): MediaRef['kind'] {
+  if (label.toLowerCase() === 'video' || VIDEO_EXT.test(path)) return 'video';
   return AUDIO_EXT.test(path) ? 'audio' : 'photo';
 }
 
 function mediaLine(m: MediaRef): string {
-  return m.kind === 'photo' ? `![photo](${m.path})` : `[audio](${m.path})`;
+  return m.kind === 'photo' ? `![photo](${m.path})` : `[${m.kind}](${m.path})`;
 }
 
 /**
@@ -34,7 +37,7 @@ export function splitBody(body: string): { writing: string; media: MediaRef[] } 
     const path = m[3];
     if (seen.has(path)) continue;
     seen.add(path);
-    media.push({ kind: m[1] === '!' ? 'photo' : mediaKind(path), path });
+    media.push({ kind: m[1] === '!' ? 'photo' : mediaKind(path, m[2]), path });
   }
   const lines = body.split('\n').filter((l) => !/^\s*!?\[[^\]]*\]\(media\/[^)\s]+\)\s*$/.test(l));
   return { writing: lines.join('\n').trim(), media };
