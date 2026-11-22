@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, ZoomIn } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
 
 import { achievementSentence } from '@/domain/achievements';
 import { formatMonth } from '@/domain/dates';
@@ -8,7 +8,7 @@ import type { Achievement } from '@/domain/types';
 import { Burst } from '@/ui/burst';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
-import { RM, SETTLE } from '@/ui/motion';
+import { enterPop, SETTLE } from '@/ui/motion';
 import { T } from '@/ui/text';
 import { colors, radius, space } from '@/ui/theme';
 
@@ -33,7 +33,7 @@ export function AchievementBanner({
   }));
   return (
     <Animated.View
-      entering={fresh ? ZoomIn.springify().damping(14).reduceMotion(RM) : undefined}
+      entering={fresh ? enterPop : undefined}
       style={styles.banner}
       accessible
       accessibilityLabel={`${fresh ? 'New achievement' : 'Achievement'}: ${a.text}, ${achievementSentence(a)}`}

@@ -26,11 +26,13 @@ const TILT = -11;
 export function DoneStamp({ date, fresh }: { date: ISODate | null; fresh?: boolean }) {
   const reduced = useReducedMotion();
   const ink_ = INK[useColorScheme() === 'dark' ? 'dark' : 'light'];
-  const drop = useSharedValue(reduced ? 1 : 0);
-  const ink = useSharedValue(reduced ? 1 : 0);
+  // Seen on every visit to Month: only the day it was stamped does it come down.
+  const still = reduced || !fresh;
+  const drop = useSharedValue(still ? 1 : 0);
+  const ink = useSharedValue(still ? 0.86 : 0);
 
   useEffect(() => {
-    if (reduced) return;
+    if (still) return;
     drop.set(withDelay(250, withSpring(1, { damping: 11, stiffness: 260, mass: 0.7 })));
     // The ink darkens on impact and settles a little lighter, as a real stamp does.
     ink.set(
@@ -45,7 +47,7 @@ export function DoneStamp({ date, fresh }: { date: ISODate | null; fresh?: boole
     if (!fresh) return;
     const t = setTimeout(() => haptic.commit(), 380);
     return () => clearTimeout(t);
-  }, [reduced, drop, ink, fresh]);
+  }, [still, drop, ink, fresh]);
 
   const style = useAnimatedStyle(() => {
     const d = drop.get();

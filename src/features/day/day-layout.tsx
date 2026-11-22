@@ -88,13 +88,27 @@ function ListSwitch({
             accessibilityRole="tab"
             accessibilityState={{ selected: on, expanded: on }}
             accessibilityLabel={`${o.label}, ${o.a11y}`}
+            containerStyle={styles.pillCell}
             style={[styles.pill, on ? styles.pillOn : styles.pillOff]}
           >
-            <T variant="subhead" weight="600" chrome style={{ color: on ? colors.bg : colors.ink }}>
+            <T
+              variant="subhead"
+              weight="600"
+              chrome
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              style={{ color: on ? colors.bg : colors.ink }}
+            >
               {o.label}
-            </T>
-            <T variant="subhead" chrome style={[styles.tabular, { color: on ? colors.bg : colors.ink2 }]}>
-              {o.count}
+              <T
+                variant="subhead"
+                weight="400"
+                chrome
+                style={[styles.tabular, { color: on ? colors.bg : colors.ink2 }]}
+              >
+                {`  ${o.count}`}
+              </T>
             </T>
           </Press>
         );
@@ -481,13 +495,16 @@ const styles = StyleSheet.create({
   challengeLinks: { flexDirection: 'row', gap: space.l },
   tabular: { fontVariant: ['tabular-nums'] },
   group: { gap: space.m },
-  switch: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s },
+  switch: { flexDirection: 'row', gap: space.s },
+  // Each pill takes the room its words need, and gives some back when the line is short.
+  pillCell: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0 },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.s,
+    justifyContent: 'center',
     minHeight: 36,
-    paddingHorizontal: space.m + 2,
+    paddingHorizontal: space.m,
     borderRadius: radius.pill,
   },
   pillOn: { backgroundColor: colors.ink },

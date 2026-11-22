@@ -17,6 +17,24 @@ import { colors, space } from './theme';
 
 /** How far a row travels before letting go counts. */
 const THRESHOLD = 84;
+/** A quick flick counts too, even short of the mark (points per second, and a little travel). */
+const FLICK_SPEED = 650;
+const FLICK_MIN = 36;
+
+/** Past the mark the row follows the finger with growing friction instead of a hard stop. */
+function resist(t: number): number {
+  'worklet';
+  const a = Math.abs(t);
+  if (a <= THRESHOLD) return t;
+  return Math.sign(t) * (THRESHOLD + (a - THRESHOLD) * 0.35);
+}
+
+function decide(t: number, v: number): 1 | -1 | 0 {
+  'worklet';
+  if (t > THRESHOLD || (t > FLICK_MIN && v > FLICK_SPEED)) return 1;
+  if (t < -THRESHOLD || (t < -FLICK_MIN && v < -FLICK_SPEED)) return -1;
+  return 0;
+}
 const SETTLE = { damping: 22, stiffness: 260, mass: 0.8 };
 
 export interface SwipeAction {
@@ -52,13 +70,15 @@ export function SwipeRow({
   const pan = usePanGesture({
     activeOffsetX: [-14, 14],
     failOffsetY: [-10, 10],
+    // A second finger mid-swipe would make the row jump.
+    maxPointers: 1,
     onActivate: () => {
       'worklet';
       if (onSwipeStart) scheduleOnRN(onSwipeStart);
     },
     onUpdate: (e) => {
       'worklet';
-      x.set(e.translationX);
+      x.set(resist(e.translationX));
       const now = e.translationX > THRESHOLD ? 1 : e.translationX < -THRESHOLD ? -1 : 0;
       if (now !== armed.get()) {
         armed.set(now);
@@ -67,8 +87,9 @@ export function SwipeRow({
     },
     onDeactivate: (e) => {
       'worklet';
-      if (e.translationX > THRESHOLD) scheduleOnRN(onSwipe, 'right');
-      else if (e.translationX < -THRESHOLD) scheduleOnRN(onSwipe, 'left');
+      const d = decide(e.translationX, e.velocityX);
+      if (d === 1) scheduleOnRN(onSwipe, 'right');
+      else if (d === -1) scheduleOnRN(onSwipe, 'left');
       armed.set(0);
       x.set(withSpring(0, SETTLE));
     },

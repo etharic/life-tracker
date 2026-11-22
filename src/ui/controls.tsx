@@ -29,14 +29,14 @@ const boxAnim: CSSTransitionProperties = {
 
 export function CheckBox({ checked, size = 26, dashed }: { checked: boolean; size?: number; dashed?: boolean }) {
   // The box pops and the check springs in when ticked; unticking is quiet.
-  const pop = usePop(checked, 0.22);
+  const pop = usePop(checked, 0.12);
   const mark = useSharedValue(checked ? 1 : 0);
   useEffect(() => {
     mark.set(checked ? withSpring(1, POP) : withTiming(0, { duration: 120, reduceMotion: RM }));
   }, [checked, mark]);
   const markStyle = useAnimatedStyle(() => ({
     opacity: Math.min(1, mark.get() * 1.4),
-    transform: [{ scale: 0.4 + mark.get() * 0.6 }],
+    transform: [{ scale: 0.7 + mark.get() * 0.3 }],
   }));
   return (
     <Animated.View

@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { EASE_OUT } from './motion';
 import { colors } from './theme';
 
 interface Props extends Omit<PressableProps, 'style' | 'children'> {
@@ -21,8 +22,9 @@ interface Props extends Omit<PressableProps, 'style' | 'children'> {
 }
 
 /** Press in quickly, spring back on release: small, physical, on the UI thread. */
-const PRESS_IN = { duration: 90, reduceMotion: ReduceMotion.System };
-const RELEASE = { damping: 14, stiffness: 320, mass: 0.6, reduceMotion: ReduceMotion.System };
+const PRESS_IN = { duration: 100, easing: EASE_OUT, reduceMotion: ReduceMotion.System };
+/** Back to rest with no overshoot: a press confirms, it does not wobble. */
+const RELEASE = { damping: 24, stiffness: 420, mass: 0.6, reduceMotion: ReduceMotion.System };
 
 export function Press({ children, style, containerStyle, feedback = 'scale', onPressIn, onPressOut, ...rest }: Props) {
   const scale = useSharedValue(1);
@@ -35,7 +37,7 @@ export function Press({ children, style, containerStyle, feedback = 'scale', onP
       pressRetentionOffset={16}
       style={containerStyle}
       onPressIn={(e) => {
-        if (feedback === 'scale') scale.set(withTiming(0.96, PRESS_IN));
+        if (feedback === 'scale') scale.set(withTiming(0.97, PRESS_IN));
         else setPressed(true);
         onPressIn?.(e);
       }}

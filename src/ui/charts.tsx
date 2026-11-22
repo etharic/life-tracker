@@ -37,12 +37,13 @@ export function Ring({
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const target = Math.max(0, Math.min(100, percent));
-  const progress = useSharedValue(reduced ? target : 0);
+  // Opening Month many times a day should not replay the fill: start where the value is.
+  const progress = useSharedValue(target);
   const glow = useSharedValue(0);
   const previous = useRef(target);
   useEffect(() => {
     // From the old value to the new one, never a jump.
-    progress.set(reduced ? target : withTiming(target, { duration: 700, easing: Easing.bezier(0.23, 1, 0.32, 1) }));
+    progress.set(reduced ? target : withTiming(target, { duration: 450, easing: Easing.bezier(0.23, 1, 0.32, 1) }));
     // Reaching 100%: one soft halo, once.
     if (target >= 100 && previous.current < 100 && !reduced) {
       glow.set(withDelay(450, withSequence(withTiming(1, { duration: 220 }), withTiming(0, { duration: 600 }))));
@@ -84,10 +85,10 @@ export function Ring({
 /** A horizontal bar for a percentage. */
 export function Bar({ percent, height = 8 }: { percent: number; height?: number }) {
   const target = Math.max(0, Math.min(100, percent)) / 100;
-  const fill = useSharedValue(0);
+  const fill = useSharedValue(target);
   useEffect(() => {
     fill.set(
-      withTiming(target, { duration: 600, easing: Easing.bezier(0.23, 1, 0.32, 1), reduceMotion: ReduceMotion.System }),
+      withTiming(target, { duration: 400, easing: Easing.bezier(0.23, 1, 0.32, 1), reduceMotion: ReduceMotion.System }),
     );
   }, [target, fill]);
   // Grows from the left by transform (no layout work per frame).

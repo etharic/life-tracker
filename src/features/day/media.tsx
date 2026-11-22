@@ -3,12 +3,12 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { ActionSheetIOS, StyleSheet, View } from 'react-native';
-import Animated, { LayoutAnimationConfig, ZoomIn } from 'react-native-reanimated';
+import Animated, { LayoutAnimationConfig } from 'react-native-reanimated';
 
 import type { ISODate, MediaRef } from '@/domain/types';
 import { mediaUri, removeMedia } from '@/state/media';
 import { Icon } from '@/ui/icon';
-import { exitSoft, layoutMove, RM } from '@/ui/motion';
+import { enterPop, exitSoft, layoutMove } from '@/ui/motion';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { colors, radius, space } from '@/ui/theme';
@@ -118,12 +118,7 @@ export function MediaStrip({ date, media, editable }: { date: ISODate; media: Me
     <LayoutAnimationConfig skipEntering>
       <View style={styles.strip}>
         {media.map((m) => (
-          <Animated.View
-            key={m.path}
-            entering={ZoomIn.springify().damping(15).reduceMotion(RM)}
-            exiting={exitSoft}
-            layout={layoutMove}
-          >
+          <Animated.View key={m.path} entering={enterPop} exiting={exitSoft} layout={layoutMove}>
             {m.kind === 'photo' ? (
               <PhotoThumb date={date} media={m} onRemove={editable ? () => confirmRemove(date, m) : undefined} />
             ) : m.kind === 'video' ? (
