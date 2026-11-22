@@ -139,7 +139,7 @@ ${d.title ? `<h3>${esc(d.title)}</h3>` : ''}${d.writing ? `<p>${para(d.writing)}
 *{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box}
 @page{margin:18mm 16mm}${player ? 'body{max-width:720px;margin:0 auto;padding:24px 18px}' : ''}body{font-family:Georgia,'Times New Roman',serif;color:#1E1E22;font-size:11.5pt;line-height:1.5}
 h1{font-size:44pt;margin:0;font-weight:normal}h2{font-size:24pt;font-weight:normal;margin:0 0 10pt}h3{font-size:13pt;margin:4pt 0}h4{font:600 9pt -apple-system,Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#66666E;margin:14pt 0 4pt}
-.cover{height:240mm;display:flex;flex-direction:column;justify-content:center}.cover .sub{color:#66666E;font-size:14pt;margin-top:8pt}
+.cover{min-height:200mm;display:flex;flex-direction:column;justify-content:center}.cover .sub{color:#66666E;font-size:14pt;margin-top:8pt}
 .page{page-break-before:always}.cols{display:flex;gap:24pt}.cols>div{flex:1}ul{padding-left:14pt;margin:2pt 0}.k{color:#66666E;font:9pt -apple-system,Helvetica,sans-serif;margin-right:4pt}
 .grid{border-collapse:separate;border-spacing:2pt;margin:10pt 0}.grid th{font:600 8pt Helvetica,sans-serif;color:#66666E}.grid .n{font:7pt Helvetica,sans-serif;color:#66666E;text-align:right}
 .c{width:28pt;height:8pt;border-radius:2pt}.c.e{border:.5pt dashed #CBC5BA}
