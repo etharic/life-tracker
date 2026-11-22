@@ -1,29 +1,17 @@
 import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import { useEffect, type ReactNode } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
-import Animated, {
-  cubicBezier,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-  type CSSTransitionProperties,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { haptic } from './haptics';
 import { Icon } from './icon';
-import { POP, RM } from './motion';
+import { colorEase, POP, RM } from './motion';
 import { Press } from './press';
 import { T } from './text';
 import { colors, radius, space, TARGET, type } from './theme';
 import { usePop } from './use-pop';
 
-const ease = cubicBezier(0.23, 1, 0.32, 1);
-const boxAnim: CSSTransitionProperties = {
-  transitionProperty: ['backgroundColor', 'borderColor'],
-  transitionDuration: '140ms',
-  transitionTimingFunction: ease,
-};
+const boxAnim = colorEase;
 
 // ---------- Checkbox ----------
 
@@ -152,6 +140,7 @@ export function Chip({
   onPress,
   onLongPress,
   starred,
+  starLabel = 'skill hobby',
   readOnly,
   wrap,
   accessibilityHint,
@@ -161,6 +150,8 @@ export function Chip({
   onPress?: () => void;
   onLongPress?: () => void;
   starred?: boolean;
+  /** What the star means, for VoiceOver. */
+  starLabel?: string;
   /** Shown as it is, not toggled (a week that has passed). */
   readOnly?: boolean;
   /** Long text wraps instead of being cut. */
@@ -173,7 +164,7 @@ export function Chip({
       {selected ? (
         <Icon name="checkmark" size={14} color={colors.onAccent} weight="bold" />
       ) : starred ? (
-        <Icon name="star.fill" size={13} color={colors.ink} />
+        <Icon name="star.fill" size={13} color={colors.accent} />
       ) : null}
       <T
         variant="callout"
@@ -206,8 +197,9 @@ export function Chip({
         onLongPress={onLongPress}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: selected }}
-        accessibilityLabel={starred ? `${label}, skill hobby` : label}
+        accessibilityLabel={starred ? `${label}, ${starLabel}` : label}
         accessibilityHint={accessibilityHint}
+        colorTransition
         style={style}
       >
         {content}

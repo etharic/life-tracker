@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   ReduceMotion,
@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { EASE_OUT } from './motion';
+import { colorEase, EASE_OUT } from './motion';
 import { colors } from './theme';
 
 interface Props extends Omit<PressableProps, 'style' | 'children'> {
@@ -19,17 +19,30 @@ interface Props extends Omit<PressableProps, 'style' | 'children'> {
   containerStyle?: StyleProp<ViewStyle>;
   /** 'scale' for buttons, chips and boxes; 'highlight' for full-width rows. */
   feedback?: 'scale' | 'highlight';
+  /** Background and border colour ease over when they change (a selection). */
+  colorTransition?: boolean;
 }
 
 /** Press in quickly, spring back on release: small, physical, on the UI thread. */
 const PRESS_IN = { duration: 100, easing: EASE_OUT, reduceMotion: ReduceMotion.System };
 /** Back to rest with no overshoot: a press confirms, it does not wobble. */
+const FADE_OUT = { duration: 220, easing: EASE_OUT, reduceMotion: ReduceMotion.Never };
 const RELEASE = { damping: 24, stiffness: 420, mass: 0.6, reduceMotion: ReduceMotion.System };
 
-export function Press({ children, style, containerStyle, feedback = 'scale', onPressIn, onPressOut, ...rest }: Props) {
+export function Press({
+  children,
+  style,
+  containerStyle,
+  feedback = 'scale',
+  colorTransition,
+  onPressIn,
+  onPressOut,
+  ...rest
+}: Props) {
   const scale = useSharedValue(1);
-  const [pressed, setPressed] = useState(false);
+  const lit = useSharedValue(0);
   const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
+  const highlight = useAnimatedStyle(() => ({ opacity: lit.get() }));
   return (
     <Pressable
       accessibilityRole="button"
@@ -38,12 +51,12 @@ export function Press({ children, style, containerStyle, feedback = 'scale', onP
       style={containerStyle}
       onPressIn={(e) => {
         if (feedback === 'scale') scale.set(withTiming(0.97, PRESS_IN));
-        else setPressed(true);
+        else lit.set(1);
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
         if (feedback === 'scale') scale.set(withSpring(1, RELEASE));
-        else setPressed(false);
+        else lit.set(withTiming(0, FADE_OUT));
         onPressOut?.(e);
       }}
       {...rest}
@@ -51,11 +64,14 @@ export function Press({ children, style, containerStyle, feedback = 'scale', onP
       <Animated.View
         style={[
           feedback === 'scale' ? animated : null,
+          colorTransition ? colorEase : null,
           style,
-          pressed && styles.highlighted,
           rest.disabled && styles.disabled,
         ]}
       >
+        {feedback === 'highlight' ? (
+          <Animated.View pointerEvents="none" style={[styles.highlighted, highlight]} />
+        ) : null}
         {children}
       </Animated.View>
     </Pressable>
@@ -63,6 +79,6 @@ export function Press({ children, style, containerStyle, feedback = 'scale', onP
 }
 
 const styles = StyleSheet.create({
-  highlighted: { backgroundColor: colors.scrim },
+  highlighted: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: colors.scrim },
   disabled: { opacity: 0.4 },
 });

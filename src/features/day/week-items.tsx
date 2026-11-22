@@ -9,7 +9,6 @@ import { useJournal } from '@/state/journal';
 import { Chip } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
-import { Divider } from '@/ui/layout';
 import { enterRow, exitSoft, layoutMove } from '@/ui/motion';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
@@ -25,8 +24,8 @@ export function SubLabel({ children }: { children: string }) {
 }
 
 /**
- * A week's two runs of capsules: its priorities (with an add button at the end of the run) and its
- * other commitments (the month's three weekly checks). Capsules flow side by side and wrap.
+ * A week's commitments as one run of capsules: its priorities first, each starred, then the month's
+ * three weekly checks, then a button to add a priority. Capsules flow side by side and wrap.
  * A week that is not the current one is shown as it was, without being changed.
  */
 export function WeekItems({
@@ -38,7 +37,7 @@ export function WeekItems({
   week: WeekId;
   date: ISODate;
   interactive: boolean;
-  /** Inside a card of its own: the runs carry the card's padding and a rule between them. */
+  /** Inside a card of its own: the run carries the card's padding. */
   padded?: boolean;
 }) {
   const rec = useWeek(week);
@@ -74,88 +73,79 @@ export function WeekItems({
       },
     );
 
-  const showPriorities = interactive || items.length > 0;
   const run = padded ? styles.runPadded : styles.run;
+  if (!items.length && !setup && !interactive) return null;
 
   return (
-    <>
-      {showPriorities ? (
-        <View style={run}>
-          <SubLabel>Priorities</SubLabel>
-          <View style={styles.chips}>
-            <LayoutAnimationConfig skipEntering>
-              {items.map((p) => (
-                <Animated.View key={p.text} entering={enterRow} exiting={exitSoft} layout={layoutMove}>
-                  <Chip
-                    label={p.text}
-                    wrap
-                    selected={doneSet.has(p.text)}
-                    readOnly={!interactive}
-                    onPress={() => togglePriority(week, p.text, date)}
-                    onLongPress={() => remove(p.text)}
-                    accessibilityHint="Touch and hold to remove"
-                  />
-                </Animated.View>
-              ))}
-            </LayoutAnimationConfig>
-            {interactive ? (
-              adding ? (
-                <View style={[styles.capsule, styles.inputCapsule]}>
-                  <TextInput
-                    autoFocus
-                    value={draft}
-                    onChangeText={setDraft}
-                    placeholder="A priority"
-                    placeholderTextColor={colors.ink3}
-                    selectionColor={colors.accent}
-                    returnKeyType="done"
-                    submitBehavior="submit"
-                    onSubmitEditing={add}
-                    onBlur={() => {
-                      add();
-                      setAdding(false);
-                    }}
-                    style={styles.input}
-                    maxLength={80}
-                  />
-                </View>
-              ) : (
-                <Press
-                  onPress={() => setAdding(true)}
-                  accessibilityLabel="Add a priority"
-                  style={[styles.capsule, styles.addCapsule]}
-                >
-                  <Icon name="plus" size={14} color={colors.accent} weight="bold" />
-                  <T variant="callout" weight="500" tone="accent" chrome>
-                    Add
-                  </T>
-                </Press>
-              )
-            ) : null}
-          </View>
-        </View>
-      ) : null}
-      {setup ? (
-        <>
-          {padded && showPriorities ? <Divider /> : null}
-          <View style={run}>
-            <SubLabel>Other commitments</SubLabel>
-            <View style={styles.chips}>
-              {CHECK_KEYS.map((k) => (
-                <Chip
-                  key={k}
-                  label={setup.weeklyChecks[k]}
-                  wrap
-                  selected={rec.checks[k]}
-                  readOnly={!interactive}
-                  onPress={() => updateWeek(week, (w) => void (w.checks[k] = !w.checks[k]))}
-                />
-              ))}
+    <View style={run}>
+      <SubLabel>Commitments</SubLabel>
+      <View style={styles.chips}>
+        {/* The week's priorities lead, starred, like the priority goal and the skill hobby. */}
+        <LayoutAnimationConfig skipEntering>
+          {items.map((p) => (
+            <Animated.View key={p.text} entering={enterRow} exiting={exitSoft} layout={layoutMove}>
+              <Chip
+                label={p.text}
+                wrap
+                starred
+                starLabel="priority"
+                selected={doneSet.has(p.text)}
+                readOnly={!interactive}
+                onPress={() => togglePriority(week, p.text, date)}
+                onLongPress={() => remove(p.text)}
+                accessibilityHint="Touch and hold to remove"
+              />
+            </Animated.View>
+          ))}
+        </LayoutAnimationConfig>
+        {setup
+          ? CHECK_KEYS.map((k) => (
+              <Chip
+                key={k}
+                label={setup.weeklyChecks[k]}
+                wrap
+                selected={rec.checks[k]}
+                readOnly={!interactive}
+                onPress={() => updateWeek(week, (w) => void (w.checks[k] = !w.checks[k]))}
+              />
+            ))
+          : null}
+        {interactive ? (
+          adding ? (
+            <View style={[styles.capsule, styles.inputCapsule]}>
+              <TextInput
+                autoFocus
+                value={draft}
+                onChangeText={setDraft}
+                placeholder="A priority"
+                placeholderTextColor={colors.ink3}
+                selectionColor={colors.accent}
+                returnKeyType="done"
+                submitBehavior="submit"
+                onSubmitEditing={add}
+                onBlur={() => {
+                  add();
+                  setAdding(false);
+                }}
+                style={styles.input}
+                maxLength={80}
+              />
             </View>
-          </View>
-        </>
-      ) : null}
-    </>
+          ) : (
+            <Press
+              onPress={() => setAdding(true)}
+              accessibilityLabel="Add a priority"
+              style={[styles.capsule, styles.addCapsule]}
+            >
+              <Icon name="plus" size={14} color={colors.accent} weight="bold" />
+              <T variant="callout" weight="500" tone="accent" chrome>
+                Priority
+              </T>
+            </Press>
+          )
+        ) : null}
+      </View>
+    </View>
   );
 }
 

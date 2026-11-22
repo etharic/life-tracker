@@ -2,6 +2,7 @@ import { router, type Href } from 'expo-router';
 import type { SFSymbol } from 'expo-symbols';
 import { useMemo, useRef } from 'react';
 import { ActionSheetIOS, StyleSheet, View } from 'react-native';
+import Animated, { LayoutAnimationConfig } from 'react-native-reanimated';
 
 import { formatFull } from '@/domain/dates';
 import { challengeCounts, type ChallengeItem, type ChallengeKind, type ChallengeOutcome } from '@/domain/types';
@@ -10,6 +11,7 @@ import { Button } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
 import { Divider, Empty, Explainer, Screen, Section, SectionLabel } from '@/ui/layout';
+import { enterPop } from '@/ui/motion';
 import { Press } from '@/ui/press';
 import { SwipeRow } from '@/ui/swipe-row';
 import { T } from '@/ui/text';
@@ -144,6 +146,7 @@ function StatusBox({ item, kind, onPress }: { item: ChallengeItem; kind: Challen
     <Press
       onPress={onPress}
       hitSlop={10}
+      colorTransition
       style={[styles.box, box]}
       accessibilityRole="button"
       accessibilityLabel={`${state}. ${item.title}`}
@@ -151,13 +154,17 @@ function StatusBox({ item, kind, onPress }: { item: ChallengeItem; kind: Challen
         item.outcome === 'open' ? (item.started ? 'Marks it not started' : 'Marks it active') : undefined
       }
     >
-      {item.outcome === 'failed' ? (
-        <Icon name="xmark" size={14} weight="bold" color={colors.onAccent} />
-      ) : item.outcome === 'succeeded' ? (
-        <Icon name="checkmark" size={14} weight="bold" color={colors.onAccent} />
-      ) : item.started ? (
-        <Icon name="flame.fill" size={14} color={colors.accent} />
-      ) : null}
+      <LayoutAnimationConfig skipEntering>
+        <Animated.View key={`${item.outcome}-${item.started}`} entering={enterPop}>
+          {item.outcome === 'failed' ? (
+            <Icon name="xmark" size={14} weight="bold" color={colors.onAccent} />
+          ) : item.outcome === 'succeeded' ? (
+            <Icon name="checkmark" size={14} weight="bold" color={colors.onAccent} />
+          ) : item.started ? (
+            <Icon name="flame.fill" size={14} color={colors.accent} />
+          ) : null}
+        </Animated.View>
+      </LayoutAnimationConfig>
     </Press>
   );
 }

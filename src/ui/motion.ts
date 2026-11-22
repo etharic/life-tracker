@@ -2,9 +2,11 @@ import {
   Easing,
   FadeOut,
   LinearTransition,
+  cubicBezier,
   ReduceMotion,
   withSpring,
   withTiming,
+  type CSSTransitionProperties,
   type EntryAnimationsValues,
 } from 'react-native-reanimated';
 
@@ -13,6 +15,15 @@ import {
  * arriving and leaving. Every animation follows the system Reduce Motion setting.
  */
 export const RM = ReduceMotion.System;
+/** Opacity is kept under Reduce Motion: a fade explains a change without moving anything. */
+const FADE_RM = ReduceMotion.Never;
+
+/** Colour changes on selection (a chip, a pill, a box): short and gentle, never instant. */
+export const colorEase: CSSTransitionProperties = {
+  transitionProperty: ['backgroundColor', 'borderColor'],
+  transitionDuration: '160ms',
+  transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1),
+};
 
 /** Strong ease-out: moves at once, settles gently. For anything entering or answering a touch. */
 export const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
@@ -32,7 +43,7 @@ export function enterRow(values: EntryAnimationsValues) {
   return {
     initialValues: { opacity: 0, transform: [{ translateY: 8 }] },
     animations: {
-      opacity: withTiming(1, { duration: 220, easing: EASE_OUT, reduceMotion: RM }),
+      opacity: withTiming(1, { duration: 220, easing: EASE_OUT, reduceMotion: FADE_RM }),
       transform: [{ translateY: withTiming(0, { duration: 260, easing: EASE_OUT, reduceMotion: RM }) }],
     },
   };
@@ -44,7 +55,7 @@ export function enterSoft(values: EntryAnimationsValues) {
   void values;
   return {
     initialValues: { opacity: 0 },
-    animations: { opacity: withTiming(1, { duration: 200, easing: EASE_OUT, reduceMotion: RM }) },
+    animations: { opacity: withTiming(1, { duration: 200, easing: EASE_OUT, reduceMotion: FADE_RM }) },
   };
 }
 
@@ -58,13 +69,13 @@ export function enterPop(values: EntryAnimationsValues) {
   return {
     initialValues: { opacity: 0, transform: [{ scale: 0.92 }] },
     animations: {
-      opacity: withTiming(1, { duration: 180, easing: EASE_OUT, reduceMotion: RM }),
+      opacity: withTiming(1, { duration: 180, easing: EASE_OUT, reduceMotion: FADE_RM }),
       transform: [{ scale: withSpring(1, POP) }],
     },
   };
 }
 
 /** Leaving is quicker than arriving. */
-export const exitSoft = FadeOut.duration(150).easing(EASE_OUT).reduceMotion(RM);
+export const exitSoft = FadeOut.duration(150).easing(EASE_OUT).reduceMotion(FADE_RM);
 /** Neighbours move aside smoothly when a row appears or leaves. */
 export const layoutMove = LinearTransition.springify().damping(20).stiffness(220).reduceMotion(RM);

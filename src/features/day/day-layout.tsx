@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { LayoutAnimationConfig } from 'react-native-reanimated';
 
-import { monthName, monthOf, weekDates, weekIndexInMonth, weekOf } from '@/domain/dates';
+import { monthName, monthOf, monthOfWeek, weekDates, weekIndexInMonth, weekOf } from '@/domain/dates';
 import { feeling } from '@/domain/feelings';
 import {
   CATEGORY_LABEL,
@@ -13,6 +13,7 @@ import {
   type HobbyCategory,
   type ISODate,
   CHALLENGE_KINDS,
+  CHECK_KEYS,
   type ChallengeItem,
   type ChallengeKind,
 } from '@/domain/types';
@@ -89,6 +90,7 @@ function ListSwitch({
             accessibilityState={{ selected: on, expanded: on }}
             accessibilityLabel={`${o.label}, ${o.a11y}`}
             containerStyle={styles.pillCell}
+            colorTransition
             style={[styles.pill, on ? styles.pillOn : styles.pillOff]}
           >
             <T
@@ -446,15 +448,19 @@ export function JournalGroup({
   );
 }
 
-// ---------- This week: priorities and checks ----------
+// ---------- This week: its commitments ----------
 
 export function WeekGroup({ date, locked }: { date: ISODate; locked?: boolean }) {
   const week = weekOf(date);
   const rec = useWeek(week);
   const days = useJournal((s) => s.days);
   const doneSet = useMemo(() => new Set(weekDates(week).flatMap((d) => days[d]?.prioritiesDone ?? [])), [days, week]);
-  const items = rec.priorities;
-  const done = items.filter((p) => doneSet.has(p.text)).length;
+  const hasChecks = !!useMonth(monthOfWeek(week)).setup;
+  // One count for all the week's commitments: its priorities and the month's weekly checks.
+  const total = rec.priorities.length + (hasChecks ? CHECK_KEYS.length : 0);
+  const done =
+    rec.priorities.filter((p) => doneSet.has(p.text)).length +
+    (hasChecks ? CHECK_KEYS.filter((k) => rec.checks[k]).length : 0);
 
   return (
     <View style={styles.group}>
@@ -462,7 +468,7 @@ export function WeekGroup({ date, locked }: { date: ISODate; locked?: boolean })
         title="This week"
         trailing={
           <T variant="subhead" tone="ink2" style={styles.tabular}>
-            {`Week ${weekIndexInMonth(week)}${items.length ? `, ${done} of ${items.length} done` : ''}`}
+            {`Week ${weekIndexInMonth(week)}${total ? `, ${done} of ${total} done` : ''}`}
           </T>
         }
       />
