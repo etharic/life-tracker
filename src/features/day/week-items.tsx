@@ -46,22 +46,41 @@ export function WeekItems({
   const { togglePriority, updateWeek } = useJournal.getState();
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
+  const [starDraft, setStarDraft] = useState(false);
   const doneSet = useMemo(() => new Set(weekDates(week).flatMap((d) => days[d]?.prioritiesDone ?? [])), [days, week]);
   const items = rec.priorities;
 
   const add = () => {
     const text = draft.trim();
     if (text && !items.some((p) => p.text === text)) {
-      updateWeek(week, (w) => void w.priorities.push({ text, done: false }));
+      updateWeek(week, (w) => void w.priorities.push({ text, done: false, ...(starDraft ? {} : { plain: true }) }));
       haptic.commit();
     }
     setDraft('');
+    setStarDraft(false);
   };
-  const remove = (text: string) =>
+  const setStar = (text: string, star: boolean) =>
+    updateWeek(week, (w) => {
+      const p = w.priorities.find((x) => x.text === text);
+      if (!p) return;
+      if (star) delete p.plain;
+      else p.plain = true;
+    });
+  const menu = (text: string, star: boolean) =>
     ActionSheetIOS.showActionSheetWithOptions(
-      { title: text, options: ['Remove from this week', 'Cancel'], destructiveButtonIndex: 0, cancelButtonIndex: 1 },
+      {
+        title: text,
+        options: [star ? 'Not a priority' : 'Make it a priority', 'Remove from this week', 'Cancel'],
+        destructiveButtonIndex: 1,
+        cancelButtonIndex: 2,
+      },
       (i) => {
-        if (i !== 0) return;
+        if (i === 0) {
+          haptic.select();
+          setStar(text, !star);
+          return;
+        }
+        if (i !== 1) return;
         for (const d of weekDates(week)) {
           if (days[d]?.prioritiesDone.includes(text)) {
             useJournal
@@ -80,20 +99,20 @@ export function WeekItems({
     <View style={run}>
       <SubLabel>Commitments</SubLabel>
       <View style={styles.chips}>
-        {/* The week's priorities lead, starred, like the priority goal and the skill hobby. */}
+        {/* The week's own commitments lead; a priority carries a star, like the priority goal. */}
         <LayoutAnimationConfig skipEntering>
           {items.map((p) => (
             <Animated.View key={p.text} entering={enterRow} exiting={exitSoft} layout={layoutMove}>
               <Chip
                 label={p.text}
                 wrap
-                starred
+                starred={!p.plain}
                 starLabel="priority"
                 selected={doneSet.has(p.text)}
                 readOnly={!interactive}
                 onPress={() => togglePriority(week, p.text, date)}
-                onLongPress={() => remove(p.text)}
-                accessibilityHint="Touch and hold to remove"
+                onLongPress={() => menu(p.text, !p.plain)}
+                accessibilityHint="Touch and hold to make it a priority or remove it"
               />
             </Animated.View>
           ))}
@@ -113,11 +132,25 @@ export function WeekItems({
         {interactive ? (
           adding ? (
             <View style={[styles.capsule, styles.inputCapsule]}>
+              {/* The star decides, before the commitment is added, whether it is a priority. */}
+              <Press
+                onPress={() => setStarDraft((v) => !v)}
+                hitSlop={8}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: starDraft }}
+                accessibilityLabel="Priority"
+              >
+                <Icon
+                  name={starDraft ? 'star.fill' : 'star'}
+                  size={17}
+                  color={starDraft ? colors.accent : colors.ink3}
+                />
+              </Press>
               <TextInput
                 autoFocus
                 value={draft}
                 onChangeText={setDraft}
-                placeholder="A priority"
+                placeholder={starDraft ? 'A priority' : 'A commitment'}
                 placeholderTextColor={colors.ink3}
                 selectionColor={colors.accent}
                 returnKeyType="done"
@@ -134,12 +167,12 @@ export function WeekItems({
           ) : (
             <Press
               onPress={() => setAdding(true)}
-              accessibilityLabel="Add a priority"
+              accessibilityLabel="Add a commitment"
               style={[styles.capsule, styles.addCapsule]}
             >
               <Icon name="plus" size={14} color={colors.accent} weight="bold" />
               <T variant="callout" weight="500" tone="accent" chrome>
-                Priority
+                Commitment
               </T>
             </Press>
           )

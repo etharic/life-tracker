@@ -54,6 +54,7 @@ export function SwipeRow({
   left,
   onSwipe,
   onSwipeStart,
+  onPaper,
 }: {
   children: ReactNode;
   /** Revealed when dragging to the right. */
@@ -63,6 +64,8 @@ export function SwipeRow({
   onSwipe: (direction: 'right' | 'left') => void;
   /** Called as soon as a swipe takes over (to ignore the tap that ends it). */
   onSwipeStart?: () => void;
+  /** On the page rather than in a card: the row takes the paper colour. */
+  onPaper?: boolean;
 }) {
   const x = useSharedValue(0);
   const armed = useSharedValue(0);
@@ -126,7 +129,7 @@ export function SwipeRow({
         <Icon name={left.icon} size={18} color={colors.onAccent} weight="bold" />
       </Animated.View>
       <GestureDetector gesture={pan}>
-        <Animated.View style={[styles.row, rowStyle]}>{children}</Animated.View>
+        <Animated.View style={[styles.row, onPaper && styles.rowPaper, rowStyle]}>{children}</Animated.View>
       </GestureDetector>
     </View>
   );
@@ -135,6 +138,7 @@ export function SwipeRow({
 const styles = StyleSheet.create({
   wrap: { overflow: 'hidden' },
   row: { backgroundColor: colors.surface },
+  rowPaper: { backgroundColor: colors.bg },
   under: {
     position: 'absolute',
     top: 0,

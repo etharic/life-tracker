@@ -184,3 +184,19 @@ describe('year file', () => {
     expect(y.notes).toBe('');
   });
 });
+
+describe('week commitments', () => {
+  it('keeps priorities and ordinary commitments apart; older files read as priorities', () => {
+    const m = emptyMonth('2026-11');
+    m.weeks['2026-W47'] = {
+      ...emptyWeek(),
+      priorities: [
+        { text: 'Draft the cover letter', done: false },
+        { text: 'Water the plants', done: false, plain: true },
+      ],
+    };
+    const text = serializeMonth(m);
+    expect(text).toContain('priority: false');
+    expect(parseMonth(text, '2026-11').weeks['2026-W47'].priorities).toEqual(m.weeks['2026-W47'].priorities);
+  });
+});

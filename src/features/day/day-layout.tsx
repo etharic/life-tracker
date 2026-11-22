@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Settings, StyleSheet, View } from 'react-native';
 import Animated, { LayoutAnimationConfig } from 'react-native-reanimated';
 
 import { monthName, monthOf, monthOfWeek, weekDates, weekIndexInMonth, weekOf } from '@/domain/dates';
@@ -133,6 +133,15 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
   const hobbiesDone = setup ? orderedHobbies(setup).filter((c) => day.hobbies[c]).length : 0;
   const [open, setOpen] = useState<ListKey | null>(null);
   const active = useActiveChallenges();
+  // Simulator check only: `-LTOpen goals,hobbies,challenges` opens the lists one after another,
+  // the way switching between them by hand does. Unused on a phone.
+  useEffect(() => {
+    const seq: unknown = Settings.get('LTOpen');
+    if (typeof seq !== 'string' || locked) return;
+    const keys = seq.split(',').filter((k): k is ListKey => ['goals', 'hobbies', 'challenges'].includes(k));
+    const timers = keys.map((k, i) => setTimeout(() => setOpen(k), 1200 * (i + 1)));
+    return () => timers.forEach(clearTimeout);
+  }, [locked]);
   const [timing, setTiming] = useState<HobbyCategory | null>(null);
   if (!setup) return null;
 
@@ -187,71 +196,77 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
               ]),
         ]}
       />
-      {open === 'challenges' ? (
-        <Animated.View key={open} entering={enterSoft} exiting={exitSoft} layout={layoutMove} style={styles.card}>
-          <View style={styles.clip}>
-            {active.length ? (
-              active.map(({ kind, item }, i) => (
-                <Animated.View key={`${kind}/${item.id}`} exiting={exitSoft} layout={layoutMove}>
-                  {i > 0 ? <Divider inset={space.l + 26 + space.m} /> : null}
-                  <ChallengeRow item={item} kind={kind} caption={CHALLENGE_COPY[kind].title} />
-                </Animated.View>
-              ))
+      {/*
+        One container for whichever list is open: it fades in when a list opens and out when it
+        closes. Switching lists changes what is inside, in place, so two containers never animate
+        in and out at the same moment.
+      */}
+      {open ? (
+        <Animated.View entering={enterSoft} exiting={exitSoft} layout={layoutMove} style={styles.bare}>
+          <Animated.View key={open} entering={enterSoft}>
+            {open === 'challenges' ? (
+              <View>
+                {active.length ? (
+                  active.map(({ kind, item }, i) => (
+                    <Animated.View key={`${kind}/${item.id}`} exiting={exitSoft} layout={layoutMove}>
+                      {i > 0 ? <Divider inset={space.l + 26 + space.m} /> : null}
+                      <ChallengeRow item={item} kind={kind} caption={CHALLENGE_COPY[kind].title} onPaper />
+                    </Animated.View>
+                  ))
+                ) : (
+                  <View style={styles.challengeEmpty}>
+                    <T variant="subhead" tone="ink2">
+                      Nothing under way. Tap the box in front of an item on a list to start it.
+                    </T>
+                    <View style={styles.challengeLinks}>
+                      {CHALLENGE_KINDS.map((k) => (
+                        <TextAction
+                          key={k}
+                          title={CHALLENGE_COPY[k].title}
+                          onPress={() => router.push(CHALLENGE_ROUTE[k])}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
             ) : (
-              <View style={styles.challengeEmpty}>
-                <T variant="subhead" tone="ink2">
-                  Nothing under way. Tap the box in front of an item on a list to start it.
-                </T>
-                <View style={styles.challengeLinks}>
-                  {CHALLENGE_KINDS.map((k) => (
-                    <TextAction
-                      key={k}
-                      title={CHALLENGE_COPY[k].title}
-                      onPress={() => router.push(CHALLENGE_ROUTE[k])}
+              <View>
+                {rows.map((r, i) => (
+                  <View key={r.c}>
+                    {i > 0 ? <Divider inset={space.l + 26 + space.m} /> : null}
+                    <CheckRow
+                      checked={r.checked}
+                      label={r.text}
+                      caption={r.caption}
+                      onToggle={r.toggle}
+                      readOnly={locked}
+                      onPressRow={
+                        r.hobby && !locked
+                          ? () => {
+                              haptic.select();
+                              setTiming((t) => (t === r.hobby ? null : r.hobby));
+                            }
+                          : undefined
+                      }
+                      expanded={!!r.hobby && timing === r.hobby}
+                      trailing={
+                        <View style={styles.trail}>
+                          {r.hobby && hobbyHours(day, r.hobby) > HOUR_PER_TICK ? (
+                            <T variant="subhead" tone="ink2" style={styles.tabular}>
+                              {formatHours(hobbyHours(day, r.hobby))}
+                            </T>
+                          ) : null}
+                          {r.star ? <Icon name="star.fill" size={13} color={colors.accent} /> : null}
+                        </View>
+                      }
                     />
-                  ))}
-                </View>
+                    {r.hobby && !locked && timing === r.hobby ? <HoursRow date={date} category={r.hobby} /> : null}
+                  </View>
+                ))}
               </View>
             )}
-          </View>
-        </Animated.View>
-      ) : null}
-      {open && open !== 'challenges' ? (
-        <Animated.View key={open} entering={enterSoft} exiting={exitSoft} layout={layoutMove} style={styles.card}>
-          <View style={styles.clip}>
-            {rows.map((r, i) => (
-              <View key={r.c}>
-                {i > 0 ? <Divider inset={space.l + 26 + space.m} /> : null}
-                <CheckRow
-                  checked={r.checked}
-                  label={r.text}
-                  caption={r.caption}
-                  onToggle={r.toggle}
-                  readOnly={locked}
-                  onPressRow={
-                    r.hobby && !locked
-                      ? () => {
-                          haptic.select();
-                          setTiming((t) => (t === r.hobby ? null : r.hobby));
-                        }
-                      : undefined
-                  }
-                  expanded={!!r.hobby && timing === r.hobby}
-                  trailing={
-                    <View style={styles.trail}>
-                      {r.hobby && hobbyHours(day, r.hobby) > HOUR_PER_TICK ? (
-                        <T variant="subhead" tone="ink2" style={styles.tabular}>
-                          {formatHours(hobbyHours(day, r.hobby))}
-                        </T>
-                      ) : null}
-                      {r.star ? <Icon name="star.fill" size={13} color={colors.accent} /> : null}
-                    </View>
-                  }
-                />
-                {r.hobby && !locked && timing === r.hobby ? <HoursRow date={date} category={r.hobby} /> : null}
-              </View>
-            ))}
-          </View>
+          </Animated.View>
         </Animated.View>
       ) : null}
       <AllDone date={date} done={goalsDone === 4 && hobbiesDone === 4} streak={current} />
@@ -333,8 +348,8 @@ export function JournalGroup({
   return (
     <View style={styles.group}>
       {titled ? <GroupHeader title="Journal" /> : null}
-      <Animated.View layout={layoutMove} style={styles.card}>
-        <View style={styles.clip}>
+      <Animated.View layout={layoutMove} style={styles.bare}>
+        <View>
           {/* How the day felt: one colour, one name. The scale opens only to choose or change it. */}
           {f && !picking && locked ? (
             <View style={styles.feelingRow} accessible accessibilityLabel={`Felt ${f.score}, ${f.name}`}>
@@ -516,6 +531,11 @@ const styles = StyleSheet.create({
   pillOn: { backgroundColor: colors.ink },
   pillOff: { backgroundColor: colors.fill },
   card: { borderRadius: radius.section, backgroundColor: colors.surface, ...elevation.card },
+  /**
+   * Content that belongs to the page sits on it, without a box: rows reach out to the screen
+   * gutter so their text lines up with the titles and pills above.
+   */
+  bare: { marginHorizontal: -space.l },
   clip: {
     borderRadius: radius.section,
     overflow: 'hidden',

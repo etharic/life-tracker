@@ -46,6 +46,13 @@ done
 for r in "close-day/$TODAY:10-close-day" "setup/$NEXT:11-setup" "week-start/$WEEK:12-week-start" "week-close/$LASTWEEK:13-week-close" "month-close/$PREV:14-month-close" "drive:15-drive" "challenge/bucket/b1:20-challenge" "backup:16-backup" "bank/goals:17-bank" "record/$TODAY:18-record" "day/$(python3 -c 'import datetime; print((datetime.date.today() - datetime.timedelta(days=1)).isoformat())'):19-day"; do
   fresh "${r%%:*}"; shot "${r#*:}" 4
 done
+# Switching between Goals, Hobbies and Challenges (a crash once): the app must still be there.
+xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
+xcrun simctl launch "$UDID" "$BUNDLE" -LTOpen goals,hobbies,challenges,goals,challenges,hobbies >/dev/null
+sleep 6; xcrun simctl io "$UDID" screenshot "$OUT/29-today-lists.png" >/dev/null; echo "  29-today-lists"
+sleep 4; xcrun simctl io "$UDID" screenshot "$OUT/30-today-lists-end.png" >/dev/null; echo "  30-today-lists-end"
+if xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BUNDLE"; then echo "  lists: app still running"; else echo "  lists: APP NOT RUNNING"; fi
+
 # The same main screens at night.
 xcrun simctl ui "$UDID" appearance dark || true
 fresh; shot 21-today-dark

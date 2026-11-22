@@ -79,6 +79,8 @@ export interface Priority {
   done: boolean;
   /** Copied forward from the previous week. */
   carried?: boolean;
+  /** An ordinary commitment for the week, not a priority (no star). Absent means a priority. */
+  plain?: boolean;
 }
 
 export interface WeekRecord {

@@ -111,7 +111,7 @@ function useArchive(): { title: string; items: Item[] }[] {
             title: 'Priorities',
             href: '/past/priorities',
             icon: 'checklist',
-            value: n(weekList.reduce((k, w) => k + w.priorities.length, 0)),
+            value: n(weekList.reduce((k, w) => k + w.priorities.filter((p) => !p.plain).length, 0)),
           },
         ],
       },

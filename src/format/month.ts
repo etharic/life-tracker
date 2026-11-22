@@ -75,7 +75,13 @@ function parseWeek(v: unknown): WeekRecord {
   w.priorities = arr(o.priorities)
     .map((p) => {
       const po = obj(p);
-      return { text: str(po.text).trim(), done: bool(po.done), ...(bool(po.carried) ? { carried: true } : {}) };
+      return {
+        text: str(po.text).trim(),
+        done: bool(po.done),
+        ...(bool(po.carried) ? { carried: true } : {}),
+        // Written only for an ordinary commitment, so older files read as priorities.
+        ...(po.priority === false ? { plain: true } : {}),
+      };
     })
     .filter((p) => p.text);
   w.started = bool(o.started);
@@ -157,6 +163,7 @@ export function serializeMonth(rec: MonthRecord): string {
               text: p.text,
               done: p.done,
               ...(p.carried ? { carried: true } : {}),
+              ...(p.plain ? { priority: false } : {}),
             })),
             started: w.started,
             closed: w.closed,

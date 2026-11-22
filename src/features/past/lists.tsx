@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { formatShort, monthName, weekDates, weekIndexInMonth, weekMonday } from '@/domain/dates';
 import { feeling } from '@/domain/feelings';
-import type { MonthRecord } from '@/domain/types';
+import type { MonthRecord, WeekRecord } from '@/domain/types';
 import { useToday } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
 import { Icon } from '@/ui/icon';
@@ -140,7 +140,8 @@ export function HighlightsList() {
 export function PrioritiesList() {
   const months = useJournal((s) => s.months);
   const days = useJournal((s) => s.days);
-  const items = sortedMonths(months).filter((m) => Object.values(m.weeks).some((w) => w.priorities.length));
+  const starred = (w: WeekRecord) => w.priorities.filter((p) => !p.plain);
+  const items = sortedMonths(months).filter((m) => Object.values(m.weeks).some((w) => starred(w).length));
   return (
     <ListScreen
       explainer="What each week set out to do, and what got done."
@@ -151,10 +152,10 @@ export function PrioritiesList() {
           {Object.keys(m.weeks)
             .sort()
             .reverse()
-            .filter((w) => m.weeks[w].priorities.length)
+            .filter((w) => starred(m.weeks[w]).length)
             .map((w) => {
               const done = new Set(weekDates(w).flatMap((d) => days[d]?.prioritiesDone ?? []));
-              const ps = m.weeks[w].priorities;
+              const ps = starred(m.weeks[w]);
               return (
                 <View key={w} style={styles.week}>
                   <T

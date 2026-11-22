@@ -173,7 +173,17 @@ function StatusBox({ item, kind, onPress }: { item: ChallengeItem; kind: Challen
  * One item: the status box, then the title. Swipe right for a success, left for a failure; tap to
  * edit; long press for Edit or Delete. `caption` names its list where items from several lists meet.
  */
-export function ChallengeRow({ item, kind, caption }: { item: ChallengeItem; kind: ChallengeKind; caption?: string }) {
+export function ChallengeRow({
+  item,
+  kind,
+  caption,
+  onPaper,
+}: {
+  item: ChallengeItem;
+  kind: ChallengeKind;
+  caption?: string;
+  onPaper?: boolean;
+}) {
   const copy = CHALLENGE_COPY[kind];
   const swiped = useRef(0);
   const save = (patch: Partial<ChallengeItem>) => useJournal.getState().saveChallenge(kind, { ...item, ...patch });
@@ -247,6 +257,7 @@ export function ChallengeRow({ item, kind, caption }: { item: ChallengeItem; kin
       }}
       onSwipe={(d) => conclude(d === 'right' ? 'succeeded' : 'failed')}
       onSwipeStart={() => (swiped.current = Date.now())}
+      onPaper={onPaper}
     >
       <View
         style={styles.item}
