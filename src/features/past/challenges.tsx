@@ -15,7 +15,7 @@ import { enterPop } from '@/ui/motion';
 import { Press } from '@/ui/press';
 import { SwipeRow } from '@/ui/swipe-row';
 import { T } from '@/ui/text';
-import { colors, radius, space } from '@/ui/theme';
+import { colors, radius, space, usePalette } from '@/ui/theme';
 
 /** The words of each list. */
 export const CHALLENGE_COPY: Record<
@@ -134,20 +134,21 @@ function StatusBox({ item, kind, onPress }: { item: ChallengeItem; kind: Challen
         : item.started
           ? 'Active'
           : 'Not started';
+  const p = usePalette();
   const box =
     item.outcome === 'failed'
-      ? styles.boxFailed
+      ? { borderColor: p.accent, backgroundColor: p.accent }
       : item.outcome === 'succeeded'
-        ? styles.boxSucceeded
+        ? { borderColor: p.good, backgroundColor: p.good }
         : item.started
-          ? styles.boxActive
-          : null;
+          ? { borderColor: p.accent, backgroundColor: p.accentSoft }
+          : { borderColor: p.boxBorder, backgroundColor: p.surface };
   return (
     <Press
       onPress={onPress}
       hitSlop={10}
-      colorTransition
-      style={[styles.box, box]}
+      fill={box}
+      style={styles.box}
       accessibilityRole="button"
       accessibilityLabel={`${state}. ${item.title}`}
       accessibilityHint={
@@ -382,7 +383,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  boxActive: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
-  boxFailed: { borderColor: colors.accent, backgroundColor: colors.accent },
-  boxSucceeded: { borderColor: colors.good, backgroundColor: colors.good },
 });

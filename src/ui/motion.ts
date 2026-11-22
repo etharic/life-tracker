@@ -18,7 +18,10 @@ export const RM = ReduceMotion.System;
 /** Opacity is kept under Reduce Motion: a fade explains a change without moving anything. */
 const FADE_RM = ReduceMotion.Never;
 
-/** Colour changes on selection (a chip, a pill, a box): short and gentle, never instant. */
+/**
+ * Colour changes on selection (a chip, a pill, a box): short and gentle, never instant.
+ * Only with plain colour strings (usePalette), never the self-switching `colors`.
+ */
 export const colorEase: CSSTransitionProperties = {
   transitionProperty: ['backgroundColor', 'borderColor'],
   transitionDuration: '160ms',

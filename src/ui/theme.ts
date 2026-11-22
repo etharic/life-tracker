@@ -1,4 +1,4 @@
-import { DynamicColorIOS, Platform, type ColorValue, type TextStyle } from 'react-native';
+import { DynamicColorIOS, Platform, useColorScheme, type ColorValue, type TextStyle } from 'react-native';
 
 /**
  * Claude's own palette: warm ivory paper and near-black ink by day, warm charcoal by night, and one
@@ -47,6 +47,14 @@ const dark: typeof light = {
 
 export type ColorName = keyof typeof light;
 export const palette = { light, dark };
+
+/**
+ * The plain colours of the current appearance. Animated colour changes need these: the animation
+ * library cannot blend the self-switching colours in `colors` and throws if it is asked to.
+ */
+export function usePalette(): typeof light {
+  return palette[useColorScheme() === 'dark' ? 'dark' : 'light'];
+}
 
 /**
  * Each colour follows the system appearance by itself (DynamicColorIOS), so every StyleSheet

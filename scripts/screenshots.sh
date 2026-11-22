@@ -64,7 +64,7 @@ xcrun simctl ui "$UDID" appearance light || true
 # The yearly book, made on the simulator and kept as a file to read.
 xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
 xcrun simctl launch "$UDID" "$BUNDLE" -LTBook "$(date +%Y)" >/dev/null
-for i in $(seq 1 30); do [ -s "$DATA/Documents/book-check.pdf" ] && break; sleep 2; done
+for i in $(seq 1 60); do [ -s "$DATA/Documents/book-check.pdf" ] && break; sleep 2; done
 cp "$DATA/Documents/book-check.pdf" "$OUT/book.pdf" 2>/dev/null && echo "  book.pdf" || echo "  (no book.pdf)"
 
 xcrun simctl spawn "$UDID" log show --last 5m --predicate "process == \"$(basename "$APP" .app)\"" --style compact > "$OUT/app.log" 2>/dev/null || true

@@ -19,8 +19,11 @@ interface Props extends Omit<PressableProps, 'style' | 'children'> {
   containerStyle?: StyleProp<ViewStyle>;
   /** 'scale' for buttons, chips and boxes; 'highlight' for full-width rows. */
   feedback?: 'scale' | 'highlight';
-  /** Background and border colour ease over when they change (a selection). */
-  colorTransition?: boolean;
+  /**
+   * Background and border colours that ease over when they change (a selection). Plain colour
+   * strings from usePalette only: the self-switching theme colours cannot be animated.
+   */
+  fill?: { backgroundColor: string; borderColor?: string };
 }
 
 /** Press in quickly, spring back on release: small, physical, on the UI thread. */
@@ -34,7 +37,7 @@ export function Press({
   style,
   containerStyle,
   feedback = 'scale',
-  colorTransition,
+  fill,
   onPressIn,
   onPressOut,
   ...rest
@@ -64,8 +67,8 @@ export function Press({
       <Animated.View
         style={[
           feedback === 'scale' ? animated : null,
-          colorTransition ? colorEase : null,
           style,
+          fill ? [colorEase, fill] : null,
           rest.disabled && styles.disabled,
         ]}
       >

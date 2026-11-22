@@ -8,16 +8,15 @@ import { Icon } from './icon';
 import { colorEase, POP, RM } from './motion';
 import { Press } from './press';
 import { T } from './text';
-import { colors, radius, space, TARGET, type } from './theme';
+import { colors, radius, space, TARGET, type, usePalette } from './theme';
 import { usePop } from './use-pop';
-
-const boxAnim = colorEase;
 
 // ---------- Checkbox ----------
 
 export function CheckBox({ checked, size = 26, dashed }: { checked: boolean; size?: number; dashed?: boolean }) {
   // The box pops and the check springs in when ticked; unticking is quiet.
   const pop = usePop(checked, 0.12);
+  const p = usePalette();
   const mark = useSharedValue(checked ? 1 : 0);
   useEffect(() => {
     mark.set(checked ? withSpring(1, POP) : withTiming(0, { duration: 120, reduceMotion: RM }));
@@ -30,9 +29,14 @@ export function CheckBox({ checked, size = 26, dashed }: { checked: boolean; siz
     <Animated.View
       style={[
         styles.box,
-        boxAnim,
         { width: size, height: size, borderRadius: size * 0.27 },
-        checked ? styles.boxOn : dashed ? styles.boxDashed : styles.boxOff,
+        dashed && !checked ? styles.boxDashed : null,
+        colorEase,
+        checked
+          ? { backgroundColor: p.accent, borderColor: p.accent }
+          : dashed
+            ? { backgroundColor: 'transparent', borderColor: p.boxBorder }
+            : { backgroundColor: p.surface, borderColor: p.boxBorder },
         pop,
       ]}
     >
@@ -179,7 +183,11 @@ export function Chip({
       {selected && starred ? <Icon name="star.fill" size={12} color={colors.onAccent} /> : null}
     </>
   );
+  const p = usePalette();
   const style = [styles.chip, wrap && styles.chipWrap, selected ? styles.chipOn : styles.chipOff];
+  const fill = selected
+    ? { backgroundColor: p.accent, borderColor: p.accent }
+    : { backgroundColor: p.surface, borderColor: p.hairline };
   if (readOnly || !onPress) {
     return (
       <View style={style} accessible accessibilityLabel={`${label}${selected ? ', done' : ''}`}>
@@ -199,7 +207,7 @@ export function Chip({
         accessibilityState={{ checked: selected }}
         accessibilityLabel={starred ? `${label}, ${starLabel}` : label}
         accessibilityHint={accessibilityHint}
-        colorTransition
+        fill={fill}
         style={style}
       >
         {content}
@@ -362,8 +370,6 @@ export function Field({ label, limit, multiline, minHeight, value, style, ...res
 
 const styles = StyleSheet.create({
   box: { alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
-  boxOn: { backgroundColor: colors.accent, borderColor: colors.accent },
-  boxOff: { backgroundColor: colors.surface, borderColor: colors.boxBorder },
   boxDashed: { backgroundColor: 'transparent', borderColor: colors.boxBorder, borderStyle: 'dashed' },
   checkRow: {
     flexDirection: 'row',

@@ -28,7 +28,7 @@ import { Divider } from '@/ui/layout';
 import { enterRow, enterSoft, exitSoft, layoutMove } from '@/ui/motion';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
-import { colors, elevation, radius, space, TARGET } from '@/ui/theme';
+import { colors, elevation, radius, space, TARGET, usePalette } from '@/ui/theme';
 import { GroupHeader } from '@/ui/group';
 
 import { AllDone } from './all-done';
@@ -78,6 +78,7 @@ function ListSwitch({
   onChange: (k: ListKey) => void;
   options: { key: ListKey; label: string; count: string; a11y: string }[];
 }) {
+  const p = usePalette();
   return (
     <View style={styles.switch} accessibilityRole="tablist">
       {options.map((o) => {
@@ -90,8 +91,8 @@ function ListSwitch({
             accessibilityState={{ selected: on, expanded: on }}
             accessibilityLabel={`${o.label}, ${o.a11y}`}
             containerStyle={styles.pillCell}
-            colorTransition
-            style={[styles.pill, on ? styles.pillOn : styles.pillOff]}
+            fill={{ backgroundColor: on ? p.ink : p.fill }}
+            style={styles.pill}
           >
             <T
               variant="subhead"
@@ -528,8 +529,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.m,
     borderRadius: radius.pill,
   },
-  pillOn: { backgroundColor: colors.ink },
-  pillOff: { backgroundColor: colors.fill },
   card: { borderRadius: radius.section, backgroundColor: colors.surface, ...elevation.card },
   /**
    * Content that belongs to the page sits on it, without a box: rows reach out to the screen
