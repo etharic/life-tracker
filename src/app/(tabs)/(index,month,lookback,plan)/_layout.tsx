@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router/stack';
 import { useColorScheme } from 'react-native';
 
-import { colors, palette, SERIF } from '@/ui/theme';
+import { colors, palette } from '@/ui/theme';
 
 export const unstable_settings = {
   index: { anchor: 'index' },
@@ -30,8 +30,7 @@ export default function TabStack({ segment }: { segment: string }) {
         headerLargeStyle: { backgroundColor: p.bg },
         headerTintColor: p.accent,
         headerTitleStyle: { color: p.ink },
-        // Large titles use the serif of the tab titles, so every screen opens the same way.
-        headerLargeTitleStyle: { color: p.ink, fontFamily: SERIF, fontWeight: '600' },
+        headerLargeTitleStyle: { color: p.ink },
         headerBackButtonDisplayMode: 'minimal',
       }}
     >

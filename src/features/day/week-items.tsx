@@ -15,11 +15,11 @@ import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { colors, radius, space, TARGET, type } from '@/ui/theme';
 
-/** A small capitalised label over a run of capsules. */
+/** A small label over a run of capsules, in sentence case like every other label. */
 export function SubLabel({ children }: { children: string }) {
   return (
     <T variant="footnote" weight="600" tone="ink2" accessibilityRole="header">
-      {children.toUpperCase()}
+      {children}
     </T>
   );
 }
