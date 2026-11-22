@@ -16,7 +16,7 @@ import { T } from '@/ui/text';
 import { colors, radius, space } from '@/ui/theme';
 import { Group, Panel } from '@/ui/group';
 
-import { DoneStamp } from './done-stamp';
+import { DoneStamp, STAMP_ROOM } from './done-stamp';
 import { RingGroup } from './rings';
 
 /**
@@ -95,7 +95,7 @@ function PlanGroup({ month }: { month: MonthId }) {
   return (
     <Group title="Plan">
       <Panel>
-        <View>
+        <View style={rec.extremeDone === true ? styles.stampRoom : undefined}>
           <PlanRow label="Kevin’s Rule" text={setup.extremeThing || 'Not set'} note={status} />
           {rec.extremeDone === true ? <DoneStamp date={rec.extremeDoneOn} fresh={rec.extremeDoneOn === today} /> : null}
         </View>
@@ -131,7 +131,7 @@ function PlanGroup({ month }: { month: MonthId }) {
           <>
             <Divider />
             <PlanRow
-              label={`Extreme incident · ${inc.mark}`}
+              label={`Extreme incident, ${inc.mark}`}
               text={inc.title || formatFull(inc.date)}
               note={formatFull(inc.date)}
               onPress={() => router.push(`/day/${inc.date}`)}
@@ -239,6 +239,7 @@ export function MonthView({ month }: { month: MonthId }) {
 }
 
 const styles = StyleSheet.create({
+  stampRoom: { paddingRight: STAMP_ROOM },
   flex: { flex: 1 },
   tabular: { fontVariant: ['tabular-nums'] },
   groups: { gap: space.xxl },

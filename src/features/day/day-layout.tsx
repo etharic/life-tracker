@@ -397,7 +397,7 @@ export function WeekGroup({ date, locked }: { date: ISODate; locked?: boolean })
         title="This week"
         trailing={
           <T variant="subhead" tone="ink2" style={styles.tabular}>
-            {`Week ${weekIndexInMonth(week)}${items.length ? ` · ${done}/${items.length}` : ''}`}
+            {`Week ${weekIndexInMonth(week)}${items.length ? `, ${done} of ${items.length} done` : ''}`}
           </T>
         }
       />

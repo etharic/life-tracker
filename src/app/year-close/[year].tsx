@@ -82,7 +82,7 @@ export default function MisogiRitual() {
           date: m.extremeIncident!.date,
           text: m.extremeIncident!.title,
           color: feeling(days[m.extremeIncident!.date]?.feeling)?.color ?? null,
-          sub: `${formatShort(m.extremeIncident!.date)} · ${m.extremeIncident!.mark}`,
+          sub: `${m.extremeIncident!.mark}, ${formatShort(m.extremeIncident!.date)}`,
         })),
     };
   }, [months, days, y]);
@@ -197,7 +197,7 @@ export default function MisogiRitual() {
                       <View style={[styles.bar, { backgroundColor: r.color ?? colors.track }]} />
                       <View style={styles.flex}>
                         <T variant="footnote" tone="ink2">
-                          {[monthShort(r.month), r.sub].filter(Boolean).join(' · ')}
+                          {[monthShort(r.month), r.sub].filter(Boolean).join(', ')}
                         </T>
                         <T variant="body" weight={selected ? '600' : '400'}>
                           {r.text}

@@ -118,7 +118,7 @@ export function HighlightsList() {
       empty={items.length ? null : 'No weekly highlights yet'}
     >
       {items.map((m) => (
-        <Group key={m.month} label={`${m.month.slice(0, 4)} · ${monthName(m.month)}`}>
+        <Group key={m.month} label={`${monthName(m.month)} ${m.month.slice(0, 4)}`}>
           {Object.keys(m.weeks)
             .sort()
             .reverse()
@@ -127,7 +127,7 @@ export function HighlightsList() {
               <Line
                 key={w}
                 serif
-                over={`Week ${weekIndexInMonth(w)} · from ${formatShort(weekMonday(w))}`}
+                over={`Week ${weekIndexInMonth(w)}, from ${formatShort(weekMonday(w))}`}
                 title={m.weeks[w].highlight}
               />
             ))}
@@ -147,7 +147,7 @@ export function PrioritiesList() {
       empty={items.length ? null : 'No weekly priorities yet'}
     >
       {items.map((m) => (
-        <Group key={m.month} label={`${m.month.slice(0, 4)} · ${monthName(m.month)}`}>
+        <Group key={m.month} label={`${monthName(m.month)} ${m.month.slice(0, 4)}`}>
           {Object.keys(m.weeks)
             .sort()
             .reverse()
@@ -160,7 +160,7 @@ export function PrioritiesList() {
                   <T
                     variant="footnote"
                     tone="ink2"
-                  >{`Week ${weekIndexInMonth(w)} · ${ps.filter((p) => done.has(p.text)).length} of ${ps.length} done`}</T>
+                  >{`Week ${weekIndexInMonth(w)}: ${ps.filter((p) => done.has(p.text)).length} of ${ps.length} done`}</T>
                   {ps.map((p) => (
                     <View key={p.text} style={styles.pRow}>
                       <Icon
@@ -224,7 +224,7 @@ export function IncidentsList() {
               <Line
                 key={m.month}
                 serif
-                over={`${monthName(m.month)} · ${inc.mark}`}
+                over={`${monthName(m.month)}, ${inc.mark}`}
                 title={inc.title}
                 sub={formatShort(inc.date)}
                 color={feeling(days[inc.date]?.feeling)?.color ?? null}

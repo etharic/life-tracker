@@ -31,7 +31,7 @@ export default function Archive() {
       >
         {groups.map(([c, list]) => (
           <View key={c}>
-            <Group label={`${GOAL_CATEGORIES.includes(c as never) ? 'Goal' : 'Hobby'} · ${CATEGORY_LABEL[c]}`}>
+            <Group label={`${CATEGORY_LABEL[c]} ${GOAL_CATEGORIES.includes(c as never) ? 'goals' : 'hobbies'}`}>
               {list
                 .sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0))
                 .map((e) => (

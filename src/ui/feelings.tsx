@@ -86,7 +86,7 @@ export function FeelingLabel({ score, size = 'large' }: { score: number; size?: 
   return (
     <View style={styles.label}>
       <View style={[styles.swatch, { width: sw, height: sw, backgroundColor: f.color }]} />
-      <T variant={size === 'large' ? 'title3' : 'subhead'} weight="600">{`${f.score} · ${f.name}`}</T>
+      <T variant={size === 'large' ? 'title3' : 'subhead'} weight="600">{`${f.name} (${f.score})`}</T>
     </View>
   );
 }

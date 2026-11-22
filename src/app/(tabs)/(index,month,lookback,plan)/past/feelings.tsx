@@ -93,7 +93,7 @@ function Selection({ date }: { date: ISODate | null }) {
         <T
           variant="subhead"
           weight="600"
-        >{`${weekdayShort(date)} ${formatShort(date)} · ${f ? `${f.score} ${f.name}` : 'No feeling logged'}`}</T>
+        >{`${weekdayShort(date)} ${formatShort(date)}, ${f ? `${f.name.toLowerCase()} (${f.score})` : 'no feeling logged'}`}</T>
         <T variant="footnote" tone="ink2" numberOfLines={1}>
           {day?.title || 'No title'}
         </T>

@@ -115,6 +115,7 @@ type Variant =
   | 'overline'
   | 'number'
   | 'display'
+  | 'pageTitle'
   | 'journalTitle'
   | 'journalBody';
 
@@ -129,9 +130,12 @@ export const type: Record<Variant, TextStyle> = {
   subhead: { fontSize: 15, lineHeight: 20, fontWeight: '400', letterSpacing: -0.24 },
   footnote: { fontSize: 13, lineHeight: 18, fontWeight: '400', letterSpacing: -0.08 },
   caption: { fontSize: 12, lineHeight: 16, fontWeight: '400' },
-  overline: { fontSize: 12, lineHeight: 16, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase' },
+  /** A small group label inside a list, in sentence case like the rest of the interface. */
+  overline: { fontSize: 13, lineHeight: 18, fontWeight: '600', letterSpacing: -0.08 },
   number: { fontSize: 17, lineHeight: 22, fontWeight: '600', fontVariant: ['tabular-nums'] },
   display: { fontFamily: SERIF, fontSize: 30, lineHeight: 36, fontWeight: '500', letterSpacing: -0.2 },
+  /** The title of a pushed screen or a flow: large-title size, in the serif the tabs use. */
+  pageTitle: { fontFamily: SERIF, fontSize: 34, lineHeight: 41, fontWeight: '600' },
   journalTitle: { fontFamily: SERIF, fontSize: 21, lineHeight: 27, fontWeight: '600' },
   journalBody: { fontFamily: SERIF, fontSize: 18, lineHeight: 27, fontWeight: '400' },
 };

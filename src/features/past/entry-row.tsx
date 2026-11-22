@@ -35,7 +35,7 @@ export function EntryRow({ day, highlight, incident }: { day: DayEntry; highligh
             </T>
             {f ? (
               <T variant="footnote" tone="ink2">
-                {`· ${f.name}`}
+                {f.name}
               </T>
             ) : null}
             {audio ? <Icon name="waveform" size={12} color={colors.ink3} /> : null}

@@ -263,8 +263,13 @@ function Item({ item, kind }: { item: ChallengeItem; kind: ChallengeKind }) {
                   <T variant="footnote" tone="ink2">
                     {sub}
                   </T>
-                ) : null}
-                {item.notes ? <Icon name="text.alignleft" size={11} color={colors.ink3} /> : null}
+                ) : (
+                  // No date: the first line of the notes says more than an icon would.
+                  <T variant="footnote" tone="ink2" numberOfLines={1} style={styles.notesLine}>
+                    {item.notes.split('\n')[0]}
+                  </T>
+                )}
+                {sub && item.notes ? <Icon name="text.alignleft" size={11} color={colors.ink3} /> : null}
               </View>
             ) : null}
           </Press>
@@ -339,6 +344,7 @@ const styles = StyleSheet.create({
   itemCell: { flex: 1, minWidth: 0 },
   itemText: { paddingLeft: space.m, paddingRight: space.l, paddingVertical: space.m, gap: 2 },
   subRow: { flexDirection: 'row', alignItems: 'center', gap: space.s },
+  notesLine: { flexShrink: 1 },
   box: {
     width: 30,
     height: 30,

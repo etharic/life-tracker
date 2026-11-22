@@ -75,7 +75,7 @@ export function ScreenHeader({
         </T>
       ) : null}
       <View style={styles.headerRow}>
-        <T variant="largeTitle" accessibilityRole="header" style={styles.headerTitle} numberOfLines={2}>
+        <T variant="pageTitle" accessibilityRole="header" style={styles.headerTitle} numberOfLines={2}>
           {title}
         </T>
         {trailing}

@@ -80,35 +80,38 @@ export function DoneStamp({ date, fresh }: { date: ISODate | null; fresh?: boole
   );
 }
 
+/** Room the stamp needs at the right of its row, so it never sits on the words. */
+export const STAMP_ROOM = 140;
+
 const styles = StyleSheet.create({
   stamp: {
     position: 'absolute',
-    right: 16,
-    top: 24,
-    borderWidth: 3,
-    borderRadius: 10,
+    right: 14,
+    top: 14,
+    borderWidth: 2.5,
+    borderRadius: 9,
     padding: 3,
   },
   inner: {
     borderWidth: 1.5,
     borderRadius: 6,
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     paddingTop: 2,
     paddingBottom: 4,
     alignItems: 'center',
   },
   word: {
-    fontSize: 34,
-    lineHeight: 38,
+    fontSize: 24,
+    lineHeight: 28,
     fontWeight: '900',
-    letterSpacing: 5,
+    letterSpacing: 3.5,
     fontFamily: 'ui-rounded',
   },
   date: {
-    fontSize: 11,
-    lineHeight: 13,
+    fontSize: 9,
+    lineHeight: 11,
     fontWeight: '800',
-    letterSpacing: 1.5,
+    letterSpacing: 1,
     fontVariant: ['tabular-nums'],
   },
 });

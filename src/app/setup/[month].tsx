@@ -101,7 +101,7 @@ function Dots({ step }: { step: number }) {
       {Array.from({ length: 7 }, (_, i) => (
         <View key={i} style={[styles.dot, i < step && styles.dotOn]} />
       ))}
-      <T variant="footnote" tone="ink2" style={styles.dotsText}>{`Step ${step} of 7 · ${STEP_NAMES[step - 1]}`}</T>
+      <T variant="footnote" tone="ink2" style={styles.dotsText}>{`Step ${step} of 7: ${STEP_NAMES[step - 1]}`}</T>
     </View>
   );
 }
@@ -473,7 +473,7 @@ export default function SetupFlow() {
         }
       >
         <View style={styles.head}>
-          <T variant="largeTitle" accessibilityRole="header">
+          <T variant="pageTitle" accessibilityRole="header">
             {title}
           </T>
           <Dots step={page.step} />

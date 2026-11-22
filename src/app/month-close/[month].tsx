@@ -34,7 +34,7 @@ function StepHead({
       <T variant="subhead" tone="ink2">
         {overline}
       </T>
-      <T variant="largeTitle" accessibilityRole="header">
+      <T variant="pageTitle" accessibilityRole="header">
         {title}
       </T>
       <View style={styles.dots} accessibilityLabel={`Step ${step} of 5`}>
@@ -291,7 +291,7 @@ export default function CloseMonth() {
       <>
         <StepHead overline={overline} title={`Before ${monthName(next)}`} step={4} />
         <KeepCard
-          label={`Priority goal · ${setup.priorityKind === 'build' ? 'Build' : 'Break'}`}
+          label={`Priority goal, to ${setup.priorityKind === 'build' ? 'build' : 'break'}`}
           title={setup.goals[setup.priority].text}
           detail={runInfo('priority')}
           keep={keepPriority}

@@ -60,7 +60,7 @@ export default function ItemHistory() {
       <Stack.Screen options={{ title: name, headerLargeTitleEnabled: true }} />
       {cat ? (
         <T variant="subhead" tone="ink2">
-          {`${CATEGORY_LABEL[cat]} ${isGoalCategory(cat) ? 'goal' : 'hobby'}, on your list for ${uses.length} ${uses.length === 1 ? 'month' : 'months'}${hours != null && !isGoalCategory(cat) ? ` · ${formatHours(hours)} in all` : ''}`}
+          {`${CATEGORY_LABEL[cat]} ${isGoalCategory(cat) ? 'goal' : 'hobby'}, on your list for ${uses.length} ${uses.length === 1 ? 'month' : 'months'}${hours != null && !isGoalCategory(cat) ? `, ${formatHours(hours)} in all` : ''}`}
         </T>
       ) : null}
       {earned.map((a) => (
