@@ -46,6 +46,13 @@ done
 for r in "close-day/$TODAY:10-close-day" "setup/$NEXT:11-setup" "week-start/$WEEK:12-week-start" "week-close/$LASTWEEK:13-week-close" "month-close/$PREV:14-month-close" "drive:15-drive" "challenge/bucket/b1:20-challenge" "backup:16-backup" "bank/goals:17-bank" "record/$TODAY:18-record" "day/$(python3 -c 'import datetime; print((datetime.date.today() - datetime.timedelta(days=1)).isoformat())'):19-day"; do
   fresh "${r%%:*}"; shot "${r#*:}" 4
 done
+# The year method: the review sitting, the year pages, the timeline, month highlights, setting a misogi.
+YEAR=$(date +%Y)
+LAST=$((YEAR - 1))
+for r in "year-review/$YEAR:31-year-review" "past/year/$LAST:32-year-last" "past/year/$YEAR:33-year-this" "past/defining:34-defining" "past/month-highlights:35-month-highlights" "misogi/$YEAR:36-set-misogi" "year-close/$YEAR?mode=edit:37-defining-edit" "record/sealed-$YEAR:38-record-sealed"; do
+  fresh "${r%%:*}"; shot "${r#*:}" 4
+done
+if xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BUNDLE"; then echo "  year screens: app still running"; else echo "  year screens: APP NOT RUNNING"; fi
 # Switching between Goals, Hobbies and Challenges (a crash once): the app must still be there.
 xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
 xcrun simctl launch "$UDID" "$BUNDLE" -LTOpen goals,hobbies,challenges,goals,challenges,hobbies >/dev/null

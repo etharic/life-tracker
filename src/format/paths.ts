@@ -27,7 +27,7 @@ export function yearPath(year: string): string {
 }
 /**
  * A media link is relative to the folder of the file that links it: a day's month folder, or
- * the year folder for a year's Misogi Ritual (owner '2026').
+ * the year folder for a year's defining moment (owner '2026').
  */
 export function mediaFile(owner: ISODate | string, relative: string): string {
   if (/^\d{4}$/.test(owner)) return `${owner}/${relative}`;

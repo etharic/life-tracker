@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { addMonths, monthName } from '@/domain/dates';
+import { activateQuestion } from '@/domain/misogi';
+import { NAMES } from '@/domain/names';
 import {
   CATEGORY_LABEL,
   CHECK_KEYS,
@@ -16,6 +18,7 @@ import {
   type MonthSetup,
 } from '@/domain/types';
 import { useDayLookup, useMonthsMap } from '@/features/hooks';
+import { askList } from '@/features/list-question';
 import { runHint, usageCounts, usageLabel } from '@/features/setup/usage';
 import { useJournal } from '@/state/journal';
 import { Button, Field, Segmented } from '@/ui/controls';
@@ -24,6 +27,7 @@ import { Icon } from '@/ui/icon';
 import { Divider, Screen, Section } from '@/ui/layout';
 import { ModalHeader } from '@/ui/modal';
 import { Press } from '@/ui/press';
+import { SuggestPicker } from '@/ui/suggest-picker';
 import { T } from '@/ui/text';
 import { colors, radius, space, TARGET, type } from '@/ui/theme';
 
@@ -261,6 +265,23 @@ export default function SetupFlow() {
       skill: prevRec?.close ? prevRec.close.keepSkill : true,
     }),
   );
+  const challenges = useJournal((st) => st.challenges);
+  const existingLink = useJournal((st) => st.months[month]?.kevinLink ?? null);
+  const [kevinPick, setKevinPick] = useState<{ kind: 'bucket' | 'rejections'; id: string } | null>(
+    existingLink ? { kind: existingLink.kind, id: existingLink.id } : null,
+  );
+  // Not-started or active bucket items, and not-started rejection items.
+  const listItems = useMemo(
+    () => [
+      ...challenges.bucket
+        .filter((b) => b.outcome === 'open')
+        .map((b) => ({ key: `bucket:${b.id}`, text: b.title, sub: b.started ? 'Bucket list, active' : 'Bucket list' })),
+      ...challenges.rejections
+        .filter((r) => r.outcome === 'open' && !r.started)
+        .map((r) => ({ key: `rejections:${r.id}`, text: r.title, sub: 'Rejection list' })),
+    ],
+    [challenges],
+  );
   const [index, setIndex] = useState(0);
   const page = PAGES[index];
   const name = monthName(month);
@@ -285,7 +306,7 @@ export default function SetupFlow() {
     }
   })();
 
-  const finish = () => {
+  const finish = async () => {
     const setup: MonthSetup = {
       goals: draft.goals as MonthSetup['goals'],
       hobbies: draft.hobbies as MonthSetup['hobbies'],
@@ -300,12 +321,29 @@ export default function SetupFlow() {
       outlook: draft.outlook.trim(),
       extremeThing: draft.extremeThing.trim(),
     };
-    useJournal.getState().updateMonth(month, (m) => void (m.setup = setup));
+    // Kevin's Rule from a list keeps its link while its text still equals the list item.
+    const item = kevinPick ? challenges[kevinPick.kind].find((x) => x.id === kevinPick.id) : undefined;
+    const prevLink = useJournal.getState().months[month]?.kevinLink ?? null;
+    const link =
+      kevinPick && item && item.title.trim() === setup.extremeThing
+        ? prevLink && prevLink.kind === kevinPick.kind && prevLink.id === kevinPick.id
+          ? prevLink
+          : { kind: kevinPick.kind, id: kevinPick.id, confirmed: null, outcomeConfirmed: null }
+        : null;
+    useJournal.getState().updateMonth(month, (m) => {
+      m.setup = setup;
+      m.kevinLink = link;
+    });
+    const q = activateQuestion(link, item);
+    if (q) {
+      const a = await askList(q);
+      if (a) useJournal.getState().answerList({ month }, 'activate', a);
+    }
     haptic.success();
     router.back();
   };
 
-  const next = () => (index === PAGES.length - 1 ? finish() : setIndex(index + 1));
+  const next = () => (index === PAGES.length - 1 ? void finish() : setIndex(index + 1));
 
   let title = '';
   let prompt = '';
@@ -430,15 +468,20 @@ export default function SetupFlow() {
       );
       break;
     case 'extreme':
-      title = 'Kevin’s Rule';
+      title = NAMES.kevin;
       prompt = `The most extreme thing you will do in ${name}. At the end of the month the app asks if it was done.`;
       body = (
-        <Field
+        <SuggestPicker
+          label=""
+          items={listItems}
           value={draft.extremeThing}
-          onChangeText={(t) => setDraft((d) => ({ ...d, extremeThing: t }))}
+          onChange={(t, from) => {
+            setDraft((d) => ({ ...d, extremeThing: t }));
+            const [kind, id] = (from?.key ?? '').split(':');
+            setKevinPick(from && (kind === 'bucket' || kind === 'rejections') ? { kind, id } : null);
+          }}
           placeholder="Run 10 km without stopping"
-          maxLength={80}
-          returnKeyType="done"
+          heading="From your lists"
         />
       );
       break;

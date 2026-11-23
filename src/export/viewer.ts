@@ -1,6 +1,7 @@
 import { FEELINGS } from '../domain/feelings';
 import { CATEGORY_LABEL, type DayEntry, type MonthRecord, type YearRecord } from '../domain/types';
 import { monthFolder } from '../format/paths';
+import { misogiOf, NAMES } from '../domain/names';
 
 /**
  * viewer.html: one self-contained page that shows the journal in any browser, offline, with no
@@ -53,7 +54,26 @@ export function viewerHtml(input: {
           .map((w) => m.weeks[w].highlight)
           .filter(Boolean),
       })),
-    years: input.years.filter((y) => y.defining).map((y) => ({ y: y.year, t: y.defining!.text })),
+    // A life timeline: each year's defining moment and the misogi set for it (from the year before).
+    // Sealed notes are never in the viewer.
+    years: [
+      ...new Set([
+        ...input.years.filter((y) => y.defining).map((y) => y.year),
+        ...input.years.filter((y) => y.nextMisogi).map((y) => String(Number(y.year) + 1)),
+      ]),
+    ]
+      .sort()
+      .map((year) => {
+        const rec = input.years.find((y) => y.year === year);
+        const m = input.years.find((y) => y.year === String(Number(year) - 1))?.nextMisogi;
+        return {
+          y: year,
+          t: rec?.defining?.text ?? '',
+          m: m
+            ? `${misogiOf(year)}: ${m.text}${m.done === true ? ' (done)' : m.done === false ? ' (not this time)' : ''}`
+            : '',
+        };
+      }),
   };
   // `</` must not appear inside the script element.
   const json = JSON.stringify(data).replace(/</g, '\\u003c');
@@ -86,7 +106,7 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
 document.getElementById('gen').textContent='Exported '+D.generated;
 if(D.note){document.getElementById('note').innerHTML='<div class="note">'+esc(D.note)+'</div>'}
-document.getElementById('timeline').innerHTML=D.years.length?D.years.map(y=>'<div><b>'+y.y+'</b> · '+esc(y.t)+'</div>').join(''):'No Misogi Rituals yet.';
+document.getElementById('timeline').innerHTML=D.years.length?D.years.map(y=>'<div><b>'+y.y+'</b> '+esc(y.t)+(y.m?'<br><small>'+esc(y.m)+'</small>':'')+'</div>').join(''):'No ${NAMES.definingPlural.toLowerCase()} yet.';
 const years=[...new Set(D.days.map(d=>d.d.slice(0,4)).concat(D.months.map(m=>m.m.slice(0,4))))].sort().reverse();
 const nav=document.getElementById('years');
 function show(y){

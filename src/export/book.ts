@@ -1,6 +1,15 @@
 import { daysInMonth, formatLong, MONTHS, toISO } from '../domain/dates';
 import { feeling, FEELINGS } from '../domain/feelings';
-import { CATEGORY_LABEL, type DayEntry, type MediaRef, type MonthRecord, type YearRecord } from '../domain/types';
+import type { BookNote } from '../domain/book-rules';
+import { misogiOf, NAMES } from '../domain/names';
+import {
+  CATEGORY_LABEL,
+  type DayEntry,
+  type MediaRef,
+  type MonthRecord,
+  type NextMisogi,
+  type YearRecord,
+} from '../domain/types';
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const para = (s: string) =>
@@ -38,6 +47,12 @@ export function bookHtml(input: {
   photo: (day: DayEntry, path: string) => string | undefined;
   mode?: 'print' | 'player';
   sound?: (day: DayEntry, media: MediaRef) => string | undefined;
+  /** The misogi set for this year (stored in last year's file). */
+  misogi?: NextMisogi | null;
+  /** The voice note sealed a year ago, when this book may carry it (see bookNote). */
+  openedNote?: BookNote | null;
+  /** The opened note as a data URI, for the edition with sound. */
+  noteSound?: string;
 }): string {
   const { year } = input;
   const player = input.mode === 'player';
@@ -134,6 +149,16 @@ ${d.title ? `<h3>${esc(d.title)}</h3>` : ''}${d.writing ? `<p>${para(d.writing)}
     .join('\n');
 
   const defining = input.yearRec?.defining?.text;
+  const m = input.misogi;
+  const misogi = m
+    ? `<p><b>${esc(misogiOf(year))}.</b> ${esc(m.text)}${m.done === true ? ' (done)' : m.done === false ? ' (not this time)' : ''}</p>`
+    : '';
+  const n = input.openedNote;
+  const note = n
+    ? player && input.noteSound
+      ? `<div class="av"><p><b>A note from 25 December ${n.from}.</b></p><audio controls preload="metadata" src="${input.noteSound}"></audio></div>`
+      : `<p class="listen">A voice note from 25 December ${n.from}, opened on 25 December ${year}: ${player ? 'too large for the book; it is' : 'play it in the book with sound and video, or find it'} in the Journal folder (${esc(n.file)}).</p>`
+    : '';
 
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The ${year} book</title><style>
 *{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box}
@@ -149,7 +174,8 @@ article{page-break-inside:avoid;border-top:.5pt solid #E7E2D8;padding:8pt 0}.met
 .listen,.miss{font:9pt -apple-system,Helvetica,sans-serif;color:#66666E;margin-top:6pt}.av{margin-top:8pt}.av audio{display:block;width:100%;margin:4pt 0}.av video{display:block;width:100%;max-height:420px;border-radius:6pt;margin:6pt 0;background:#000}.note{white-space:pre-wrap;font-style:italic;margin-top:30pt}
 </style></head><body>
 <section class="cover"><h1>${year}</h1><div class="sub">A year of the journal${player ? ', with its voice notes and videos' : ''}</div>
-${defining ? `<p style="margin-top:28pt"><b>Misogi Ritual.</b> ${esc(defining)}</p>` : ''}
+${defining ? `<p style="margin-top:28pt"><b>${NAMES.defining}.</b> ${esc(defining)}</p>` : ''}
+${misogi}${note}
 ${input.note ? `<div class="note">${para(input.note)}</div>` : ''}</section>
 <section class="page"><h2>How the days felt</h2>${grid}</section>
 ${monthPages}

@@ -13,6 +13,7 @@ import {
   type MonthSetup,
   type WeekRecord,
 } from '../domain/types';
+import { parseLink, serializeLink } from './links';
 import { arr, bool, boolOrNull, extras, FORMAT, obj, parseFrontmatter, serializeFrontmatter, str } from './frontmatter';
 
 const KNOWN = [
@@ -32,6 +33,10 @@ const KNOWN = [
   'extreme_incident',
   'close',
   'skipped',
+  'highlight',
+  'highlight_from_week',
+  'week_highlight_from',
+  'kevin_link',
 ] as const;
 
 function choice(v: unknown): Choice | null {
@@ -121,6 +126,12 @@ export function parseMonth(text: string, fallback: MonthId): MonthRecord {
     };
   }
   for (const [id, note] of Object.entries(obj(data.skipped))) rec.skipped[id] = str(note);
+  rec.highlight = str(data.highlight).trim();
+  const hw = str(data.highlight_from_week);
+  rec.highlightFromWeek = rec.highlight && /^\d{4}-W\d{2}$/.test(hw) ? hw : null;
+  for (const [id, d] of Object.entries(obj(data.week_highlight_from)))
+    if (/^\d{4}-W\d{2}$/.test(id) && isISODate(d)) rec.weekHighlightFrom[id] = d;
+  rec.kevinLink = parseLink(data.kevin_link);
   // An incomplete (hand-edited) setup is kept as written instead of being dropped on save.
   const setupKeys = ['goals', 'hobbies', 'priority', 'priority_kind', 'skill', 'weekly_checks', 'outlook'];
   rec.extra = extras(data, rec.setup ? KNOWN : KNOWN.filter((k) => !setupKeys.includes(k)));
@@ -184,6 +195,12 @@ export function serializeMonth(rec: MonthRecord): string {
     };
   }
   if (Object.keys(rec.skipped).length) data.skipped = { ...rec.skipped };
+  // New keys are top level (older versions keep unknown top-level keys, not nested ones).
+  if (rec.highlight) data.highlight = rec.highlight;
+  if (rec.highlight && rec.highlightFromWeek) data.highlight_from_week = rec.highlightFromWeek;
+  const from = Object.keys(rec.weekHighlightFrom).sort();
+  if (from.length) data.week_highlight_from = Object.fromEntries(from.map((id) => [id, rec.weekHighlightFrom[id]]));
+  if (rec.kevinLink) data.kevin_link = serializeLink(rec.kevinLink);
   Object.assign(data, rec.extra);
   return serializeFrontmatter(data);
 }

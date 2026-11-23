@@ -9,12 +9,14 @@ import { CHALLENGE_COPY, CHALLENGE_ROUTE } from '@/features/past/challenges';
 import { useToday } from '@/features/hooks';
 import { EntryRow } from '@/features/past/entry-row';
 import { Insights } from '@/features/past/insights';
+import { GoodDays, OnThisDay } from '@/features/past/remember';
 import { useJournal } from '@/state/journal';
 import { Icon } from '@/ui/icon';
 import { Divider, Row, Rows, Screen, Section, TopBar } from '@/ui/layout';
 import { T } from '@/ui/text';
 import { colors, radius, space, type } from '@/ui/theme';
 import { Group } from '@/ui/group';
+import { NAMES } from '@/domain/names';
 
 type Item = { title: string; href: Href; icon: SFSymbol; value: string };
 
@@ -102,7 +104,7 @@ function useArchive(): { title: string; items: Item[] }[] {
         title: 'Every week',
         items: [
           {
-            title: 'Highlights',
+            title: 'Week highlights',
             href: '/past/highlights',
             icon: 'sparkle',
             value: n(weekList.filter((w) => w.highlight).length),
@@ -118,6 +120,12 @@ function useArchive(): { title: string; items: Item[] }[] {
       {
         title: 'Every month',
         items: [
+          {
+            title: 'Month highlights',
+            href: '/past/month-highlights',
+            icon: 'sparkles',
+            value: n(monthList.filter((m) => m.highlight).length),
+          },
           {
             title: 'Kevin’s Rules',
             href: '/past/extremes',
@@ -138,7 +146,7 @@ function useArchive(): { title: string; items: Item[] }[] {
         title: 'Every year',
         items: [
           {
-            title: 'Misogi Rituals',
+            title: NAMES.definingPlural,
             href: '/past/defining',
             icon: 'calendar',
             value: n(Object.values(years).filter((y) => y.defining).length),
@@ -179,6 +187,8 @@ export default function LookBackHub() {
       ) : (
         <View style={styles.groups}>
           <Insights />
+          <OnThisDay />
+          <GoodDays />
           {groups.map((g) => (
             <Group key={g.title} title={g.title}>
               <Section flush>

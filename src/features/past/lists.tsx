@@ -8,10 +8,12 @@ import { CHECK_KEYS, type MonthRecord, type WeekRecord } from '@/domain/types';
 import { useToday } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
 import { Icon } from '@/ui/icon';
-import { Divider, Empty, Explainer, Row, Screen, Section, SectionLabel } from '@/ui/layout';
+import { Divider, Empty, Explainer, Screen, Section, SectionLabel } from '@/ui/layout';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { colors, space, TARGET } from '@/ui/theme';
+import { misogiFor } from '@/domain/misogi';
+import { misogiOf, NAMES } from '@/domain/names';
 
 export function sortedMonths(months: Record<string, MonthRecord>): MonthRecord[] {
   return Object.values(months).sort((a, b) => (a.month < b.month ? 1 : -1));
@@ -129,6 +131,7 @@ export function HighlightsList() {
                 serif
                 over={`Week ${weekIndexInMonth(w)}, from ${formatShort(weekMonday(w))}`}
                 title={m.weeks[w].highlight}
+                sub={m.weekHighlightFrom[w] ? `The title of ${formatShort(m.weekHighlightFrom[w])}` : undefined}
               />
             ))}
         </Group>
@@ -257,47 +260,86 @@ export function IncidentsList() {
   );
 }
 
+/** The month highlights, chosen at each month close: the best of the month, in a line. */
+export function MonthHighlightsList() {
+  const months = useJournal((s) => s.months);
+  const items = sortedMonths(months).filter((m) => m.highlight);
+  return (
+    <ListScreen
+      explainer="One line for each month, chosen when it closes, often from its week highlights."
+      empty={items.length ? null : 'No month highlights yet'}
+    >
+      {byYear(items).map(([year, ms]) => (
+        <Group key={year} label={year}>
+          {ms.map((m) => (
+            <Line
+              key={m.month}
+              serif
+              over={monthName(m.month)}
+              title={m.highlight}
+              sub={m.highlightFromWeek ? `From week ${weekIndexInMonth(m.highlightFromWeek)}` : undefined}
+            />
+          ))}
+        </Group>
+      ))}
+    </ListScreen>
+  );
+}
+
 /**
- * Misogi Rituals, one line per year, a life timeline. This year's can be written or changed at
- * any time; past years open as they were recorded.
+ * Defining moments and misogis, one line per year: a life timeline. Each year opens its page,
+ * where the defining moment, the year's misogi and the sealed note live.
  */
 export function DefiningList() {
   const years = useJournal((s) => s.years);
   const thisYear = useToday().slice(0, 4);
-  const mine = years[thisYear]?.defining ?? null;
-  const items = Object.values(years)
-    .filter((y) => y.defining && y.year !== thisYear)
-    .sort((a, b) => (a.year < b.year ? 1 : -1));
-  const line = (year: string, text: string, onPress: () => void, hint: string) => (
-    <Press feedback="highlight" onPress={onPress} accessibilityLabel={`${year}: ${text}`} accessibilityHint={hint}>
-      <View style={styles.timeline}>
-        <T variant="title3" tone="accent" style={styles.year}>
-          {year}
-        </T>
-        <T variant="journalBody" style={styles.flex}>
-          {text}
-        </T>
-      </View>
-    </Press>
-  );
+  const all = new Set<string>([thisYear]);
+  for (const y of Object.values(years)) {
+    if (y.defining) all.add(y.year);
+    if (y.nextMisogi) all.add(String(Number(y.year) + 1));
+  }
+  const list = [...all]
+    .filter((y) => y <= String(Number(thisYear) + 1))
+    .sort()
+    .reverse();
   return (
-    <ListScreen explainer="Misogi Ritual: what defined each year. One line per year, a life timeline." empty={null}>
+    <ListScreen explainer={`${NAMES.definingPlural}: what defined each year, and each year’s misogi.`} empty={null}>
       <Section flush>
-        {mine ? (
-          line(thisYear, mine.text, () => router.push(`/year-close/${thisYear}?mode=edit`), 'Opens it to change')
-        ) : (
-          <Row
-            leading={<Icon name="plus.circle.fill" size={20} color={colors.accent} />}
-            title={`Record ${thisYear}’s Misogi Ritual`}
-            onPress={() => router.push(`/year-close/${thisYear}?mode=edit`)}
-          />
-        )}
-        {items.map((y) => (
-          <View key={y.year}>
-            <Divider />
-            {line(y.year, y.defining!.text, () => router.push(`/year-close/${y.year}?mode=view`), 'Opens it')}
-          </View>
-        ))}
+        {list.map((y, i) => {
+          const d = years[y]?.defining ?? null;
+          const m = misogiFor(years, y);
+          const outcome = m ? (m.done === true ? 'done' : m.done === false ? 'not this time' : '') : '';
+          const sub = m ? `${misogiOf(y)}: ${m.text}${outcome ? `, ${outcome}` : ''}` : '';
+          const title = d?.text ?? (y === thisYear ? `Record ${y}’s ${NAMES.defining.toLowerCase()}` : 'Not recorded');
+          return (
+            <View key={y}>
+              {i > 0 ? <Divider /> : null}
+              <Press
+                feedback="highlight"
+                onPress={() => router.push(`/past/year/${y}`)}
+                accessibilityLabel={[y, title, sub].filter(Boolean).join(', ')}
+                accessibilityHint="Opens the year"
+              >
+                <View style={styles.timeline}>
+                  <T variant="title3" tone="accent" style={styles.year}>
+                    {y}
+                  </T>
+                  <View style={styles.flex}>
+                    <T variant="journalBody" tone={d ? 'ink' : 'ink3'}>
+                      {title}
+                    </T>
+                    {sub ? (
+                      <T variant="footnote" tone="ink2">
+                        {sub}
+                      </T>
+                    ) : null}
+                  </View>
+                  <Icon name="chevron.right" size={13} color={colors.ink3} weight="semibold" />
+                </View>
+              </Press>
+            </View>
+          );
+        })}
       </Section>
     </ListScreen>
   );

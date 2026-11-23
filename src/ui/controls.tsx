@@ -313,10 +313,8 @@ export function Segmented<T extends string>({
   value: T;
   onChange: (v: T) => void;
 }) {
-  const index = Math.max(
-    0,
-    options.findIndex((o) => o.value === value),
-  );
+  // -1 when nothing is chosen yet (a question not answered), so no segment looks selected.
+  const index = options.findIndex((o) => o.value === value);
   return (
     <SegmentedControl
       values={options.map((o) => o.label)}

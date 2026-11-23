@@ -5,6 +5,7 @@ import { ActionSheetIOS, StyleSheet, View } from 'react-native';
 import { addMonths, formatShort, monthName, monthOf } from '@/domain/dates';
 import { GOAL_CATEGORIES, HOBBY_CATEGORIES } from '@/domain/types';
 import { useMonth, useToday } from '@/features/hooks';
+import { MisogiLine } from '@/features/year/plan-line';
 import { useSync } from '@/sync/scheduler';
 import { useJournal } from '@/state/journal';
 import { Icon } from '@/ui/icon';
@@ -18,7 +19,7 @@ const INSET = space.l + 18 + space.m;
 
 /**
  * Plan: what you set up, as quiet lists. Each row says what it is once, with its state on the right.
- *   Months, Ideas, Keep it safe, Settings
+ *   the year's misogi, Months, Ideas, Keep it safe, Settings
  */
 export default function PlanScreen() {
   const today = useToday();
@@ -51,6 +52,7 @@ export default function PlanScreen() {
     <Screen topInset>
       <TopBar title="Plan" />
       <View style={styles.groups}>
+        <MisogiLine />
         <Group title="Months">
           <Section flush>
             <Rows inset={INSET}>

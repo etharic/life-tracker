@@ -178,6 +178,9 @@ for (const [month, m] of Object.entries(MONTHS)) {
   if (closed) {
     const inc = Object.keys(days).find((d) => d.startsWith(month) && days[d].title.includes('Museum')) ?? `${month}-14`;
     t += `extreme_incident:\n  date: ${inc}\n  title: ${q(days[inc]?.title || 'Museum day with friends')}\n  mark: positive\n`;
+    // The month highlight, chosen at month close from one of its week highlights.
+    const firstWeek = Object.keys(weeks).find((w) => weeks[w].highlight);
+    if (firstWeek) t += `highlight: ${q(weeks[firstWeek].highlight)}\nhighlight_from_week: ${firstWeek}\n`;
     t += `close:\n  closed_on: ${month}-${month === '2026-09' ? 30 : 31}\n  keep_priority: true\n  keep_skill: true\n  keep_lineup: true\n`;
   }
   write(`${month.slice(0, 4)}/${month}/month.md`, t + '---\n');
@@ -247,6 +250,32 @@ function challengeFile(items, prefix) {
   });
   out.push('---', '');
   return out.join(NL);
+}
+// Last year was reviewed on 25 December: its defining moment, and this year's misogi (the
+// bucket list's marathon, still to judge), so Plan, Look back and the year review can be checked.
+{
+  const last = String(Number(today.slice(0, 4)) - 1);
+  write(
+    `${last}/year.md`,
+    [
+      '---',
+      'format: journal-v1',
+      `year: "${last}"`,
+      'defining_incident:',
+      '  text: "Moved to a new city on my own"',
+      '  source: custom',
+      'next_misogi:',
+      '  text: "Run a marathon"',
+      '  bucket_id: b1',
+      '  confirmed: true',
+      '  outcome_confirmed: null',
+      '  done: null',
+      'reviewed: true',
+      `reviewed_on: ${last}-12-25`,
+      '---',
+      '',
+    ].join(NL),
+  );
 }
 write('challenges/rejections.md', challengeFile(REJ, 'r'));
 write('challenges/bucket-list.md', challengeFile(BUCKET, 'b'));

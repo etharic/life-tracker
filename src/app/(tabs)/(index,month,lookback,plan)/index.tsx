@@ -4,10 +4,13 @@ import { ActionSheetIOS, AppState, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { formatTitle, monthOf } from '@/domain/dates';
+import { unjudgedMisogi } from '@/domain/misogi';
+import { misogiOf, NAMES } from '@/domain/names';
 import { JournalGroup, NoSetupNote, TodayGroup, WeekGroup } from '@/features/day/day-layout';
 import { DayWash } from '@/features/day/day-wash';
 import { useDay, useMonth, usePrompts, useStreaks, useToday } from '@/features/hooks';
 import { PromptCard } from '@/features/prompts/prompt-card';
+import { judgeMisogi } from '@/features/year/commit';
 import { useJournal } from '@/state/journal';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
@@ -32,39 +35,56 @@ function Streak({ days }: { days: number }) {
 }
 
 /**
- * The day's shortcuts: Kevin's Rule done today (stamped on the Month page), and this year's
- * Misogi Ritual achieved today (opens its editor, kept in Look back).
+ * The day's shortcuts: Kevin's Rule done today (stamped on the Month page), this year's defining
+ * moment happened today (opens its editor, kept in Look back), and, while this year's misogi is
+ * not yet judged, "Misogi done today" (the same action as Plan's "Done it?").
  */
 function DayMenu() {
   const today = useToday();
   const monthId = monthOf(today);
   const month = useMonth(monthId);
+  const years = useJournal((s) => s.years);
   const rule = month.setup?.extremeThing;
   const done = month.extremeDone === true;
+  const misogi = unjudgedMisogi(years, today);
   const open = () => {
-    const options = [
-      ...(rule ? [done ? 'Kevin’s Rule: not done after all' : 'Kevin’s Rule done today'] : []),
-      'Misogi Ritual achieved today',
-      'Cancel',
-    ];
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title: rule ? `Kevin’s Rule: ${rule}` : undefined,
-        options,
-        cancelButtonIndex: options.length - 1,
-        destructiveButtonIndex: rule && done ? 0 : undefined,
-      },
-      (i) => {
-        if (rule && i === 0) {
+    type Action = { label: string; run: () => void };
+    const actions: Action[] = [];
+    if (rule)
+      actions.push({
+        label: done ? `${NAMES.kevin}: not done after all` : `${NAMES.kevin} done today`,
+        run: () => {
           useJournal.getState().updateMonth(monthId, (m) => {
             m.extremeDone = done ? null : true;
             m.extremeDoneOn = done ? null : today;
           });
           if (done) haptic.select();
           else haptic.success();
-        } else if (i === options.length - 2) {
-          router.push(`/year-close/${today.slice(0, 4)}?mode=edit&date=${today}`);
-        }
+        },
+      });
+    if (misogi)
+      actions.push({
+        label: `${NAMES.misogi} done today`,
+        run: () => {
+          haptic.success();
+          void judgeMisogi(misogi.year, true, today);
+        },
+      });
+    actions.push({
+      label: `${NAMES.defining} today`,
+      run: () => router.push(`/year-close/${today.slice(0, 4)}?mode=edit&date=${today}`),
+    });
+    const options = [...actions.map((a) => a.label), 'Cancel'];
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        title: rule ? `${NAMES.kevin}: ${rule}` : undefined,
+        message: misogi ? `${misogiOf(misogi.year)}: ${misogi.misogi.text}` : undefined,
+        options,
+        cancelButtonIndex: options.length - 1,
+        destructiveButtonIndex: rule && done ? 0 : undefined,
+      },
+      (i) => {
+        if (i < actions.length) actions[i].run();
       },
     );
   };

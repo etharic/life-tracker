@@ -120,6 +120,8 @@ export default function RootLayout() {
         <Stack.Screen name="week-start/[week]" options={modal} />
         <Stack.Screen name="month-close/[month]" options={{ ...modal, presentation: 'fullScreenModal' }} />
         <Stack.Screen name="year-close/[year]" options={modal} />
+        <Stack.Screen name="year-review/[year]" options={{ ...modal, presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="misogi/[year]" options={modal} />
         <Stack.Screen name="conflict/[id]" options={modal} />
         <Stack.Screen name="challenge/[kind]/[id]" options={modal} />
         <Stack.Screen

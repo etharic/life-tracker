@@ -117,9 +117,43 @@ export interface MonthRecord {
   weeks: Record<WeekId, WeekRecord>;
   extremeIncident: ExtremeIncident | null;
   close: MonthClose | null;
+  /** The month's highlight, chosen at month close (often one of its week highlights). */
+  highlight: string;
+  /** The week whose highlight it was, while the text still matches it. */
+  highlightFromWeek: WeekId | null;
+  /** Week id -> the day whose title became that week's highlight (while it still matches). */
+  weekHighlightFrom: Record<WeekId, ISODate>;
+  /** Kevin's Rule taken from a challenge list. */
+  kevinLink: ListLink | null;
   /** Prompt id -> note written when it was skipped. */
   skipped: Record<string, string>;
   extra: Record<string, unknown>;
+}
+
+/** A link from a misogi or Kevin's Rule to the challenge-list item it came from. */
+export interface ListLink {
+  kind: ChallengeKind;
+  id: string;
+  /** The one-tap "Mark it active?" question: answered yes, no, or not asked yet. */
+  confirmed: boolean | null;
+  /** The one-tap question asked when it was judged: answered (true or false) or not yet (null). */
+  outcomeConfirmed: boolean | null;
+}
+
+/** The challenge committed at a year's review for the following year. */
+export interface NextMisogi {
+  text: string;
+  link: ListLink | null;
+  /** Judged at the following year's review (or earlier, when done early). */
+  done: boolean | null;
+  doneOn: ISODate | null;
+}
+
+/** A voice note to the future self, locked in the app until its date. */
+export interface SealedNote {
+  /** Relative to the year folder, e.g. media/sealed-2026.m4a */
+  path: string;
+  sealedUntil: ISODate;
 }
 
 export interface DefiningIncident {
@@ -131,9 +165,17 @@ export interface DefiningIncident {
 
 export interface YearRecord {
   year: string;
-  /** The Misogi Ritual: what defined the year. Its date (optional) is defining.date. */
+  /** The defining moment: what defined the year. Its date (optional) is defining.date. */
   defining: DefiningIncident | null;
-  /** Notes written with the Misogi Ritual, and its photos and voice notes. */
+  /** The month whose highlight became the defining moment, while the text still matches. */
+  definingFrom: MonthId | null;
+  /** Next year's misogi, committed at this year's review. */
+  nextMisogi: NextMisogi | null;
+  /** A voice note sealed at this year's review. */
+  sealedNote: SealedNote | null;
+  /** The day the review sitting was held. */
+  reviewedOn: ISODate | null;
+  /** Notes written with the defining moment, and its photos and voice notes. */
   notes: string;
   media: MediaRef[];
   /** The year-end review (25 December) was confirmed. */
@@ -255,6 +297,10 @@ export function emptyMonth(month: MonthId): MonthRecord {
     weeks: {},
     extremeIncident: null,
     close: null,
+    highlight: '',
+    highlightFromWeek: null,
+    weekHighlightFrom: {},
+    kevinLink: null,
     skipped: {},
     extra: {},
   };
@@ -302,5 +348,17 @@ export function formatHours(h: number): string {
 }
 
 export function emptyYear(year: string): YearRecord {
-  return { year, defining: null, notes: '', media: [], reviewed: false, skipped: null, extra: {} };
+  return {
+    year,
+    defining: null,
+    definingFrom: null,
+    nextMisogi: null,
+    sealedNote: null,
+    reviewedOn: null,
+    notes: '',
+    media: [],
+    reviewed: false,
+    skipped: null,
+    extra: {},
+  };
 }

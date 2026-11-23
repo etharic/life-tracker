@@ -17,6 +17,7 @@ import {
   type YearRecord,
 } from '../domain/types';
 import { joinBody, splitBody } from './day';
+import { parseNextMisogi, parseSealedNote, serializeNextMisogi, serializeSealedNote } from './links';
 import { arr, bool, extras, FORMAT, obj, parseFrontmatter, serializeFrontmatter, str } from './frontmatter';
 
 // ---------- year.md ----------
@@ -35,15 +36,31 @@ export function parseYear(text: string, fallback: string): YearRecord {
       }
     : null;
   const { writing, media } = splitBody(body);
+  const from = str(obj(data.defining_from).month_highlight);
   return {
     year,
     defining,
+    definingFrom: defining && /^\d{4}-\d{2}$/.test(from) ? from : null,
+    nextMisogi: parseNextMisogi(data.next_misogi),
+    sealedNote: parseSealedNote(data.sealed_note),
+    reviewedOn: isISODate(data.reviewed_on) ? data.reviewed_on : null,
     notes: writing === `The defining incident of ${year}.` ? '' : writing,
+    // The sealed note's file sits in media/ but is never an attachment line.
     media,
     // Files from before the review existed: a recorded one counts as reviewed.
     reviewed: 'reviewed' in data ? bool(data.reviewed) : !!defining,
     skipped: typeof data.skipped === 'string' ? data.skipped : null,
-    extra: extras(data, ['format', 'year', 'defining_incident', 'reviewed', 'skipped']),
+    extra: extras(data, [
+      'format',
+      'year',
+      'defining_incident',
+      'defining_from',
+      'next_misogi',
+      'sealed_note',
+      'reviewed_on',
+      'reviewed',
+      'skipped',
+    ]),
   };
 }
 
@@ -57,10 +74,21 @@ export function serializeYear(y: YearRecord): string {
       ...(y.defining.date ? { date: y.defining.date } : {}),
     };
   }
+  // New keys are top level, so versions that rebuild nested keys still keep them.
+  if (y.defining && y.definingFrom) data.defining_from = { month_highlight: y.definingFrom };
+  if (y.nextMisogi) data.next_misogi = serializeNextMisogi(y.nextMisogi);
+  if (y.sealedNote) data.sealed_note = serializeSealedNote(y.sealedNote);
   data.reviewed = y.reviewed;
+  if (y.reviewedOn) data.reviewed_on = y.reviewedOn;
   if (y.skipped != null) data.skipped = y.skipped;
   Object.assign(data, y.extra);
-  return serializeFrontmatter(data, joinBody(y.notes, y.media));
+  return serializeFrontmatter(
+    data,
+    joinBody(
+      y.notes,
+      y.media.filter((m) => m.path !== y.sealedNote?.path),
+    ),
+  );
 }
 
 // ---------- bank.md ----------

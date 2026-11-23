@@ -23,7 +23,7 @@ HOW THE FOLDER IS ORGANISED
                         was started, how it ended, and notes
     settings.md         app settings (when a new day starts, last backup)
     2026/               one folder per year
-      year.md           the Misogi Ritual of that year
+      year.md           the defining moment of that year, next year's misogi
       2026-11/          one folder per month
         month.md        the month's plan and how it went
         2026-11-19.md   one file per day
@@ -51,14 +51,16 @@ Each week has commitments (its priorities, marked as such, and the month's three
 
 At the end of a month the most memorable day is chosen as the extreme
 incident (positive or negative). At the end of a year one moment is chosen as
-the Misogi Ritual.
+the defining moment.
 
 WORDS USED
 
     Kevin's Rule        what was planned as the month's most extreme thing
                         (extreme_thing in the files)
     extreme incident    the day that turned out most memorable that month
-    Misogi Ritual       what defined the year (defining_incident in the files)
+    Defining moment     what defined the year (defining_incident in the files)
+    Misogi              the challenge set at a year's review for the next year (next_misogi)
+    Sealed note         a voice note locked in the app until next 25 December (sealed_note)
     achievement         the same priority goal or skill for 3 months in a row,
                         done on more than 80% of the days; or 100, 250, 500
                         and 1000 hours on one hobby, across every month it

@@ -7,7 +7,7 @@ import { journalStore, useJournal } from './journal';
 export const PHOTO_LONG_EDGE = 2000;
 
 /**
- * What a photo or recording belongs to: a day (its date, 2026-11-19) or a year's Misogi Ritual
+ * What a photo or recording belongs to: a day (its date, 2026-11-19) or a year's defining moment
  * (the year, 2026). Day media lives in the month folder, a year's in the year folder.
  */
 export type MediaOwner = string;

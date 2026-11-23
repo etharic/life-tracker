@@ -8,6 +8,8 @@ import type { DayEntry, MediaRef } from '../domain/types';
 import { mediaFile, README, VIEWER } from '../format/paths';
 import { readmeText } from '../format/readme';
 import { flushWrites, journalStore, useJournal } from '../state/journal';
+import { bookNote } from '../domain/book-rules';
+import { misogiFor } from '../domain/misogi';
 import { bookHtml } from './book';
 import { viewerHtml } from './viewer';
 
@@ -100,6 +102,8 @@ function bookInput(year: string, photos: Map<string, string>) {
   const s = useJournal.getState();
   return {
     year,
+    misogi: misogiFor(s.years, year),
+    openedNote: bookNote(s.years, year, s.today),
     days: Object.values(s.days),
     months: Object.values(s.months),
     yearRec: s.years[year],
@@ -157,10 +161,22 @@ export async function exportBookWithSound(year: string): Promise<void> {
       sounds.set(`${d.date}/${m.path}`, `data:${mimeOf(m)};base64,${b64}`);
     }
   }
+  // The note sealed a year ago, only in the book of the year it opens, and only from that day.
+  const opened = bookNote(useJournal.getState().years, year, useJournal.getState().today);
+  let noteSound: string | undefined;
+  if (opened) {
+    const path = mediaFile(opened.from, opened.path);
+    const size = store.exists(path) ? (new File(store.uri(path)).size ?? 0) : 0;
+    if (size && size <= MAX_FILE) {
+      const b64 = await store.readBase64(path);
+      if (b64) noteSound = `data:audio/mp4;base64,${b64}`;
+    }
+  }
   const html = bookHtml({
     ...bookInput(year, photos),
     mode: 'player',
     sound: (d, m) => sounds.get(`${d.date}/${m.path}`),
+    noteSound,
   });
   const out = cacheFile(`The ${year} book.html`);
   out.create();

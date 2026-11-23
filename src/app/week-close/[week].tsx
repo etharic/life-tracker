@@ -1,17 +1,17 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { formatLong, weekDates, weekdayShort, weekIndexInMonth, weekSunday } from '@/domain/dates';
-import { feeling } from '@/domain/feelings';
+import { chainSource, weekSuggestions } from '@/domain/chain';
+import { formatLong, monthOfWeek, weekIndexInMonth, weekSunday } from '@/domain/dates';
 import { WeekItems } from '@/features/day/week-items';
 import { useWeek } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
-import { Button, Field } from '@/ui/controls';
+import { Button } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
 import { Divider, Screen, ScreenHeader } from '@/ui/layout';
 import { ModalHeader } from '@/ui/modal';
-import { Press } from '@/ui/press';
+import { SuggestPicker } from '@/ui/suggest-picker';
 import { T } from '@/ui/text';
 import { colors, space } from '@/ui/theme';
 
@@ -23,6 +23,9 @@ export default function CloseWeek() {
   const rec = useWeek(w);
   const days = useJournal((s) => s.days);
   const [highlight, setHighlight] = useState(rec.highlight);
+  const month = useJournal((s) => s.months[monthOfWeek(w)]);
+  const [fromDay, setFromDay] = useState<string | null>(month?.weekHighlightFrom[w] ?? null);
+  const items = useMemo(() => weekSuggestions(w, days), [w, days]);
 
   if (!valid) return null;
 
@@ -30,6 +33,11 @@ export default function CloseWeek() {
     useJournal.getState().updateWeek(w, (x) => {
       x.highlight = highlight.trim();
       x.closed = true;
+    });
+    // The day it came from, kept only while the text still equals that day's title.
+    useJournal.getState().updateMonth(monthOfWeek(w), (m) => {
+      if (fromDay && days[fromDay]?.title.trim() === highlight.trim()) m.weekHighlightFrom[w] = fromDay;
+      else delete m.weekHighlightFrom[w];
     });
     haptic.success();
     router.back();
@@ -53,49 +61,17 @@ export default function CloseWeek() {
           Tick anything you did this week.
         </T>
         <Divider inset={0} />
-        <Field
+        <SuggestPicker
           label="Highlight of the week"
+          items={items}
           value={highlight}
-          onChangeText={setHighlight}
+          onChange={(t, from) => {
+            setHighlight(t);
+            setFromDay(chainSource(from?.key)?.ref ?? null);
+          }}
           placeholder="Got the interview invite"
-          maxLength={100}
-          returnKeyType="done"
+          heading="Or use one of this week’s days"
         />
-        <Divider inset={0} />
-        <View style={styles.labelRow}>
-          <T variant="subhead" weight="600" tone="ink2" style={styles.flex} accessibilityRole="header">
-            {"This week's days"}
-          </T>
-          <T variant="footnote" tone="ink2">
-            to jog your memory
-          </T>
-        </View>
-        <View style={styles.bare}>
-          {weekDates(w).map((d, i) => {
-            const day = days[d];
-            const f = feeling(day?.feeling);
-            return (
-              <View key={d}>
-                {i > 0 ? <Divider /> : null}
-                <Press
-                  feedback="highlight"
-                  onPress={() => router.push(`/day/${d}`)}
-                  accessibilityLabel={`${weekdayShort(d)}: ${day?.title || 'no title'}`}
-                >
-                  <View style={styles.dayRow}>
-                    <View style={[styles.bar, f ? { backgroundColor: f.color } : styles.barEmpty]} />
-                    <T variant="subhead" tone="ink2" style={styles.dayName}>
-                      {weekdayShort(d)}
-                    </T>
-                    <T variant="body" tone={day?.title ? 'ink' : 'ink3'} numberOfLines={1} style={styles.flex}>
-                      {day?.title || 'No title'}
-                    </T>
-                  </View>
-                </Press>
-              </View>
-            );
-          })}
-        </View>
       </Screen>
     </View>
   );
@@ -103,14 +79,6 @@ export default function CloseWeek() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.bg },
-  flex: { flex: 1 },
   footer: { gap: space.xs },
   hint: { marginTop: -space.s },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
-  // Rows reach out to the gutter so their text lines up with the labels above.
-  bare: { marginHorizontal: -space.l },
-  dayRow: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingHorizontal: space.l, minHeight: 44 },
-  bar: { width: 4, height: 26, borderRadius: 2 },
-  barEmpty: { backgroundColor: colors.track },
-  dayName: { width: 34 },
 });

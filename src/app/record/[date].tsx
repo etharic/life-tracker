@@ -23,7 +23,14 @@ import Animated, {
 
 import { formatLong, isISODate } from '@/domain/dates';
 import { useToday } from '@/features/hooks';
-import { discardRecording, saveRecording, VOICE_NOTE } from '@/state/recordings';
+import {
+  beginSealedTake,
+  discardRecording,
+  endSealedTake,
+  saveRecording,
+  saveSealedNote,
+  VOICE_NOTE,
+} from '@/state/recordings';
 import { Button } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
@@ -33,6 +40,7 @@ import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { colors, GUTTER, radius, space } from '@/ui/theme';
 import { levelFromDb, Waveform } from '@/ui/waveform';
+import { NAMES } from '@/domain/names';
 
 type Phase = 'idle' | 'recording' | 'paused' | 'preview' | 'saving';
 
@@ -106,8 +114,10 @@ function RoundButton({
 export default function RecordSheet() {
   const params = useLocalSearchParams<{ date: string }>();
   const today = useToday();
-  // A day (2026-11-19), or a year (2026) when recording for that year's Misogi Ritual.
-  const year = /^[0-9]{4}$/.test(String(params.date)) ? String(params.date) : null;
+  // A day (2026-11-19), a year (2026) when recording for that year's defining moment, or
+  // sealed-2026 for the voice note sealed at 2026's review (its own path, never an attachment).
+  const sealed = /^sealed-[0-9]{4}$/.test(String(params.date)) ? String(params.date).slice(7) : null;
+  const year = sealed ?? (/^[0-9]{4}$/.test(String(params.date)) ? String(params.date) : null);
   const date = year ?? (isISODate(params.date) ? params.date : today);
   const insets = useSafeAreaInsets();
 
@@ -171,6 +181,7 @@ export default function RecordSheet() {
       setDenied(false);
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
       await recorder.prepareToRecordAsync();
+      if (sealed) beginSealedTake(sealed);
       recorder.record();
       haptic.commit();
       setLevels([]);
@@ -234,7 +245,8 @@ export default function RecordSheet() {
     setPhase('saving');
     player.pause();
     try {
-      await saveRecording(date, take);
+      if (sealed) await saveSealedNote(sealed, take);
+      else await saveRecording(date, take);
       haptic.success();
       router.back();
     } catch (e) {
@@ -258,6 +270,7 @@ export default function RecordSheet() {
         const take = recording ? await finishTake() : uri;
         if (i === 0) return save(take);
         discardRecording(take);
+        if (sealed) endSealedTake();
         router.back();
       },
     );
@@ -286,7 +299,17 @@ export default function RecordSheet() {
     <View style={styles.fill}>
       {/* No swipe-to-dismiss with a take in progress: closing asks first. */}
       <Stack.Screen options={{ gestureEnabled: phase === 'idle' }} />
-      <ModalHeader title="Record" subtitle={year ? `${year} Misogi Ritual` : formatLong(date)} onClose={close} />
+      <ModalHeader
+        title="Record"
+        subtitle={
+          sealed
+            ? `A note for 25 December ${Number(sealed) + 1}`
+            : year
+              ? `${year} ${NAMES.defining.toLowerCase()}`
+              : formatLong(date)
+        }
+        onClose={close}
+      />
       <View style={styles.body}>
         <View style={styles.center}>
           <T variant="largeTitle" style={styles.time} accessibilityLabel={`Time ${time}`} chrome>
@@ -349,10 +372,16 @@ export default function RecordSheet() {
       </View>
       <View style={[styles.footer, { paddingBottom: insets.bottom + space.m }]}>
         {phase === 'preview' || phase === 'saving' ? (
-          <Button title="Save to this day" onPress={() => void save(uri)} disabled={phase === 'saving'} />
+          <Button
+            title={sealed ? 'Seal this note' : year ? 'Save to this year' : 'Save to this day'}
+            onPress={() => void save(uri)}
+            disabled={phase === 'saving'}
+          />
         ) : (
           <T variant="footnote" tone="ink2" center>
-            The recording is saved with the day, next to its photos.
+            {sealed
+              ? `It opens on 25 December ${Number(sealed) + 1}. Until then it stays locked in the app.`
+              : 'The recording is saved with the day, next to its photos.'}
           </T>
         )}
       </View>

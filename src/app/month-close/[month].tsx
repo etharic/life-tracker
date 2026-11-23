@@ -4,12 +4,18 @@ import { StyleSheet, View } from 'react-native';
 
 import { newAchievements, runEndingAt, slotOf, tickedInMonth } from '@/domain/achievements';
 import { addDays, addMonths, daysInMonth, dayNumber, lastOfMonth, monthDates, monthName } from '@/domain/dates';
+import { chainSource, monthSuggestions } from '@/domain/chain';
 import { feeling } from '@/domain/feelings';
+import { outcomeQuestion } from '@/domain/misogi';
+import { NAMES } from '@/domain/names';
 import type { ExtremeIncident, MonthId } from '@/domain/types';
 import { AchievementBanner } from '@/features/achievements';
+import { askList } from '@/features/list-question';
 import { useDayLookup, useMonth, useMonthsMap, useToday } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
 import { Button, Segmented } from '@/ui/controls';
+import { StepHead } from '@/ui/steps';
+import { SuggestPicker } from '@/ui/suggest-picker';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
 import { Divider, Empty, Screen, Section } from '@/ui/layout';
@@ -17,37 +23,6 @@ import { ModalHeader } from '@/ui/modal';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { colors, space, TARGET } from '@/ui/theme';
-
-function StepHead({
-  overline,
-  title,
-  step,
-  prompt,
-}: {
-  overline: string;
-  title: string;
-  step: number;
-  prompt?: string;
-}) {
-  return (
-    <View style={styles.head}>
-      <T variant="pageTitle" accessibilityRole="header">
-        {title}
-      </T>
-      <View style={styles.dots} accessibilityLabel={`Step ${step} of 5`}>
-        {Array.from({ length: 5 }, (_, i) => (
-          <View key={i} style={[styles.dot, i < step && styles.dotOn]} />
-        ))}
-        <T variant="footnote" tone="ink2" style={styles.dotsText}>{`${overline}, step ${step} of 5`}</T>
-      </View>
-      {prompt ? (
-        <T variant="body" style={styles.prompt}>
-          {prompt}
-        </T>
-      ) : null}
-    </View>
-  );
-}
 
 function KeepCard({
   label,
@@ -103,6 +78,10 @@ export default function CloseMonth() {
   const [step, setStep] = useState(1);
   const [extremeDone, setExtremeDone] = useState<boolean | null>(rec.extremeDone);
   const [incident, setIncident] = useState<ExtremeIncident | null>(rec.extremeIncident);
+  const [highlight, setHighlight] = useState(rec.highlight);
+  const [fromWeek, setFromWeek] = useState<string | null>(rec.highlightFromWeek);
+  const weekItems = useMemo(() => monthSuggestions(month || '2000-01', rec), [month, rec]);
+  const challenges = useJournal((s) => s.challenges);
   const [keepPriority, setKeepPriority] = useState(true);
   const [keepSkill, setKeepSkill] = useState(true);
   const [keepLineup, setKeepLineup] = useState(true);
@@ -149,6 +128,10 @@ export default function CloseMonth() {
       m.extremeDone = extremeDone;
       if (extremeDone !== true) m.extremeDoneOn = null;
       m.extremeIncident = incident;
+      m.highlight = highlight.trim();
+      // The week it came from, kept only while the text still equals that week's highlight.
+      m.highlightFromWeek =
+        fromWeek && highlight.trim() && m.weeks[fromWeek]?.highlight.trim() === highlight.trim() ? fromWeek : null;
       m.close = { closedOn: today, keepPriority, keepSkill, keepLineup };
     });
     useJournal.getState().checkAchievements();
@@ -166,8 +149,9 @@ export default function CloseMonth() {
       <>
         <StepHead
           overline={overline}
-          title="Kevin’s Rule"
+          title={NAMES.kevin}
           step={1}
+          total={TOTAL}
           prompt="The most extreme thing you planned for the month."
         />
         <Section>
@@ -189,8 +173,25 @@ export default function CloseMonth() {
     footer = (
       <Button
         title="Next"
-        onPress={() => {
+        onPress={async () => {
+          const done = extremeDone ?? true;
           if (extremeDone === null) setExtremeDone(true);
+          // Kevin's Rule from a list: one tap updates the list item, asked once per judgement.
+          const link = rec.kevinLink;
+          if (link) {
+            const changed = rec.extremeDone !== done;
+            if (changed)
+              useJournal.getState().updateMonth(month, (m) => {
+                m.extremeDone = done;
+                if (m.kevinLink) m.kevinLink.outcomeConfirmed = null;
+              });
+            const item = challenges[link.kind].find((x) => x.id === link.id);
+            const q = outcomeQuestion(changed ? { ...link, outcomeConfirmed: null } : link, item, done);
+            if (q) {
+              const a = await askList(q);
+              if (a) useJournal.getState().answerList({ month }, 'outcome', a);
+            }
+          }
           setStep(2);
         }}
       />
@@ -200,8 +201,33 @@ export default function CloseMonth() {
       <>
         <StepHead
           overline={overline}
-          title="Extreme incident"
+          title="Highlight of the month"
           step={2}
+          total={TOTAL}
+          prompt="The best of the month, in a line. The most extreme day comes next: a different question."
+        />
+        <SuggestPicker
+          label="Highlight"
+          items={weekItems}
+          value={highlight}
+          onChange={(t, from) => {
+            setHighlight(t);
+            setFromWeek(chainSource(from?.key)?.ref ?? null);
+          }}
+          placeholder="Moved into the new flat"
+          heading="Or use one of the week highlights"
+        />
+      </>
+    );
+    footer = <Button title="Next" onPress={() => setStep(3)} />;
+  } else if (step === 3) {
+    body = (
+      <>
+        <StepHead
+          overline={overline}
+          title="Extreme incident"
+          step={3}
+          total={TOTAL}
           prompt="Which day will you remember for a long time?"
         />
         {titled.length ? (
@@ -262,11 +288,11 @@ export default function CloseMonth() {
         ) : null}
       </>
     );
-    footer = <Button title="Save and continue" onPress={() => setStep(3)} />;
-  } else if (step === 3) {
+    footer = <Button title="Save and continue" onPress={() => setStep(4)} />;
+  } else if (step === 4) {
     body = (
       <>
-        <StepHead overline={overline} title="Achievements" step={3} />
+        <StepHead overline={overline} title="Achievements" step={4} total={TOTAL} />
         {earned.length ? (
           earned.map((a) => <AchievementBanner key={`${a.kind}-${a.bankId}`} a={a} fresh />)
         ) : (
@@ -282,11 +308,11 @@ export default function CloseMonth() {
         )}
       </>
     );
-    footer = <Button title="Next" onPress={() => setStep(4)} />;
-  } else if (step === 4) {
+    footer = <Button title="Next" onPress={() => setStep(5)} />;
+  } else if (step === 5) {
     body = (
       <>
-        <StepHead overline={overline} title={`Before ${monthName(next)}`} step={4} />
+        <StepHead overline={overline} title={`Before ${monthName(next)}`} step={5} total={TOTAL} />
         <KeepCard
           label={`Priority goal, to ${setup.priorityKind === 'build' ? 'build' : 'break'}`}
           title={setup.goals[setup.priority].text}
@@ -306,14 +332,15 @@ export default function CloseMonth() {
         <T variant="footnote" tone="ink2" center>{`Keeping carries both into ${monthName(next)}’s setup.`}</T>
       </>
     );
-    footer = <Button title="Next" onPress={() => setStep(5)} />;
+    footer = <Button title="Next" onPress={() => setStep(6)} />;
   } else {
     body = (
       <>
         <StepHead
           overline={overline}
           title="Goals and hobbies"
-          step={5}
+          step={6}
+          total={TOTAL}
           prompt={`Start ${monthName(next)} with the same goals, hobbies and commitments, or choose again?`}
         />
         <Section>
@@ -364,16 +391,12 @@ export default function CloseMonth() {
   );
 }
 
+const TOTAL = 6;
+
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   gapS: { gap: space.s },
-  head: { gap: space.xs, marginBottom: space.xs },
-  prompt: { marginTop: space.s },
-  dots: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: space.xs },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.track },
-  dotOn: { backgroundColor: colors.accent },
-  dotsText: { marginLeft: space.s },
   selected: { backgroundColor: colors.accentSoft },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingRight: space.l, minHeight: TARGET + 10 },
   bar: { width: 4, alignSelf: 'stretch', marginVertical: space.s, borderTopRightRadius: 2, borderBottomRightRadius: 2 },

@@ -2,6 +2,7 @@ import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
 
 import { newAchievements } from '../domain/achievements';
+import type { ListAnswer } from '../domain/misogi';
 import { logicalDate, monthOf, monthOfWeek, weekDates } from '../domain/dates';
 import {
   emptyDay,
@@ -101,6 +102,22 @@ export interface JournalState extends JournalData {
   addBankEntry(kind: BankKind, category: Category, text: string): BankEntry;
   skipPrompt(home: { month?: MonthId; year?: string }, id: string, note: string): void;
   checkAchievements(): Achievement[];
+
+  /**
+   * The one owner of a misogi's judgement: year close, Plan's "Done it?" and Today's ••• menu
+   * all call this. `forYear` is the misogi's own year (it is stored in the year before).
+   * A changed judgement clears the list answer, so its one-tap question is asked again.
+   */
+  recordMisogi(forYear: string, done: boolean | null, on?: ISODate): void;
+  /**
+   * Applies the answer to a one-tap list question for the link of a misogi (`{ misogiYear }`)
+   * or a month's Kevin's Rule (`{ month }`), and records that it was answered.
+   */
+  answerList(
+    owner: { misogiYear: string } | { month: MonthId },
+    which: 'activate' | 'outcome',
+    answer: ListAnswer,
+  ): void;
 }
 
 function dayLookup(days: Record<ISODate, DayEntry>) {
@@ -304,6 +321,37 @@ export const useJournal = create<JournalState>()((set, get) => ({
   skipPrompt(home, id, note) {
     if (home.year) get().updateYear(home.year, (y) => void (y.skipped = note));
     else if (home.month) get().updateMonth(home.month, (m) => void (m.skipped[id] = note));
+  },
+
+  recordMisogi(forYear, done, on) {
+    const home = String(Number(forYear) - 1);
+    const m = get().years[home]?.nextMisogi;
+    if (!m) return;
+    if (m.done === done && (done !== true || !on || m.doneOn === on)) return;
+    get().updateYear(home, (y) => {
+      const n = y.nextMisogi!;
+      if (n.done !== done && n.link) n.link.outcomeConfirmed = null;
+      n.done = done;
+      n.doneOn = done === true ? (on ?? get().today) : null;
+    });
+  },
+
+  answerList(owner, which, answer) {
+    const s = get();
+    const link =
+      'misogiYear' in owner
+        ? s.years[String(Number(owner.misogiYear) - 1)]?.nextMisogi?.link
+        : s.months[owner.month]?.kevinLink;
+    if (!link) return;
+    const item = s.challenges[link.kind].find((x) => x.id === link.id);
+    if (item && answer.patch) s.saveChallenge(link.kind, { ...item, ...answer.patch });
+    const mark = (l: { confirmed: boolean | null; outcomeConfirmed: boolean | null }) => {
+      if (which === 'activate') l.confirmed = !answer.dismiss;
+      else l.outcomeConfirmed = !answer.dismiss;
+    };
+    if ('misogiYear' in owner)
+      s.updateYear(String(Number(owner.misogiYear) - 1), (y) => void (y.nextMisogi?.link && mark(y.nextMisogi.link)));
+    else s.updateMonth(owner.month, (m) => void (m.kevinLink && mark(m.kevinLink)));
   },
 
   checkAchievements() {

@@ -14,7 +14,7 @@ import { colors, radius, space } from '@/ui/theme';
 import { MediaStrip } from './media';
 
 /**
- * The photos and voice notes of a day (or of a year's Misogi Ritual), with Record and
+ * The photos and voice notes of a day (or of a year's defining moment), with Record and
  * "Photo or file" at the end of the row. Long press an item to remove it.
  */
 export function MediaEditor({ owner, media }: { owner: MediaOwner; media: MediaRef[] }) {

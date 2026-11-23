@@ -105,7 +105,7 @@ function describe(kind: PromptKind, ref: string): { title: string; detail: strin
     case 'month-close':
       return { title: `Close ${monthName(ref)}`, detail: 'Kevin’s Rule, extreme incident, next month' };
     case 'year-close':
-      return { title: `Review ${ref}`, detail: 'Record or confirm the year’s Misogi Ritual' };
+      return { title: `Review ${ref}`, detail: 'Defining moment, next year’s misogi, a sealed note' };
     case 'backup':
       return { title: 'Yearly backup', detail: 'Save a ZIP and the yearly book to a drive' };
   }
@@ -147,6 +147,11 @@ export function duePrompts(input: PromptInput): Prompt[] {
     if (!rec.setup) continue;
     yearsWithSetup.add(month.slice(0, 4));
     if (lastOfMonth(month) <= today) add('month-close', month, lastOfMonth(month));
+  }
+  // A year with a misogi or a sealed note from the year before has its review even if no month was set up.
+  for (const [y, rec] of input.years) {
+    const following = String(Number(y) + 1);
+    if (rec.nextMisogi || rec.sealedNote) yearsWithSetup.add(following);
   }
   for (const y of yearsWithSetup) {
     if (`${y}-12-25` <= today) add('year-close', y, `${y}-12-25`);

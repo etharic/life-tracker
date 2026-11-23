@@ -22,7 +22,7 @@ export function promptHref(p: Prompt): Href {
     case 'month-close':
       return `/month-close/${p.ref}`;
     case 'year-close':
-      return `/year-close/${p.ref}`;
+      return `/year-review/${p.ref}`;
     case 'backup':
       return '/backup';
   }
