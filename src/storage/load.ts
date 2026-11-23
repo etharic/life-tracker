@@ -19,6 +19,7 @@ import { parseDay } from '../format/day';
 import { parseMonth } from '../format/month';
 import { classify } from '../format/paths';
 import { parseAchievements, parseBank, parseChallenges, parseSettings, parseYear } from '../format/records';
+import { dayWithDefaults, monthWithDefaults, settingsWithDefaults, yearWithDefaults } from './cache-shape';
 import type { Store } from './store';
 
 export interface JournalData {
@@ -74,7 +75,9 @@ function parseFile(path: string, text: string): Parsed | null {
   }
 }
 
-const CACHE_VERSION = 1;
+// Raise when a parsed record changes shape (1.17 added the method fields). Older entries are then
+// read again from their files; any that slip through still get their new fields from the defaults.
+const CACHE_VERSION = 2;
 interface CacheEntry {
   m: number;
   s: number;
@@ -155,13 +158,13 @@ export async function loadJournal(store: Store): Promise<LoadReport> {
     next[f.path] = { m: f.modified, s: f.size, p: parsed };
     switch (parsed.t) {
       case 'day':
-        data.days[parsed.v.date] = parsed.v;
+        data.days[parsed.v.date] = dayWithDefaults(parsed.v);
         break;
       case 'month':
-        data.months[parsed.v.month] = parsed.v;
+        data.months[parsed.v.month] = monthWithDefaults(parsed.v);
         break;
       case 'year':
-        data.years[parsed.v.year] = parsed.v;
+        data.years[parsed.v.year] = yearWithDefaults(parsed.v);
         break;
       case 'bank':
         data.bank = parsed.v;
@@ -170,7 +173,7 @@ export async function loadJournal(store: Store): Promise<LoadReport> {
         data.achievements = parsed.v;
         break;
       case 'settings':
-        data.settings = parsed.v;
+        data.settings = settingsWithDefaults(parsed.v);
         break;
       case 'challenges':
         data.challenges[parsed.kind] = parsed.v;

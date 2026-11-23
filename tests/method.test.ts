@@ -33,6 +33,7 @@ import {
 import { parseMonth, serializeMonth } from '../src/format/month';
 import { parseYear, serializeYear } from '../src/format/records';
 import { definingFrom } from '../src/features/year/defining';
+import { monthWithDefaults, yearWithDefaults } from '../src/storage/cache-shape';
 import * as anchorMonth from './fixtures/anchor-1.15.1/src/format/month';
 import * as anchorRecords from './fixtures/anchor-1.15.1/src/format/records';
 
@@ -448,5 +449,31 @@ describe('one set of names', () => {
     };
     walk(path.join(__dirname, '..', 'src'));
     expect(hits).toEqual([]);
+  });
+});
+
+// ---------- records cached by an older version ----------
+
+describe('records cached by 1.16 (before the method fields)', () => {
+  it('a cached month without the new fields can still be saved (Start the week crashed on this)', () => {
+    const old = { ...emptyMonth('2026-11') } as Partial<MonthRecord>;
+    delete old.weekHighlightFrom;
+    delete old.highlight;
+    delete old.highlightFromWeek;
+    delete old.kevinLink;
+    const m = monthWithDefaults(old as MonthRecord);
+    m.weeks['2026-W48'] = { ...emptyWeek(), started: true };
+    expect(() => serializeMonth(m)).not.toThrow();
+    expect(m.weekHighlightFrom).toEqual({});
+    expect(m.highlight).toBe('');
+  });
+
+  it('a cached year without the new fields reads as having none', () => {
+    const old = { ...emptyYear('2026') } as Partial<YearRecord>;
+    delete old.nextMisogi;
+    delete old.sealedNote;
+    const y = yearWithDefaults(old as YearRecord);
+    expect(y.nextMisogi).toBeNull();
+    expect(() => serializeYear(y)).not.toThrow();
   });
 });
