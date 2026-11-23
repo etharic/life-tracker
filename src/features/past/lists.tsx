@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { formatShort, monthName, weekDates, weekIndexInMonth, weekMonday } from '@/domain/dates';
 import { feeling } from '@/domain/feelings';
-import type { MonthRecord, WeekRecord } from '@/domain/types';
+import { CHECK_KEYS, type MonthRecord, type WeekRecord } from '@/domain/types';
 import { useToday } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
 import { Icon } from '@/ui/icon';
@@ -137,41 +137,59 @@ export function HighlightsList() {
   );
 }
 
+/**
+ * Each week's commitments, as on Today: its own (priorities starred, first) and the month's weekly
+ * checks, each with whether it got done.
+ */
 export function PrioritiesList() {
   const months = useJournal((s) => s.months);
   const days = useJournal((s) => s.days);
-  const starred = (w: WeekRecord) => w.priorities.filter((p) => !p.plain);
-  const items = sortedMonths(months).filter((m) => Object.values(m.weeks).some((w) => starred(w).length));
+  const lines = (m: MonthRecord, id: string) => {
+    const w: WeekRecord = m.weeks[id];
+    const done = new Set(weekDates(id).flatMap((d) => days[d]?.prioritiesDone ?? []));
+    const own = [...w.priorities]
+      .sort((a, b) => Number(!!a.plain) - Number(!!b.plain))
+      .map((p) => ({ text: p.text, star: !p.plain, done: done.has(p.text) }));
+    const checks = m.setup
+      ? CHECK_KEYS.map((k) => ({ text: m.setup!.weeklyChecks[k], star: false, done: w.checks[k] })).filter(
+          (c) => c.text,
+        )
+      : [];
+    return [...own, ...checks];
+  };
+  const items = sortedMonths(months).filter((m) =>
+    Object.keys(m.weeks).some((w) => m.weeks[w].started || m.weeks[w].priorities.length),
+  );
   return (
     <ListScreen
-      explainer="What each week set out to do, and what got done."
-      empty={items.length ? null : 'No weekly priorities yet'}
+      explainer="What each week set out to do, and what got done. Priorities carry a star."
+      empty={items.length ? null : 'No weekly commitments yet'}
     >
       {items.map((m) => (
         <Group key={m.month} label={`${monthName(m.month)} ${m.month.slice(0, 4)}`}>
           {Object.keys(m.weeks)
             .sort()
             .reverse()
-            .filter((w) => starred(m.weeks[w]).length)
+            .filter((w) => m.weeks[w].started || m.weeks[w].priorities.length)
             .map((w) => {
-              const done = new Set(weekDates(w).flatMap((d) => days[d]?.prioritiesDone ?? []));
-              const ps = starred(m.weeks[w]);
+              const ps = lines(m, w);
               return (
                 <View key={w} style={styles.week}>
                   <T
                     variant="footnote"
                     tone="ink2"
-                  >{`Week ${weekIndexInMonth(w)}: ${ps.filter((p) => done.has(p.text)).length} of ${ps.length} done`}</T>
+                  >{`Week ${weekIndexInMonth(w)}: ${ps.filter((p) => p.done).length} of ${ps.length} done`}</T>
                   {ps.map((p) => (
                     <View key={p.text} style={styles.pRow}>
                       <Icon
-                        name={done.has(p.text) ? 'checkmark.circle.fill' : 'circle'}
+                        name={p.done ? 'checkmark.circle.fill' : 'circle'}
                         size={16}
-                        color={done.has(p.text) ? colors.accent : colors.ink3}
+                        color={p.done ? colors.accent : colors.ink3}
                       />
-                      <T variant="body" tone={done.has(p.text) ? 'ink' : 'ink2'} style={styles.flex}>
+                      <T variant="body" tone={p.done ? 'ink' : 'ink2'} style={styles.flex}>
                         {p.text}
                       </T>
+                      {p.star ? <Icon name="star.fill" size={12} color={colors.accent} /> : null}
                     </View>
                   ))}
                 </View>

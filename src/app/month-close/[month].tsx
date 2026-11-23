@@ -31,9 +31,6 @@ function StepHead({
 }) {
   return (
     <View style={styles.head}>
-      <T variant="subhead" tone="ink2">
-        {overline}
-      </T>
       <T variant="pageTitle" accessibilityRole="header">
         {title}
       </T>
@@ -41,7 +38,7 @@ function StepHead({
         {Array.from({ length: 5 }, (_, i) => (
           <View key={i} style={[styles.dot, i < step && styles.dotOn]} />
         ))}
-        <T variant="footnote" tone="ink2" style={styles.dotsText}>{`Step ${step} of 5`}</T>
+        <T variant="footnote" tone="ink2" style={styles.dotsText}>{`${overline}, step ${step} of 5`}</T>
       </View>
       {prompt ? (
         <T variant="body" style={styles.prompt}>

@@ -47,7 +47,7 @@ a feeling from 0 to 10, and write anything else. A ticked hobby counts as one
 hour; more time is kept under hobby_hours.
 
 Weeks run Monday to Sunday and belong to the month their Sunday falls in.
-Each week has priorities and, at its end, a highlight.
+Each week has commitments (its priorities, marked as such, and the month's three weekly checks) and, at its end, a highlight.
 
 At the end of a month the most memorable day is chosen as the extreme
 incident (positive or negative). At the end of a year one moment is chosen as

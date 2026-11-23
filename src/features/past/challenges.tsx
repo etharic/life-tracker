@@ -30,6 +30,8 @@ export const CHALLENGE_COPY: Record<
     question: string;
     placeholder: string;
     explainer: string;
+    /** Once the list is in use, the explainer shrinks to this one line. */
+    hint: string;
     empty: string;
     emptyBody: string;
   }
@@ -45,6 +47,7 @@ export const CHALLENGE_COPY: Record<
     placeholder: 'Applied to the summer internship at…',
     explainer:
       'Go for the things you expect to be turned down for. Tap the box when you go for one, then swipe: right for a yes, left for a no.',
+    hint: 'Tap the box to start one. Swipe right for a yes, left for a no.',
     empty: 'Nothing logged yet',
     emptyBody: 'An application, an email, an ask: anything you expect a no for.',
   },
@@ -59,6 +62,7 @@ export const CHALLENGE_COPY: Record<
     placeholder: 'See the northern lights',
     explainer:
       'Everything you want to do in your life. Tap the box when you start one, then swipe: right when it is done, left if it failed.',
+    hint: 'Tap the box to start one. Swipe right when done, left if it failed.',
     empty: 'Nothing on the list yet',
     emptyBody: 'Places to see, things to learn, things to try once.',
   },
@@ -179,11 +183,14 @@ export function ChallengeRow({
   kind,
   caption,
   onPaper,
+  onConcluded,
 }: {
   item: ChallengeItem;
   kind: ChallengeKind;
   caption?: string;
   onPaper?: boolean;
+  /** Called after a swipe ends it, with the item as it was, so the caller can offer Undo. */
+  onConcluded?: (before: ChallengeItem, outcome: ChallengeOutcome) => void;
 }) {
   const copy = CHALLENGE_COPY[kind];
   const swiped = useRef(0);
@@ -199,6 +206,7 @@ export function ChallengeRow({
     if (outcome === 'succeeded') haptic.success();
     else haptic.commit();
     save({ outcome, started: true });
+    onConcluded?.(item, outcome);
   };
 
   const toggleStarted = () => {
@@ -298,7 +306,7 @@ export function ChallengeRow({
                     {item.notes.split('\n')[0]}
                   </T>
                 )}
-                {sub && item.notes ? <Icon name="text.alignleft" size={11} color={colors.ink3} /> : null}
+                {item.date && item.notes ? <Icon name="text.alignleft" size={11} color={colors.ink3} /> : null}
               </View>
             ) : null}
           </Press>
@@ -339,7 +347,8 @@ export function ChallengeList({ kind }: { kind: ChallengeKind }) {
   }, [items]);
   return (
     <Screen>
-      <Explainer>{copy.explainer}</Explainer>
+      {/* The full explanation while the list is new; one line once it is in use. */}
+      <Explainer>{items.length < 3 ? copy.explainer : copy.hint}</Explainer>
       <Totals kind={kind} list={items} />
       <Button title={copy.add} icon="plus" onPress={() => router.push(`/challenge/${kind}/new`)} />
       {items.length ? (

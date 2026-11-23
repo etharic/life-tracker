@@ -9,7 +9,8 @@ import { useJournal } from '@/state/journal';
 import { Button, Field } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
 import { FeelingRow } from '@/ui/feelings';
-import { Screen, Section } from '@/ui/layout';
+import { Divider, Screen } from '@/ui/layout';
+import { T } from '@/ui/text';
 import { ModalHeader } from '@/ui/modal';
 import { colors, space } from '@/ui/theme';
 
@@ -55,37 +56,39 @@ export default function CloseDaySheet() {
         onClose={() => router.back()}
       />
       <Screen footer={<Button title="Save" onPress={save} />}>
-        <Section title={date === today ? 'How did today feel?' : 'How did the day feel?'}>
+        {/* The one place the day's feeling is chosen; Today shows the answer. All on the page, no boxes. */}
+        <View style={styles.gap}>
+          <T variant="subhead" weight="600" tone="ink2" accessibilityRole="header">
+            {date === today ? 'How did today feel?' : 'How did the day feel?'}
+          </T>
           <FeelingRow
             value={day.feeling}
             onChange={(v) => useJournal.getState().updateDay(date, (d) => void (d.feeling = v))}
           />
-        </Section>
-        <Section>
+        </View>
+        <Divider inset={0} />
+        <Field
+          label="One line for the day"
+          value={title}
+          onChangeText={setTitle}
+          limit={TITLE_LIMIT}
+          placeholder="Finished the valuation chapter"
+          returnKeyType="next"
+          autoCapitalize="sentences"
+        />
+        <Divider inset={0} />
+        <View style={styles.gap}>
           <Field
-            label="One line for the day"
-            value={title}
-            onChangeText={setTitle}
-            limit={TITLE_LIMIT}
-            placeholder="Finished the valuation chapter"
-            returnKeyType="next"
+            label="Anything else about the day"
+            value={writing}
+            onChangeText={setWriting}
+            multiline
+            minHeight={160}
+            placeholder="Write as much or as little as you like."
             autoCapitalize="sentences"
           />
-        </Section>
-        <Section>
-          <View style={styles.gap}>
-            <Field
-              label="Anything else about the day"
-              value={writing}
-              onChangeText={setWriting}
-              multiline
-              minHeight={160}
-              placeholder="Write as much or as little as you like."
-              autoCapitalize="sentences"
-            />
-            <MediaEditor owner={date} media={day.media} />
-          </View>
-        </Section>
+          <MediaEditor owner={date} media={day.media} />
+        </View>
       </Screen>
     </View>
   );

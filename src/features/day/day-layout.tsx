@@ -21,7 +21,6 @@ import { orderedGoals, orderedHobbies, useDay, useMonth, useStreaks, useWeek } f
 import { useJournal } from '@/state/journal';
 import { CHALLENGE_COPY, CHALLENGE_ROUTE, ChallengeRow } from '@/features/past/challenges';
 import { CheckRow, TextAction } from '@/ui/controls';
-import { FeelingDots } from '@/ui/feelings';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
 import { Divider } from '@/ui/layout';
@@ -134,6 +133,13 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
   const hobbiesDone = setup ? orderedHobbies(setup).filter((c) => day.hobbies[c]).length : 0;
   const [open, setOpen] = useState<ListKey | null>(null);
   const active = useActiveChallenges();
+  // A swipe on Today ends a challenge and takes it off this list: for a few seconds it can be taken back.
+  const [ended, setEnded] = useState<{ kind: ChallengeKind; before: ChallengeItem; outcome: string } | null>(null);
+  useEffect(() => {
+    if (!ended) return;
+    const t = setTimeout(() => setEnded(null), 6000);
+    return () => clearTimeout(t);
+  }, [ended]);
   // Simulator check only: `-LTOpen goals,hobbies,challenges` opens the lists one after another,
   // the way switching between them by hand does. Unused on a phone.
   useEffect(() => {
@@ -207,11 +213,39 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
           <Animated.View key={open} entering={enterSoft}>
             {open === 'challenges' ? (
               <View>
+                {ended ? (
+                  <Animated.View entering={enterSoft} exiting={exitSoft} style={styles.undoRow}>
+                    <T variant="subhead" tone="ink2" numberOfLines={1} style={styles.flex}>
+                      {`${ended.outcome}: ${ended.before.title}`}
+                    </T>
+                    <TextAction
+                      title="Undo"
+                      onPress={() => {
+                        haptic.select();
+                        useJournal.getState().saveChallenge(ended.kind, ended.before);
+                        setEnded(null);
+                      }}
+                    />
+                  </Animated.View>
+                ) : null}
                 {active.length ? (
                   active.map(({ kind, item }, i) => (
                     <Animated.View key={`${kind}/${item.id}`} exiting={exitSoft} layout={layoutMove}>
                       {i > 0 ? <Divider inset={space.l + 26 + space.m} /> : null}
-                      <ChallengeRow item={item} kind={kind} caption={CHALLENGE_COPY[kind].title} onPaper />
+                      <ChallengeRow
+                        item={item}
+                        kind={kind}
+                        caption={CHALLENGE_COPY[kind].title}
+                        onPaper
+                        onConcluded={(before, outcome) =>
+                          setEnded({
+                            kind,
+                            before,
+                            outcome:
+                              outcome === 'failed' ? CHALLENGE_COPY[kind].failed : CHALLENGE_COPY[kind].succeeded,
+                          })
+                        }
+                      />
                     </Animated.View>
                   ))
                 ) : (
@@ -337,14 +371,8 @@ export function JournalGroup({
 }) {
   const day = useDay(date);
   const f = feeling(day.feeling);
-  const [picking, setPicking] = useState(false);
-  const showDots = !locked && (!f || picking);
   const hasEntry = !!(day.title || day.writing || day.media.length);
   const write = () => router.push(`/close-day/${date}`);
-  const setFeeling = (v: number | null) => {
-    useJournal.getState().updateDay(date, (d) => void (d.feeling = v));
-    if (v != null) setPicking(false);
-  };
 
   return (
     <View style={styles.group}>
@@ -352,7 +380,8 @@ export function JournalGroup({
       <Animated.View layout={layoutMove} style={styles.bare}>
         <View>
           {/* How the day felt: one colour, one name. The scale opens only to choose or change it. */}
-          {f && !picking && locked ? (
+          {/* How the day felt is chosen in Close the day, once; here it is only shown. */}
+          {f && locked ? (
             <View style={styles.feelingRow} accessible accessibilityLabel={`Felt ${f.score}, ${f.name}`}>
               <View style={[styles.swatch, { backgroundColor: f.color }]} />
               <View style={styles.flex}>
@@ -368,11 +397,12 @@ export function JournalGroup({
               </T>
             </View>
           ) : null}
-          {f && !picking && !locked ? (
+          {f && !locked ? (
             <Press
               feedback="highlight"
-              onPress={() => setPicking(true)}
-              accessibilityLabel={`Felt ${f.score}, ${f.name}. Change`}
+              onPress={write}
+              accessibilityLabel={`Felt ${f.score}, ${f.name}`}
+              accessibilityHint="Opens the day to change it"
             >
               <View style={styles.feelingRow}>
                 <View style={[styles.swatch, { backgroundColor: f.color }]} />
@@ -380,29 +410,11 @@ export function JournalGroup({
                   <T variant="headline">{f.name}</T>
                   <T variant="footnote" tone="ink2">{`${f.score} of 10`}</T>
                 </View>
-                <T variant="subhead" weight="600" tone="accent">
-                  Change
-                </T>
+                <Icon name="chevron.right" size={13} color={colors.ink3} weight="semibold" />
               </View>
             </Press>
           ) : null}
-          {showDots ? (
-            <Animated.View entering={enterSoft} style={styles.feelingPick}>
-              <T variant="subhead" tone="ink2">
-                {isToday ? 'How does today feel?' : 'How did the day feel?'}
-              </T>
-              <FeelingDots value={day.feeling} onChange={setFeeling} />
-              <View style={styles.ends}>
-                <T variant="caption" tone="ink3">
-                  Worst day ever
-                </T>
-                <T variant="caption" tone="ink3">
-                  Best day ever
-                </T>
-              </View>
-            </Animated.View>
-          ) : null}
-          <Divider />
+          {f || locked ? <Divider /> : null}
           {/* The entry: its line in the serif face, a glimpse of the writing, the photos. */}
           <LayoutAnimationConfig skipEntering>
             {locked ? (
@@ -514,6 +526,7 @@ function useActiveChallenges(): { kind: ChallengeKind; item: ChallengeItem }[] {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   challengeEmpty: { padding: space.l, gap: space.s },
+  undoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingHorizontal: space.l, minHeight: TARGET },
   challengeLinks: { flexDirection: 'row', gap: space.l },
   tabular: { fontVariant: ['tabular-nums'] },
   group: { gap: space.m },
@@ -543,8 +556,6 @@ const styles = StyleSheet.create({
   },
   feelingRow: { flexDirection: 'row', alignItems: 'center', gap: space.m, padding: space.l, minHeight: TARGET + 16 },
   swatch: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.edge },
-  feelingPick: { gap: space.m, padding: space.l },
-  ends: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -space.xs },
   entry: { gap: space.s, padding: space.l },
   writeRow: { flexDirection: 'row', alignItems: 'center', gap: space.m, padding: space.l, minHeight: TARGET + 16 },
   writeIcon: {

@@ -69,17 +69,18 @@ export function ScreenHeader({
 }) {
   return (
     <View style={styles.header}>
-      {overline ? (
-        <T variant="subhead" tone="ink2">
-          {overline}
-        </T>
-      ) : null}
       <View style={styles.headerRow}>
         <T variant="pageTitle" accessibilityRole="header" style={styles.headerTitle} numberOfLines={2}>
           {title}
         </T>
         {trailing}
       </View>
+      {/* What the title belongs to (a date, a list) reads underneath it, not as a label above. */}
+      {overline ? (
+        <T variant="subhead" tone="ink2">
+          {overline}
+        </T>
+      ) : null}
       {children}
     </View>
   );

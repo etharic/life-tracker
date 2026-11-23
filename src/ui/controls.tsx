@@ -163,30 +163,32 @@ export function Chip({
   accessibilityHint?: string;
 }) {
   const pop = usePop(selected, 0.1);
+  // Done goes quiet, like a line crossed off in a notebook: a soft tint, a tick, softer text.
+  // What is still to do stays the clearest thing in the run.
   const content = (
     <>
       {selected ? (
-        <Icon name="checkmark" size={14} color={colors.onAccent} weight="bold" />
+        <Icon name="checkmark" size={14} color={colors.accent} weight="bold" />
       ) : starred ? (
         <Icon name="star.fill" size={13} color={colors.accent} />
       ) : null}
       <T
         variant="callout"
         weight="500"
-        tone={selected ? 'onAccent' : 'ink'}
+        tone={selected ? 'ink2' : 'ink'}
         numberOfLines={wrap ? undefined : 1}
         chrome
         style={styles.chipText}
       >
         {label}
       </T>
-      {selected && starred ? <Icon name="star.fill" size={12} color={colors.onAccent} /> : null}
+      {selected && starred ? <Icon name="star.fill" size={12} color={colors.accent} /> : null}
     </>
   );
   const p = usePalette();
   const style = [styles.chip, wrap && styles.chipWrap, selected ? styles.chipOn : styles.chipOff];
   const fill = selected
-    ? { backgroundColor: p.accent, borderColor: p.accent }
+    ? { backgroundColor: p.accentSoft, borderColor: p.accentSoft }
     : { backgroundColor: p.surface, borderColor: p.hairline };
   if (readOnly || !onPress) {
     return (
@@ -392,7 +394,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1.5,
   },
-  chipOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accentSoft },
   chipOff: { backgroundColor: colors.surface, borderColor: colors.hairline },
   chipText: { flexShrink: 1 },
   chipWrap: { paddingVertical: space.s },

@@ -146,6 +146,10 @@ export function WeekItems({
                   color={starDraft ? colors.accent : colors.ink3}
                 />
               </Press>
+              {/* Said in words too: a bare star does not explain itself. */}
+              <T variant="footnote" weight="600" tone={starDraft ? 'accent' : 'ink3'} chrome>
+                Priority
+              </T>
               <TextInput
                 autoFocus
                 value={draft}

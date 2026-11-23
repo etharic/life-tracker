@@ -99,7 +99,7 @@ function describe(kind: PromptKind, ref: string): { title: string; detail: strin
         detail: `${monthName(monthOfWeek(ref))}, commitments and highlight`,
       };
     case 'week-start':
-      return { title: `Start ${weekLabel(ref).toLowerCase()}`, detail: 'Outlook and this week’s priorities' };
+      return { title: `Start ${weekLabel(ref).toLowerCase()}`, detail: 'Outlook and this week’s commitments' };
     case 'setup':
       return { title: `Set up ${monthName(ref)}`, detail: 'Goals, hobbies, commitments and Kevin’s Rule' };
     case 'month-close':

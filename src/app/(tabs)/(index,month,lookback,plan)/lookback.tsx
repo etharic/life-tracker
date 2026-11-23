@@ -108,10 +108,10 @@ function useArchive(): { title: string; items: Item[] }[] {
             value: n(weekList.filter((w) => w.highlight).length),
           },
           {
-            title: 'Priorities',
+            title: 'Commitments',
             href: '/past/priorities',
             icon: 'checklist',
-            value: n(weekList.reduce((k, w) => k + w.priorities.filter((p) => !p.plain).length, 0)),
+            value: n(weekList.filter((w) => w.started || w.priorities.length).length),
           },
         ],
       },

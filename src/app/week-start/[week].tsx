@@ -9,13 +9,34 @@ import { useJournal } from '@/state/journal';
 import { Button, Field, TextAction } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
-import { Screen, ScreenHeader, Section } from '@/ui/layout';
+import { Divider, Screen, ScreenHeader } from '@/ui/layout';
 import { ModalHeader } from '@/ui/modal';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { colors, radius, space, TARGET, type } from '@/ui/theme';
 
-/** Monday: the outlook, last week's unfinished priorities (keep or drop), then this week's. */
+/** A star that makes a commitment a priority, the same as on Today. */
+function StarToggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
+  return (
+    <Press
+      onPress={() => {
+        haptic.select();
+        onToggle();
+      }}
+      hitSlop={10}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: on }}
+      accessibilityLabel={`${label}, priority`}
+    >
+      <Icon name={on ? 'star.fill' : 'star'} size={17} color={on ? colors.accent : colors.ink3} />
+    </Press>
+  );
+}
+
+/**
+ * Monday: the outlook, last week's unfinished commitments (keep or drop), then this week's.
+ * Everything sits on the page, one thin line between parts, as on Today.
+ */
 export default function StartWeek() {
   const { week } = useLocalSearchParams<{ week: string }>();
   const valid = typeof week === 'string' && /^\d{4}-W\d{2}$/.test(week);
@@ -35,25 +56,28 @@ export default function StartWeek() {
   const [decisions, setDecisions] = useState<Record<string, 'keep' | 'drop'>>({});
   const [list, setList] = useState<Priority[]>(rec.priorities);
   const [draft, setDraft] = useState('');
+  const [draftStar, setDraftStar] = useState(false);
   const [editingOutlook, setEditingOutlook] = useState(false);
   const [outlook, setOutlook] = useState(month.setup?.outlook ?? '');
 
   if (!valid) return null;
 
   const undecided = leftover.some((p) => !decisions[p.text]);
+  const kept = leftover.filter((p) => decisions[p.text] === 'keep');
+  const make = (text: string, star: boolean): Priority => ({ text, done: false, ...(star ? {} : { plain: true }) });
 
   const addDraft = () => {
     const text = draft.trim();
-    if (text && !list.some((p) => p.text === text)) setList((l) => [...l, { text, done: false }]);
+    if (text && !list.some((p) => p.text === text)) setList((l) => [...l, make(text, draftStar)]);
     setDraft('');
+    setDraftStar(false);
   };
+  const toggleStar = (text: string) => setList((l) => l.map((p) => (p.text === text ? make(p.text, !!p.plain) : p)));
 
   const start = () => {
     const text = draft.trim();
-    const kept = leftover
-      .filter((p) => decisions[p.text] === 'keep')
-      .map((p) => ({ text: p.text, done: false, carried: true }));
-    const all = [...kept, ...list, ...(text && !list.some((p) => p.text === text) ? [{ text, done: false }] : [])];
+    const carried = kept.map((p) => ({ ...make(p.text, !p.plain), carried: true }));
+    const all = [...carried, ...list, ...(text && !list.some((p) => p.text === text) ? [make(text, draftStar)] : [])];
     useJournal.getState().updateWeek(w, (x) => {
       x.priorities = all;
       x.started = true;
@@ -83,107 +107,139 @@ export default function StartWeek() {
         }
       >
         <ScreenHeader overline={formatLong(weekMonday(w))} title={`Start week ${weekIndexInMonth(w)}`} />
+
         {month.setup ? (
-          <Section
-            title={`${monthName(monthOfWeek(w))} outlook`}
-            action={
+          <View style={styles.part}>
+            <View style={styles.labelRow}>
+              <T variant="subhead" weight="600" tone="ink2" style={styles.flex} accessibilityRole="header">
+                {`${monthName(monthOfWeek(w))} outlook`}
+              </T>
               <TextAction title={editingOutlook ? 'Done' : 'Edit'} onPress={() => setEditingOutlook((e) => !e)} />
-            }
-          >
+            </View>
             {editingOutlook ? (
               <Field value={outlook} onChangeText={setOutlook} multiline autoFocus minHeight={110} />
             ) : (
-              <View style={styles.gapS}>
+              <>
                 <T variant="body" tone={outlook ? 'ink' : 'ink2'}>
                   {outlook || 'No outlook written yet.'}
                 </T>
                 <T variant="footnote" tone="ink2">
                   Update it if the month has changed.
                 </T>
-              </View>
+              </>
             )}
-          </Section>
+          </View>
         ) : null}
 
         {leftover.length ? (
-          <Section title={`Left over from last week: ${leftover.length}`} flush>
-            {leftover.map((p) => {
-              const d = decisions[p.text];
-              return (
-                <View key={p.text} style={styles.leftRow}>
-                  <T variant="body" style={styles.flex} tone={d === 'drop' ? 'ink3' : 'ink'}>
-                    {p.text}
-                  </T>
-                  <Press
-                    onPress={() => {
-                      haptic.select();
-                      setDecisions((x) => ({ ...x, [p.text]: 'drop' }));
-                    }}
-                    style={[styles.choice, d === 'drop' && styles.choiceDrop]}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: d === 'drop' }}
-                    accessibilityLabel={`Drop ${p.text}`}
-                  >
-                    <T variant="subhead" weight="600" tone={d === 'drop' ? 'ink' : 'ink2'} chrome>
-                      Drop
-                    </T>
-                  </Press>
-                  <Press
-                    onPress={() => {
-                      haptic.select();
-                      setDecisions((x) => ({ ...x, [p.text]: 'keep' }));
-                    }}
-                    style={[styles.choice, d === 'keep' && styles.choiceKeep]}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: d === 'keep' }}
-                    accessibilityLabel={`Keep ${p.text}`}
-                  >
-                    <T variant="subhead" weight="600" tone={d === 'keep' ? 'onAccent' : 'accent'} chrome>
-                      Keep
-                    </T>
-                  </Press>
-                </View>
-              );
-            })}
-          </Section>
+          <>
+            <Divider inset={0} />
+            <View style={styles.part}>
+              <T variant="subhead" weight="600" tone="ink2" accessibilityRole="header">
+                {`Left over from last week: ${leftover.length}`}
+              </T>
+              <View style={styles.bare}>
+                {leftover.map((p, i) => {
+                  const d = decisions[p.text];
+                  return (
+                    <View key={p.text}>
+                      {i > 0 ? <Divider /> : null}
+                      <View style={styles.row}>
+                        {p.plain ? null : <Icon name="star.fill" size={13} color={colors.accent} />}
+                        <T variant="body" style={styles.flex} tone={d === 'drop' ? 'ink3' : 'ink'}>
+                          {p.text}
+                        </T>
+                        <Press
+                          onPress={() => {
+                            haptic.select();
+                            setDecisions((x) => ({ ...x, [p.text]: 'drop' }));
+                          }}
+                          style={[styles.choice, d === 'drop' && styles.choiceDrop]}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: d === 'drop' }}
+                          accessibilityLabel={`Drop ${p.text}`}
+                        >
+                          <T variant="subhead" weight="600" tone={d === 'drop' ? 'ink' : 'ink2'} chrome>
+                            Drop
+                          </T>
+                        </Press>
+                        <Press
+                          onPress={() => {
+                            haptic.select();
+                            setDecisions((x) => ({ ...x, [p.text]: 'keep' }));
+                          }}
+                          style={[styles.choice, d === 'keep' && styles.choiceKeep]}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: d === 'keep' }}
+                          accessibilityLabel={`Keep ${p.text}`}
+                        >
+                          <T variant="subhead" weight="600" tone={d === 'keep' ? 'onAccent' : 'accent'} chrome>
+                            Keep
+                          </T>
+                        </Press>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          </>
         ) : null}
 
-        <Section title="This week's priorities">
-          <View style={styles.gapS}>
-            {leftover
-              .filter((p) => decisions[p.text] === 'keep')
-              .map((p) => (
-                <View key={`k-${p.text}`} style={styles.item}>
+        <Divider inset={0} />
+        <View style={styles.part}>
+          <T variant="subhead" weight="600" tone="ink2" accessibilityRole="header">
+            {"This week's commitments"}
+          </T>
+          <T variant="footnote" tone="ink2">
+            Star the ones that are priorities.
+          </T>
+          <View style={styles.bare}>
+            {kept.map((p) => (
+              <View key={`k-${p.text}`}>
+                <View style={styles.row}>
+                  {p.plain ? (
+                    <View style={styles.starSpace} />
+                  ) : (
+                    <Icon name="star.fill" size={17} color={colors.accent} />
+                  )}
                   <T variant="body" style={styles.flex}>
                     {p.text}
                   </T>
                   <T variant="footnote" tone="ink2">
-                    kept
+                    Kept
                   </T>
                 </View>
-              ))}
-            {list.map((p) => (
-              <View key={p.text} style={styles.item}>
-                <T variant="body" style={styles.flex}>
-                  {p.text}
-                </T>
-                <Press
-                  onPress={() => setList((l) => l.filter((x) => x.text !== p.text))}
-                  hitSlop={12}
-                  accessibilityLabel={`Remove ${p.text}`}
-                >
-                  <Icon name="xmark.circle.fill" size={18} color={colors.ink3} />
-                </Press>
+                <Divider />
               </View>
             ))}
-            <View style={styles.addWrap}>
+            {list.map((p) => (
+              <View key={p.text}>
+                <View style={styles.row}>
+                  <StarToggle on={!p.plain} onToggle={() => toggleStar(p.text)} label={p.text} />
+                  <T variant="body" style={styles.flex}>
+                    {p.text}
+                  </T>
+                  <Press
+                    onPress={() => setList((l) => l.filter((x) => x.text !== p.text))}
+                    hitSlop={12}
+                    accessibilityLabel={`Remove ${p.text}`}
+                  >
+                    <Icon name="xmark.circle.fill" size={18} color={colors.ink3} />
+                  </Press>
+                </View>
+                <Divider />
+              </View>
+            ))}
+            <View style={styles.row}>
+              <StarToggle on={draftStar} onToggle={() => setDraftStar((v) => !v)} label="New commitment" />
               <TextInput
                 value={draft}
                 onChangeText={setDraft}
                 onSubmitEditing={addDraft}
                 submitBehavior="submit"
                 returnKeyType="done"
-                placeholder="Add priority"
+                placeholder={draftStar ? 'Add a priority' : 'Add a commitment'}
                 placeholderTextColor={colors.ink3}
                 selectionColor={colors.accent}
                 style={styles.addInput}
@@ -191,7 +247,7 @@ export default function StartWeek() {
               />
             </View>
           </View>
-        </Section>
+        </View>
       </Screen>
     </View>
   );
@@ -201,14 +257,19 @@ const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   gapS: { gap: space.s },
-  leftRow: {
+  part: { gap: space.s },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
+  // Rows reach out to the gutter so their text lines up with the labels above.
+  bare: { marginHorizontal: -space.l },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.s,
+    gap: space.m,
     paddingHorizontal: space.l,
     paddingVertical: space.s,
     minHeight: TARGET + 8,
   },
+  starSpace: { width: 17 },
   choice: {
     minHeight: 34,
     paddingHorizontal: space.m,
@@ -218,21 +279,5 @@ const styles = StyleSheet.create({
   },
   choiceDrop: { backgroundColor: colors.fill },
   choiceKeep: { backgroundColor: colors.accent },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.m,
-    minHeight: TARGET + 4,
-    paddingHorizontal: space.l,
-    backgroundColor: colors.fill,
-    borderRadius: radius.control,
-  },
-  addWrap: {
-    borderRadius: radius.control,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: colors.boxBorder,
-    paddingHorizontal: space.l,
-  },
-  addInput: { ...type.body, color: colors.ink, minHeight: TARGET + 4 },
+  addInput: { ...type.body, flex: 1, color: colors.ink, minHeight: TARGET },
 });
