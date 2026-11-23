@@ -261,7 +261,7 @@ function YearGrid({
 }) {
   const days = useJournal((s) => s.days);
   const { width } = useWindowDimensions();
-  const labelW = 18;
+  const labelW = 20;
   const cell = Math.floor((width - GUTTER * 2 - labelW - 11 * 3) / 12);
   const h = Math.max(10, Math.round(cell * 0.55));
   return (
@@ -428,6 +428,7 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   statSwatch: { width: 22, height: 22, borderRadius: 5 },
   yearRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  yearLabel: { fontSize: 9, lineHeight: 11, textAlign: 'right', paddingRight: 3 },
+  // iOS's smallest text style (caption 2, 11 pt); every fifth day only, so it has room.
+  yearLabel: { fontSize: 11, lineHeight: 13, textAlign: 'right', paddingRight: 3 },
   scale: { gap: space.s, marginTop: space.s },
 });

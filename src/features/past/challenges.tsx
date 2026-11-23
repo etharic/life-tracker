@@ -257,12 +257,12 @@ export function ChallengeRow({
       right={{
         label: item.outcome === 'succeeded' ? 'Undo' : copy.succeeded,
         icon: item.outcome === 'succeeded' ? 'arrow.uturn.backward' : 'checkmark',
-        color: colors.good,
+        color: colors.goodStrong,
       }}
       left={{
         label: item.outcome === 'failed' ? 'Undo' : copy.failed,
         icon: item.outcome === 'failed' ? 'arrow.uturn.backward' : 'xmark',
-        color: colors.accent,
+        color: colors.accentStrong,
       }}
       onSwipe={(d) => conclude(d === 'right' ? 'succeeded' : 'failed')}
       onSwipeStart={() => (swiped.current = Date.now())}

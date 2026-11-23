@@ -10,15 +10,19 @@ const light = {
   fill: '#F0EEE6', // inputs, pills, segmented track
   ink: '#141413',
   ink2: '#5E5D59', // secondary text
-  ink3: '#9C9A92', // placeholders, disabled, decorative only
+  ink3: '#75736B', // placeholders and quiet hints; 4.5:1 on paper
   hairline: '#E8E6DC',
   track: '#E8E6DC', // empty ring track, missed strip cells
   boxBorder: '#C3C0B6', // unticked checkbox
-  accent: '#C96442', // terracotta
-  accentPressed: '#B5573A',
+  accent: '#C96442', // terracotta: fills, rings, icons
+  // Terracotta has two jobs. The bright one fills; text in terracotta and white text on a terracotta
+  // button need a deeper shade to be read easily (4.5:1 or more, WCAG AA).
+  accentText: '#A64F34', // terracotta words: links, actions, the streak
+  accentStrong: '#AD5236', // fill behind white words: primary buttons
   accentSoft: '#F5E9E2',
   onAccent: '#FFFFFF',
-  good: '#3F8A4F', // a yes on a challenge list
+  good: '#387D47', // a yes on a challenge list
+  goodStrong: '#387D47', // fill behind white words
   goodSoft: '#E5F0E3',
   scrim: 'rgba(20,20,19,0.05)',
   edge: 'rgba(20,20,19,0.08)', // the thin edge around colour swatches
@@ -31,15 +35,17 @@ const dark: typeof light = {
   fill: '#3A3936',
   ink: '#FAF9F5',
   ink2: '#C2C0B6',
-  ink3: '#8A8880',
+  ink3: '#9C9A93',
   hairline: '#3E3D3A',
   track: '#45443F',
   boxBorder: '#6B6A64',
   accent: '#D97757',
-  accentPressed: '#E38B6E',
+  accentText: '#E38B6E',
+  accentStrong: '#A9553A',
   accentSoft: '#45322A',
   onAccent: '#FFFFFF',
   good: '#6DBE7C',
+  goodStrong: '#2F7A3F',
   goodSoft: '#2F3D30',
   scrim: 'rgba(250,249,245,0.07)',
   edge: 'rgba(250,249,245,0.12)',

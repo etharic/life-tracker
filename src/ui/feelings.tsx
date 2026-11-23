@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   boxEmpty: { borderStyle: 'dashed', borderColor: colors.boxBorder, backgroundColor: 'transparent' },
   boxDim: { opacity: 0.3 },
   boxSelected: { borderWidth: 2.5, borderColor: colors.ink },
-  boxCorner: { position: 'absolute', top: 3, left: 5, fontSize: 10, lineHeight: 12 },
+  boxCorner: { position: 'absolute', top: 3, left: 5, fontSize: 11, lineHeight: 13 },
   scale: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 6, columnGap: space.m },
   scaleItem: { flexDirection: 'row', alignItems: 'center', gap: space.s, width: '47%' },
   scaleName: { flexShrink: 1 },
@@ -189,49 +189,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.edge,
   },
-});
-
-function FeelingDot({ feeling: x, selected, onPress }: { feeling: Feeling; selected: boolean; onPress: () => void }) {
-  const pop = usePop(selected, 0.25);
-  return (
-    <Pressable
-      hitSlop={{ top: 10, bottom: 10, left: 1, right: 1 }}
-      accessibilityRole="radio"
-      accessibilityState={{ selected }}
-      accessibilityLabel={`${x.score}, ${x.name}`}
-      onPress={() => {
-        haptic.select();
-        onPress();
-      }}
-      style={dotStyles.hit}
-    >
-      <Animated.View style={[dotStyles.dot, { backgroundColor: x.color }, selected && dotStyles.selected, pop]} />
-    </Pressable>
-  );
-}
-
-/**
- * The compact scale: eleven colour dots on one line. The chosen one grows a ring; its number and
- * name are said beside it by the caller and by VoiceOver.
- */
-export function FeelingDots({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
-  return (
-    <View style={dotStyles.row} accessibilityRole="adjustable" accessibilityLabel="How the day felt, 0 to 10">
-      {FEELINGS.map((x) => (
-        <FeelingDot
-          key={x.score}
-          feeling={x}
-          selected={x.score === value}
-          onPress={() => onChange(x.score === value ? null : x.score)}
-        />
-      ))}
-    </View>
-  );
-}
-
-const dotStyles = StyleSheet.create({
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  hit: { flex: 1, alignItems: 'center' },
-  dot: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: colors.edge },
-  selected: { width: 28, height: 28, borderRadius: 14, borderWidth: 3, borderColor: colors.ink },
 });

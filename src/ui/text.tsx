@@ -19,7 +19,8 @@ export function T({ variant = 'body', tone = 'ink', weight, center, chrome, styl
       maxFontSizeMultiplier={chrome ? 1.4 : undefined}
       style={[
         type[variant],
-        { color: colors[tone] },
+        // Terracotta words use the deeper text shade; the bright one is for fills.
+        { color: tone === 'accent' ? colors.accentText : colors[tone] },
         weight ? { fontWeight: weight } : null,
         center ? { textAlign: 'center' } : null,
         style,

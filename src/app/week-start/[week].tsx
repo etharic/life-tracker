@@ -278,6 +278,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   choiceDrop: { backgroundColor: colors.fill },
-  choiceKeep: { backgroundColor: colors.accent },
+  choiceKeep: { backgroundColor: colors.accentStrong },
   addInput: { ...type.body, flex: 1, color: colors.ink, minHeight: TARGET },
 });

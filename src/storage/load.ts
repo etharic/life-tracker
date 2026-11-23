@@ -127,19 +127,30 @@ export async function loadJournal(store: Store): Promise<LoadReport> {
   const data = emptyJournal();
   const unreadable: string[] = [];
 
-  for (const f of files) {
-    let parsed: Parsed | null = null;
+  // Files unchanged since the last launch come from the cache. The rest (all of them after a
+  // restore or on a new phone) are read a few at a time, not one after another.
+  const fresh = new Map<string, Parsed | null>();
+  const misses = files.filter((f) => {
     const hit = cache[f.path];
-    if (hit && hit.m === f.modified && hit.s === f.size) {
-      parsed = hit.p;
-    } else {
-      try {
-        const text = await store.readText(f.path);
-        parsed = text == null ? null : parseFile(f.path, text);
-      } catch {
-        unreadable.push(f.path);
-      }
-    }
+    return !(hit && hit.m === f.modified && hit.s === f.size);
+  });
+  const BATCH = 8;
+  for (let i = 0; i < misses.length; i += BATCH) {
+    await Promise.all(
+      misses.slice(i, i + BATCH).map(async (f) => {
+        try {
+          const text = await store.readText(f.path);
+          fresh.set(f.path, text == null ? null : parseFile(f.path, text));
+        } catch {
+          unreadable.push(f.path);
+          fresh.set(f.path, null);
+        }
+      }),
+    );
+  }
+
+  for (const f of files) {
+    const parsed = fresh.has(f.path) ? fresh.get(f.path)! : cache[f.path].p;
     if (!parsed) continue;
     next[f.path] = { m: f.modified, s: f.size, p: parsed };
     switch (parsed.t) {

@@ -392,7 +392,7 @@ export function JournalGroup({
           ) : null}
           {!f && locked ? (
             <View style={styles.entry}>
-              <T variant="subhead" tone="ink3">
+              <T variant="subhead" tone="ink2">
                 No feeling recorded
               </T>
             </View>
@@ -426,7 +426,7 @@ export function JournalGroup({
                     <MediaStrip date={date} media={day.media} />
                   </>
                 ) : (
-                  <T variant="subhead" tone="ink3">
+                  <T variant="subhead" tone="ink2">
                     Nothing was written this day
                   </T>
                 )}

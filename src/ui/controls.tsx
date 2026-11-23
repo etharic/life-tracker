@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.section,
   },
   buttonCompact: { minHeight: TARGET, paddingHorizontal: space.l, borderRadius: radius.pill },
-  primary: { backgroundColor: colors.accent },
+  primary: { backgroundColor: colors.accentStrong },
   secondary: { backgroundColor: colors.accentSoft },
   plain: { backgroundColor: 'transparent' },
   textAction: { minHeight: 28, justifyContent: 'center' },

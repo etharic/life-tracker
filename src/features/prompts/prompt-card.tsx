@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  smallFilled: { backgroundColor: colors.accent },
+  smallFilled: { backgroundColor: colors.accentStrong },
   smallPlain: { backgroundColor: colors.scrim },
   note: {
     ...type.body,
