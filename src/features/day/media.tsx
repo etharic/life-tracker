@@ -92,7 +92,7 @@ export function VideoTile({ date, media, onRemove }: { date: ISODate; media: Med
       accessibilityHint={onRemove ? 'Long press to remove' : undefined}
       style={styles.video}
     >
-      <Icon name="play.fill" size={20} color={colors.bg} />
+      <Icon name="play.fill" size={20} color="#FFFFFF" />
     </Press>
   );
 }
@@ -150,7 +150,8 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: radius.control,
-    backgroundColor: colors.ink,
+    // Video is dark in both appearances, like a player: ink turned white at night.
+    backgroundColor: '#1F1E1C',
     alignItems: 'center',
     justifyContent: 'center',
   },
