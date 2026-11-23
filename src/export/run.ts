@@ -185,9 +185,13 @@ export async function exportBook(year: string): Promise<void> {
 }
 
 /** Makes the PDF into the cache and returns it (the simulator check saves it instead of sharing). */
-export async function makeBookPdf(year: string): Promise<File> {
+export async function makeBookPdf(year: string, note?: (step: string) => void): Promise<File> {
   await flushWrites();
-  const html = bookHtml(bookInput(year, await bookPhotos(year)));
+  note?.('flushed');
+  const photos = await bookPhotos(year);
+  note?.(`photos ${photos.size}`);
+  const html = bookHtml(bookInput(year, photos));
+  note?.(`html ${html.length}`);
   // A4 at 72 points per inch.
   const { uri } = await Print.printToFileAsync({
     html,
@@ -195,6 +199,7 @@ export async function makeBookPdf(year: string): Promise<File> {
     height: 842,
     margins: { top: 36, bottom: 36, left: 36, right: 36 },
   });
+  note?.('printed');
   const out = cacheFile(`Journal ${year}.pdf`);
   await new File(uri).move(out);
   return out;

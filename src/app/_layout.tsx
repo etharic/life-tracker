@@ -47,13 +47,29 @@ export default function RootLayout() {
   // The simulator check of the yearly book: `-LTBook 2026` saves that year's PDF to Documents.
   useEffect(() => {
     if (status !== 'ready') return;
-    const year: unknown = Settings.get('LTBook');
-    if (typeof year !== 'string' || !/^\d{4}$/.test(year)) return;
-    void makeBookPdf(year).then((pdf) => {
-      const out = new File(Paths.document, 'book-check.pdf');
-      if (out.exists) out.delete();
-      pdf.copy(out);
-    });
+    const raw: unknown = Settings.get('LTBook');
+    const year = raw == null ? '' : String(raw);
+    if (!/^\d{4}$/.test(year)) return;
+    // Each step is written down, so a check that stops says where.
+    const log = new File(Paths.document, 'book-check.txt');
+    const note = (line: string) => {
+      try {
+        if (!log.exists) log.create();
+        log.write(`${log.exists ? log.textSync() : ''}${line}
+`);
+      } catch {
+        // The note is only for the check.
+      }
+    };
+    note(`start ${year}`);
+    makeBookPdf(year, note)
+      .then((pdf) => {
+        const out = new File(Paths.document, 'book-check.pdf');
+        if (out.exists) out.delete();
+        pdf.copy(out);
+        note('saved');
+      })
+      .catch((e: unknown) => note(`failed: ${e instanceof Error ? e.message : String(e)}`));
   }, [status]);
 
   // The journal date changes at the day boundary (04:00 by default), also while the app is open.
