@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
-import { ActionSheetIOS, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActionSheetIOS, AppState, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { formatTitle, monthOf } from '@/domain/dates';
 import { JournalGroup, NoSetupNote, TodayGroup, WeekGroup } from '@/features/day/day-layout';
-import { useMonth, usePrompts, useStreaks, useToday } from '@/features/hooks';
+import { DayWash } from '@/features/day/day-wash';
+import { useDay, useMonth, usePrompts, useStreaks, useToday } from '@/features/hooks';
 import { PromptCard } from '@/features/prompts/prompt-card';
 import { useJournal } from '@/state/journal';
 import { haptic } from '@/ui/haptics';
@@ -21,8 +23,8 @@ function Streak({ days }: { days: number }) {
   if (days < 2) return null;
   return (
     <Animated.View style={[styles.streak, bump]} accessible accessibilityLabel={`${days}-day streak`}>
-      <Icon name="flame.fill" size={14} color={colors.accent} />
-      <T variant="subhead" weight="700" tone="accent" style={styles.tabular} chrome>
+      <Icon name="flame.fill" size={14} color={colors.flame} />
+      <T variant="subhead" weight="700" style={[styles.tabular, styles.streakText]} chrome>
         {String(days)}
       </T>
     </Animated.View>
@@ -77,15 +79,40 @@ function DayMenu() {
  * Today: the date is the title. Below it: what is due (a prompt card, only when something is), the
  * journal entry, today's goals and hobbies, then the week.
  */
+/** From 5 pm until the new day starts (04:00 by default), the day is closing. */
+function isEvening(hour: number): boolean {
+  return hour >= 17 || hour < 4;
+}
+
+/** The current hour, checked again every few minutes and whenever the app comes back. */
+function useHour(): number {
+  const [hour, setHour] = useState(() => new Date().getHours());
+  useEffect(() => {
+    const tick = () => setHour(new Date().getHours());
+    const t = setInterval(tick, 5 * 60 * 1000);
+    const sub = AppState.addEventListener('change', (st) => st === 'active' && tick());
+    return () => {
+      clearInterval(t);
+      sub.remove();
+    };
+  }, []);
+  return hour;
+}
+
 export default function TodayScreen() {
   const today = useToday();
   const prompts = usePrompts();
   const { current } = useStreaks();
   const month = useMonth(monthOf(today));
   const setupSkipped = !month.setup && !prompts.some((p) => p.kind === 'setup');
+  const day = useDay(today);
+  const written = !!(day.title || day.writing || day.media.length || day.feeling != null);
+  const hour = useHour();
+  const evening = written || isEvening(hour);
 
   return (
     <Screen topInset>
+      <DayWash date={today} />
       <TopBar
         title={formatTitle(today)}
         trailing={
@@ -97,10 +124,15 @@ export default function TodayScreen() {
       />
       <PromptCard prompts={prompts} />
       {setupSkipped ? <NoSetupNote date={today} /> : null}
+      {/*
+        What comes first follows the day: in daytime the quick ticks lead and the day's entry waits
+        at the end; from late afternoon, or once the day is written, its entry leads.
+      */}
       <View style={styles.groups}>
-        <JournalGroup date={today} isToday titled={false} />
+        {evening ? <JournalGroup date={today} isToday titled={false} /> : null}
         <TodayGroup date={today} />
         <WeekGroup date={today} />
+        {evening ? null : <JournalGroup date={today} isToday titled={false} />}
       </View>
     </Screen>
   );
@@ -118,5 +150,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   streak: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  streakText: { color: colors.flame },
   tabular: { fontVariant: ['tabular-nums'] },
 });

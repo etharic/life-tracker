@@ -1,54 +1,60 @@
 import { DynamicColorIOS, Platform, useColorScheme, type ColorValue, type TextStyle } from 'react-native';
 
 /**
- * Claude's own palette: warm ivory paper and near-black ink by day, warm charcoal by night, and one
- * terracotta accent. The feelings scale keeps its own colours (src/domain/feelings.ts).
+ * Ink on paper. A journal is written with a pen: day paper and pen ink, one deep pen-blue for
+ * everything that can be acted on, a leaf green for a yes and a muted brick for a no. Blue is calm
+ * on purpose (the evening ritual, decades of use); warm colours are left to the day itself, whose
+ * feeling colour tints Today (src/domain/feelings.ts). Every text pairing is at least 4.5:1.
  */
 const light = {
-  bg: '#FAF9F5', // ivory paper
+  bg: '#F7F7F4', // day paper
   surface: '#FFFFFF',
-  fill: '#F0EEE6', // inputs, pills, segmented track
-  ink: '#141413',
-  ink2: '#5E5D59', // secondary text
-  ink3: '#75736B', // placeholders and quiet hints; 4.5:1 on paper
-  hairline: '#E8E6DC',
-  track: '#E8E6DC', // empty ring track, missed strip cells
-  boxBorder: '#C3C0B6', // unticked checkbox
-  accent: '#C96442', // terracotta: fills, rings, icons
-  // Terracotta has two jobs. The bright one fills; text in terracotta and white text on a terracotta
-  // button need a deeper shade to be read easily (4.5:1 or more, WCAG AA).
-  accentText: '#A64F34', // terracotta words: links, actions, the streak
-  accentStrong: '#AD5236', // fill behind white words: primary buttons
-  accentSoft: '#F5E9E2',
+  fill: '#ECEDEA', // inputs, pills, segmented track
+  ink: '#15181C',
+  ink2: '#55595F', // secondary text
+  ink3: '#6E7278', // placeholders and quiet hints
+  hairline: '#E2E3DF',
+  track: '#E2E3DF', // empty ring track, missed strip cells
+  boxBorder: '#B6B9BE', // unticked checkbox
+  accent: '#2B4C7E', // pen blue: actions, selection, rings
+  accentText: '#2B4C7E', // blue words (8:1 on paper)
+  accentStrong: '#2B4C7E', // fill behind white words
+  accentSoft: '#E6ECF5', // pen-blue wash: done, chosen
   onAccent: '#FFFFFF',
-  good: '#387D47', // a yes on a challenge list
-  goodStrong: '#387D47', // fill behind white words
-  goodSoft: '#E5F0E3',
-  scrim: 'rgba(20,20,19,0.05)',
-  edge: 'rgba(20,20,19,0.08)', // the thin edge around colour swatches
+  good: '#2F7A4A', // a yes
+  goodStrong: '#2F7A4A',
+  goodSoft: '#E3F0E7',
+  bad: '#A8432F', // a no, a rejection: muted brick, never alarm red
+  badStrong: '#A8432F',
+  flame: '#B3591F', // the streak's flame
+  scrim: 'rgba(21,24,28,0.05)',
+  edge: 'rgba(21,24,28,0.08)', // the thin edge around colour swatches
 };
 
-/** Night: warm charcoal, slightly raised cards, the brighter terracotta Claude uses in dark mode. */
+/** Night: blue-black paper, lighter ink, the pen-blue lifted so it reads on dark. */
 const dark: typeof light = {
-  bg: '#262624',
-  surface: '#30302E',
-  fill: '#3A3936',
-  ink: '#FAF9F5',
-  ink2: '#C2C0B6',
-  ink3: '#9C9A93',
-  hairline: '#3E3D3A',
-  track: '#45443F',
-  boxBorder: '#6B6A64',
-  accent: '#D97757',
-  accentText: '#E38B6E',
-  accentStrong: '#A9553A',
-  accentSoft: '#45322A',
-  onAccent: '#FFFFFF',
-  good: '#6DBE7C',
-  goodStrong: '#2F7A3F',
-  goodSoft: '#2F3D30',
-  scrim: 'rgba(250,249,245,0.07)',
-  edge: 'rgba(250,249,245,0.12)',
+  bg: '#12161C',
+  surface: '#1A2028',
+  fill: '#232A33',
+  ink: '#ECEEF1',
+  ink2: '#AEB4BC',
+  ink3: '#8C939C',
+  hairline: '#2A313A',
+  track: '#2E3540',
+  boxBorder: '#4C545E',
+  accent: '#93B4E8',
+  accentText: '#93B4E8',
+  accentStrong: '#93B4E8',
+  accentSoft: '#1E2A3B',
+  onAccent: '#0E1726', // dark words on the light night blue
+  good: '#7CC495',
+  goodStrong: '#7CC495',
+  goodSoft: '#1D3126',
+  bad: '#E8907F',
+  badStrong: '#E8907F',
+  flame: '#E9A15F',
+  scrim: 'rgba(236,238,241,0.07)',
+  edge: 'rgba(236,238,241,0.12)',
 };
 
 export type ColorName = keyof typeof light;

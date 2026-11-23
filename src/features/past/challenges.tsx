@@ -107,13 +107,13 @@ function Totals({ kind, list }: { kind: ChallengeKind; list: ChallengeItem[] }) 
           <View style={styles.rule} />
           <Stat value={active} label="Active" color={colors.ink} />
           <View style={styles.rule} />
-          <Stat value={failed} label={copy.failed} color={colors.accent} />
+          <Stat value={failed} label={copy.failed} color={colors.bad} />
           <View style={styles.rule} />
           <Stat value={succeeded} label={copy.succeeded} color={colors.good} />
         </View>
         {total ? (
           <View style={styles.bar} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-            {failed ? <View style={{ flex: failed, backgroundColor: colors.accent }} /> : null}
+            {failed ? <View style={{ flex: failed, backgroundColor: colors.bad }} /> : null}
             {succeeded ? <View style={{ flex: succeeded, backgroundColor: colors.good }} /> : null}
             {active ? <View style={{ flex: active, backgroundColor: colors.boxBorder }} /> : null}
             {rest ? <View style={{ flex: rest }} /> : null}
@@ -141,7 +141,7 @@ function StatusBox({ item, kind, onPress }: { item: ChallengeItem; kind: Challen
   const p = usePalette();
   const box =
     item.outcome === 'failed'
-      ? { borderColor: p.accent, backgroundColor: p.accent }
+      ? { borderColor: p.bad, backgroundColor: p.bad }
       : item.outcome === 'succeeded'
         ? { borderColor: p.good, backgroundColor: p.good }
         : item.started
@@ -262,7 +262,7 @@ export function ChallengeRow({
       left={{
         label: item.outcome === 'failed' ? 'Undo' : copy.failed,
         icon: item.outcome === 'failed' ? 'arrow.uturn.backward' : 'xmark',
-        color: colors.accentStrong,
+        color: colors.badStrong,
       }}
       onSwipe={(d) => conclude(d === 'right' ? 'succeeded' : 'failed')}
       onSwipeStart={() => (swiped.current = Date.now())}

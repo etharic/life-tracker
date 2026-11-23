@@ -61,10 +61,10 @@ export function viewerHtml(input: {
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Journal</title>
 <style>
-:root{--paper:#FBF9F5;--ink:#1E1E22;--ink2:#66666E;--line:#E7E2D8;--accent:#5B5BD6}
+:root{--paper:#F7F7F4;--ink:#15181C;--ink2:#55595F;--line:#E2E3DF;--accent:#2B4C7E;--wash:#E6ECF5}
 *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif}
 main{max-width:760px;margin:0 auto;padding:32px 20px 80px}h1{font-size:34px;margin:0 0 4px}h2{font-size:22px;margin:40px 0 8px}
-.muted{color:var(--ink2)}.note{white-space:pre-wrap;border-left:3px solid var(--accent);padding:4px 0 4px 16px;margin:24px 0}
+.muted{color:var(--ink2)}.note{white-space:pre-wrap;background:var(--wash);border-radius:10px;padding:14px 16px;margin:24px 0}
 nav{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}nav button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font:inherit;cursor:pointer}
 nav button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .grid{display:grid;grid-template-columns:22px repeat(12,1fr);gap:3px;margin:16px 0}.grid div{height:14px;border-radius:3px}
