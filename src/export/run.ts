@@ -38,13 +38,26 @@ export async function refreshReadmeAndViewer(): Promise<void> {
   );
 }
 
-function markBackup() {
+export type BackupKind = 'text' | 'full';
+
+/**
+ * Records a backup the owner confirmed as saved somewhere off the phone. The share sheet closes the
+ * same way whether a copy was saved, cancelled or kept on the phone, so it never counts by itself.
+ */
+export function confirmBackup(kind: BackupKind) {
   const today = useJournal.getState().today;
-  useJournal.getState().updateSettings((s) => void (s.lastBackup = today));
+  useJournal.getState().updateSettings((s) => {
+    s.lastBackup = today;
+    if (kind === 'full') s.lastFullBackup = today;
+  });
 }
 
-/** One ZIP of the whole Journal folder, viewer.html and README.txt included. */
-export async function exportZip(onProgress?: (pct: number) => void): Promise<void> {
+/**
+ * One ZIP of the Journal folder, viewer.html and README.txt included. The text ZIP holds every
+ * written file and leaves out photos, audio and video, so it stays small and never needs the
+ * memory the media would.
+ */
+export async function exportZip(kind: BackupKind, onProgress?: (pct: number) => void): Promise<void> {
   await flushWrites();
   await refreshReadmeAndViewer();
   const store = journalStore();
@@ -52,6 +65,7 @@ export async function exportZip(onProgress?: (pct: number) => void): Promise<voi
   const root = zip.folder('Journal')!;
   const files = await store.list();
   for (const f of files) {
+    if (kind === 'text' && !TEXT.test(f.path)) continue;
     if (TEXT.test(f.path)) {
       root.file(f.path, (await store.readText(f.path)) ?? '');
     } else {
@@ -63,7 +77,7 @@ export async function exportZip(onProgress?: (pct: number) => void): Promise<voi
     { type: 'base64', compression: 'DEFLATE', compressionOptions: { level: 6 } },
     (m) => onProgress?.(m.percent),
   );
-  const out = cacheFile(`Journal-${useJournal.getState().today}.zip`);
+  const out = cacheFile(`Journal-${kind === 'text' ? 'writing-' : ''}${useJournal.getState().today}.zip`);
   out.create();
   await out.write(b64, { encoding: 'base64' });
   await Sharing.shareAsync(out.uri, {
@@ -71,7 +85,6 @@ export async function exportZip(onProgress?: (pct: number) => void): Promise<voi
     UTI: 'public.zip-archive',
     dialogTitle: 'Save the journal',
   });
-  markBackup();
 }
 
 /** Every photo of the year as a small inline JPEG, keyed by day and path. */
@@ -186,7 +199,6 @@ export async function exportBookWithSound(year: string): Promise<void> {
     UTI: 'public.html',
     dialogTitle: `The ${year} book with sound and video`,
   });
-  markBackup();
 }
 
 /** The yearly book as a printable PDF. Photos are embedded at a reduced size. */
@@ -197,7 +209,6 @@ export async function exportBook(year: string): Promise<void> {
     UTI: 'com.adobe.pdf',
     dialogTitle: `The ${year} book`,
   });
-  markBackup();
 }
 
 /** Makes the PDF into the cache and returns it (the simulator check saves it instead of sharing). */

@@ -1,5 +1,5 @@
 import { File, Paths } from 'expo-file-system';
-import { router, Stack, type Href } from 'expo-router';
+import { router, Stack, usePathname, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -7,6 +7,9 @@ import { AppState, Settings, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { nextDayBoundary } from '@/domain/dates';
+import { CrashScreen } from '@/features/crash-screen';
+import { installErrorHandlers, setErrorRoute } from '@/storage/error-log';
+import { startReminders } from '@/reminders/scheduler';
 import { startSync } from '@/sync/scheduler';
 import { makeBookPdf } from '@/export/run';
 import { useJournal } from '@/state/journal';
@@ -14,6 +17,10 @@ import { Empty } from '@/ui/layout';
 import { colors } from '@/ui/theme';
 
 void SplashScreen.preventAutoHideAsync();
+installErrorHandlers();
+
+/** A screen that fails to draw shows this instead of closing the app (Expo Router's boundary). */
+export const ErrorBoundary = CrashScreen;
 
 const modal = { presentation: 'modal', headerShown: false, contentStyle: { backgroundColor: colors.bg } } as const;
 
@@ -21,6 +28,8 @@ export default function RootLayout() {
   const status = useJournal((s) => s.status);
   const error = useJournal((s) => s.error);
   const dayStartHour = useJournal((s) => s.settings.dayStartHour);
+  const pathname = usePathname();
+  useEffect(() => setErrorRoute(pathname), [pathname]);
 
   useEffect(() => {
     void useJournal
@@ -31,6 +40,10 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (status === 'ready') return startSync();
+  }, [status]);
+
+  useEffect(() => {
+    if (status === 'ready') return startReminders();
   }, [status]);
 
   // Simulator screenshots open a screen with the launch argument `-LTRoute /month`

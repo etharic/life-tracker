@@ -53,6 +53,14 @@ for r in "year-review/$YEAR:31-year-review" "past/year/$LAST:32-year-last" "past
   fresh "${r%%:*}"; shot "${r#*:}" 4
 done
 if xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BUNDLE"; then echo "  year screens: app still running"; else echo "  year screens: APP NOT RUNNING"; fi
+# 1.18: reminders, the backup screen, and search across every kind of entry.
+for r in "reminders:39-reminders" "backup:40-backup"; do
+  fresh "${r%%:*}"; shot "${r#*:}" 4
+done
+xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
+xcrun simctl launch "$UDID" "$BUNDLE" -LTRoute "/(tabs)/(lookback)/lookback" -LTSearch "marathon" >/dev/null
+sleep 7; xcrun simctl io "$UDID" screenshot "$OUT/41-search.png" >/dev/null; echo "  41-search"
+if xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BUNDLE"; then echo "  1.18 screens: app still running"; else echo "  1.18 screens: APP NOT RUNNING"; fi
 # Switching between Goals, Hobbies and Challenges (a crash once): the app must still be there.
 xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
 xcrun simctl launch "$UDID" "$BUNDLE" -LTOpen goals,hobbies,challenges,goals,challenges,hobbies >/dev/null

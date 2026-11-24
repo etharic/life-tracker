@@ -20,6 +20,7 @@ import { parseMonth } from '../format/month';
 import { classify } from '../format/paths';
 import { parseAchievements, parseBank, parseChallenges, parseSettings, parseYear } from '../format/records';
 import { dayWithDefaults, monthWithDefaults, settingsWithDefaults, yearWithDefaults } from './cache-shape';
+import { appBuild, cacheEntries, cacheHeader } from './cache-key';
 import type { Store } from './store';
 
 export interface JournalData {
@@ -75,9 +76,9 @@ function parseFile(path: string, text: string): Parsed | null {
   }
 }
 
-// Raise when a parsed record changes shape (1.17 added the method fields). Older entries are then
-// read again from their files; any that slip through still get their new fields from the defaults.
-const CACHE_VERSION = 2;
+// The cache is tied to the app build that wrote it (see cache-key.ts), so every update reads the
+// files once and a record parsed by an older version can never reach the app.
+const BUILD = appBuild();
 interface CacheEntry {
   m: number;
   s: number;
@@ -96,8 +97,7 @@ async function readCache(): Promise<Record<string, CacheEntry>> {
   try {
     const f = cacheFile();
     if (!f.exists) return {};
-    const json = JSON.parse(await f.text()) as { v?: number; e?: Record<string, CacheEntry> };
-    return json.v === CACHE_VERSION && json.e ? json.e : {};
+    return cacheEntries<CacheEntry>(JSON.parse(await f.text()), BUILD);
   } catch {
     return {};
   }
@@ -107,7 +107,7 @@ async function writeCache(entries: Record<string, CacheEntry>): Promise<void> {
   try {
     const f = cacheFile();
     if (!f.exists) f.create();
-    await f.write(JSON.stringify({ v: CACHE_VERSION, e: entries }));
+    await f.write(JSON.stringify(cacheHeader(BUILD, entries)));
   } catch {
     // A missing cache only costs time on the next launch.
   }

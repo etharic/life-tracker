@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { monthDates, monthOf, monthOfWeek, weekOf } from '../domain/dates';
+import { logicalDate, monthDates, monthOf, monthOfWeek, weekOf } from '../domain/dates';
 import { currentStreak, longestStreak, ringStat, runEndingToday, isTicked, type RingStat } from '../domain/progress';
 import { duePrompts, type PromptInput } from '../domain/prompts';
 import {
@@ -18,6 +18,7 @@ import {
   type MonthSetup,
   type WeekId,
 } from '../domain/types';
+import { useSyncState } from '../sync/scheduler';
 import { useJournal } from '../state/journal';
 
 export function useToday(): ISODate {
@@ -53,9 +54,16 @@ export function usePromptInput(): PromptInput {
   const { today, months, years, settings } = useJournal(
     useShallow((s) => ({ today: s.today, months: s.months, years: s.years, settings: s.settings })),
   );
+  const lastSync = useSyncState((s) => (s.connected ? s.lastSync : null));
   return useMemo(
-    () => ({ today, months: new Map(Object.entries(months)), years: new Map(Object.entries(years)), settings }),
-    [today, months, years, settings],
+    () => ({
+      today,
+      months: new Map(Object.entries(months)),
+      years: new Map(Object.entries(years)),
+      settings,
+      driveSync: lastSync ? logicalDate(new Date(lastSync), settings.dayStartHour) : null,
+    }),
+    [today, months, years, settings, lastSync],
   );
 }
 

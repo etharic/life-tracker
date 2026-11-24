@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { dayNumber, monthShort, weekdayShort } from '@/domain/dates';
 import { feeling } from '@/domain/feelings';
+import type { Span } from '@/domain/search';
 import type { DayEntry } from '@/domain/types';
 import { mediaUri } from '@/state/media';
 import { Icon } from '@/ui/icon';
@@ -15,11 +16,18 @@ import { colors, radius, space } from '@/ui/theme';
  * A day in a list, the way notes apps show notes: its line in the serif face, two lines of what was
  * written, and its first photo on the right. The feeling is the thin colour bar on the left.
  */
-export function EntryRow({ day, highlight, incident }: { day: DayEntry; highlight?: string; incident?: boolean }) {
+/** A search match: the marks in the title, and the piece of writing around the first match. */
+export interface RowMatch {
+  headMarks: Span[];
+  snippet: string;
+  snippetMarks: Span[];
+}
+
+export function EntryRow({ day, match, incident }: { day: DayEntry; match?: RowMatch; incident?: boolean }) {
   const f = feeling(day.feeling);
   const photo = day.media.find((m) => m.kind === 'photo');
   const audio = day.media.some((m) => m.kind === 'audio');
-  const snippet = snippetOf(day.writing, highlight);
+  const snippet = match ? match.snippet : snippetOf(day.writing);
   return (
     <Press
       feedback="highlight"
@@ -42,11 +50,11 @@ export function EntryRow({ day, highlight, incident }: { day: DayEntry; highligh
             {incident ? <Icon name="star.fill" size={11} color={colors.accent} /> : null}
           </View>
           <T variant="journalBody" weight="600" numberOfLines={2}>
-            {day.title || 'Untitled day'}
+            {day.title ? <Marked text={day.title} marks={match?.headMarks ?? []} /> : 'Untitled day'}
           </T>
           {snippet ? (
             <T variant="subhead" tone="ink2" numberOfLines={2}>
-              {snippet}
+              <Marked text={snippet} marks={match?.snippetMarks ?? []} />
             </T>
           ) : null}
         </View>
@@ -63,14 +71,27 @@ export function EntryRow({ day, highlight, incident }: { day: DayEntry; highligh
   );
 }
 
-/** The writing, or the part of it around a search match. */
-function snippetOf(writing: string, highlight?: string): string {
-  const flat = writing.replace(/\s+/g, ' ').trim();
-  if (!flat) return '';
-  if (!highlight) return flat;
-  const i = flat.toLowerCase().indexOf(highlight.toLowerCase());
-  if (i <= 30) return flat;
-  return `…${flat.slice(i - 30)}`;
+/** The writing on one line. */
+function snippetOf(writing: string): string {
+  return writing.replace(/\s+/g, ' ').trim();
+}
+
+/** Text with its matched spans in pen blue (search results). */
+export function Marked({ text, marks }: { text: string; marks: Span[] }) {
+  if (!marks.length) return <>{text}</>;
+  const parts: React.ReactNode[] = [];
+  let at = 0;
+  marks.forEach(([a, b], i) => {
+    if (a > at) parts.push(text.slice(at, a));
+    parts.push(
+      <T key={i} tone="accent" weight="700">
+        {text.slice(a, b)}
+      </T>,
+    );
+    at = b;
+  });
+  if (at < text.length) parts.push(text.slice(at));
+  return <>{parts}</>;
 }
 
 const styles = StyleSheet.create({

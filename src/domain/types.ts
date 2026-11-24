@@ -248,18 +248,33 @@ export function emptyChallenges(): Record<ChallengeKind, ChallengeItem[]> {
   return { rejections: [], bucket: [] };
 }
 
+/** A daily reminder to write, at a local time ("21:00"). */
+export interface Reminder {
+  time: string;
+  on: boolean;
+}
+
 export interface Settings {
   dayStartHour: number;
   noteToReaders: string;
+  /** The last backup confirmed as saved off the phone (a text ZIP or the full ZIP). */
   lastBackup: ISODate | null;
+  /** The last full ZIP (with photos, audio and video) confirmed as saved off the phone. */
+  lastFullBackup: ISODate | null;
   firstUse: ISODate | null;
+  /** Up to three daily reminders to write. */
+  reminders: Reminder[];
 }
+
+export const MAX_REMINDERS = 3;
 
 export const DEFAULT_SETTINGS: Settings = {
   dayStartHour: 4,
   noteToReaders: '',
   lastBackup: null,
+  lastFullBackup: null,
   firstUse: null,
+  reminders: [],
 };
 
 export function emptyGoals(): Record<GoalCategory, boolean> {

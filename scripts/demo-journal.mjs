@@ -87,7 +87,7 @@ for (const kind of ['goals', 'hobbies']) {
 write('bank.md', bank + '---\nIdeas for daily goals and monthly hobbies, by category.\n');
 write(
   'settings.md',
-  `---\nformat: journal-v1\nday_starts_at_hour: 4\nfirst_use: 2026-09-01\nlast_backup: null\nnote_to_future_readers: ""\n---\n`,
+  `---\nformat: journal-v1\nday_starts_at_hour: 4\nfirst_use: 2026-09-01\nlast_backup: null\nnote_to_future_readers: ""\nreminders:\n  - time: "21:00"\n    on: true\n---\n`,
 );
 
 const MONTHS = {

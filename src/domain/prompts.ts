@@ -1,6 +1,7 @@
 import {
   addDays,
   addWeeks,
+  daysBetween,
   lastOfMonth,
   monthName,
   monthOf,
@@ -63,6 +64,8 @@ export interface PromptInput {
   months: Map<MonthId, MonthRecord>;
   years: Map<string, YearRecord>;
   settings: Settings;
+  /** The journal day of the last Drive sync, when Drive is connected. */
+  driveSync?: ISODate | null;
 }
 
 /** Is this prompt answered (done) regardless of skipping? */
@@ -107,12 +110,44 @@ function describe(kind: PromptKind, ref: string): { title: string; detail: strin
     case 'year-close':
       return { title: `Review ${ref}`, detail: 'Defining moment, next year’s misogi, a sealed note' };
     case 'backup':
-      return { title: 'Yearly backup', detail: 'Save a ZIP and the yearly book to a drive' };
+      return ref === 'full'
+        ? { title: 'Yearly backup', detail: 'Save the full ZIP, with photos and voice notes, off this phone' }
+        : { title: 'Monthly backup', detail: 'Save a ZIP of your writing somewhere off this phone' };
   }
 }
 
 function make(kind: PromptKind, ref: string, due: ISODate): Prompt {
   return { id: promptId(kind, ref), kind, ref, due, ...describe(kind, ref) };
+}
+
+function latest(...dates: (ISODate | null | undefined)[]): ISODate | null {
+  return dates.reduce<ISODate | null>((a, d) => (d && (!a || d > a) ? d : a), null);
+}
+
+/**
+ * Which backup is due: 'full' (a year since the last full ZIP), the month id (30 days since the
+ * last confirmed backup), or null. A Drive sync counts as both, since Drive holds every file.
+ */
+export function backupDue(input: PromptInput): 'full' | MonthId | null {
+  const { today, settings } = input;
+  const start = settings.firstUse ?? today;
+  const drive = input.driveSync ?? null;
+  const full = latest(settings.lastFullBackup, drive) ?? start;
+  if (addDays(full, 365) <= today) return 'full';
+  const any = latest(settings.lastBackup, settings.lastFullBackup, drive) ?? start;
+  if (addDays(any, 30) <= today) return monthOf(today);
+  return null;
+}
+
+function ago(days: number): string {
+  return days <= 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`;
+}
+
+/** The line under the Yearly book row: the newer of a confirmed backup and a Drive sync. */
+export function backupLine(settings: Settings, driveSync: ISODate | null, today: ISODate): string {
+  const zip = latest(settings.lastBackup, settings.lastFullBackup);
+  if (driveSync && (!zip || driveSync >= zip)) return `Synced to Drive ${ago(daysBetween(driveSync, today))}`;
+  return zip ? `Last backup ${ago(daysBetween(zip, today))}` : 'No backup yet';
 }
 
 /**
@@ -157,9 +192,8 @@ export function duePrompts(input: PromptInput): Prompt[] {
     if (`${y}-12-25` <= today) add('year-close', y, `${y}-12-25`);
   }
 
-  // Backup reminder once a year.
-  const since = settings.lastBackup ?? start;
-  if (addDays(since, 365) <= today) out.push(make('backup', today.slice(0, 4), today));
+  const backup = backupDue(input);
+  if (backup) out.push(make('backup', backup, today));
 
   return out.sort((a, b) => (a.due === b.due ? ORDER.indexOf(a.kind) - ORDER.indexOf(b.kind) : a.due < b.due ? -1 : 1));
 }

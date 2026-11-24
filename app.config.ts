@@ -8,7 +8,7 @@ const MIC = 'Record voice notes for a day in your journal.';
 const config: ExpoConfig = {
   name: 'Life-Tracker',
   slug: 'life-tracker',
-  version: '1.17.1',
+  version: '1.18.0',
   scheme: 'lifetracker',
   orientation: 'portrait',
   icon: './assets/icon.png',
@@ -46,6 +46,9 @@ const config: ExpoConfig = {
     ['expo-secure-store', { faceIDPermission: false }],
     'expo-web-browser',
     'expo-video',
+    // Reminders are local notifications only. Free signing (SideStore) cannot carry the push
+    // entitlement, so remote notifications stay off and aps-environment is never written.
+    ['expo-notifications', { enableRemoteNotifications: false }],
   ],
   experiments: { typedRoutes: true, reactCompiler: true },
 };

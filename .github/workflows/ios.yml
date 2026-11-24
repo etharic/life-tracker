@@ -42,6 +42,11 @@ jobs:
       - name: Native project
         run: |
           CI=1 npx expo prebuild --platform ios --clean --no-install
+          # Free signing (SideStore) cannot carry the push entitlement: stop if anything added it.
+          if grep -l "aps-environment" ios/*/*.entitlements 2>/dev/null; then
+            echo "aps-environment found in the entitlements; free signing would refuse this app." >&2
+            exit 1
+          fi
           cd ios && (pod install || (sleep 15 && pod install) || (sleep 45 && pod install))
 
       - name: Build app (unsigned)

@@ -1,5 +1,15 @@
-import { addDays, daysInMonth, firstOfMonth, lastOfMonth, monthDates, weekDates } from './dates';
-import type { Category, DayEntry, HobbyCategory, ISODate, MonthId, WeekId, WeekRecord } from './types';
+import { addDays, daysInMonth, firstOfMonth, lastOfMonth, monthDates, weekDates, weekSunday } from './dates';
+import type {
+  Category,
+  CheckKey,
+  DayEntry,
+  HobbyCategory,
+  ISODate,
+  MonthId,
+  MonthRecord,
+  WeekId,
+  WeekRecord,
+} from './types';
 import { CHECK_KEYS, GOAL_CATEGORIES, HOBBY_CATEGORIES, hobbyHours, isGoalCategory } from './types';
 
 export type DayLookup = (date: ISODate) => DayEntry | undefined;
@@ -142,4 +152,56 @@ export function weekScore(
   }
   parts.push(rec ? CHECK_KEYS.filter((k) => rec.checks[k]).length / CHECK_KEYS.length : 0);
   return Math.round((parts.reduce((a, b) => a + Math.min(1, b), 0) / parts.length) * 100);
+}
+
+// ---------- Weekly-check rates and hobby balance (Plan) ----------
+
+export const RATE_WEEKS = 12;
+export const RATE_MIN_WEEKS = 4;
+
+export interface CheckRate {
+  /** The check's text, as it was set for those weeks. */
+  label: string;
+  done: number;
+  weeks: number;
+}
+
+/**
+ * How often each weekly check was ticked over the last 12 closed weeks. Checks are set per month,
+ * so the same slot can hold a different check each month: rates go by the check's text, and a
+ * renamed check starts its own row. A row shows once its check has 4 closed weeks.
+ */
+export function checkRates(months: Iterable<MonthRecord>, today: ISODate): CheckRate[] {
+  const closed: { week: WeekId; rec: WeekRecord; labels: Record<CheckKey, string> }[] = [];
+  for (const m of months) {
+    if (!m.setup) continue;
+    for (const [week, rec] of Object.entries(m.weeks) as [WeekId, WeekRecord][]) {
+      if (rec.closed && weekSunday(week) <= today) closed.push({ week, rec, labels: m.setup.weeklyChecks });
+    }
+  }
+  closed.sort((a, b) => (a.week < b.week ? 1 : -1));
+  const rows = new Map<string, CheckRate>();
+  for (const { rec, labels } of closed.slice(0, RATE_WEEKS)) {
+    for (const k of CHECK_KEYS) {
+      const label = labels[k]?.trim();
+      if (!label) continue;
+      const row = rows.get(label) ?? { label, done: 0, weeks: 0 };
+      row.weeks += 1;
+      if (rec.checks[k]) row.done += 1;
+      rows.set(label, row);
+    }
+  }
+  return [...rows.values()].filter((r) => r.weeks >= RATE_MIN_WEEKS);
+}
+
+/** Hours on each kind of hobby this month (a tick is an hour unless more was recorded). */
+export function hobbyBalance(month: MonthId, today: ISODate, day: DayLookup): Record<HobbyCategory, number> {
+  const out = { intellectual: 0, physical: 0, creative: 0, social: 0 } as Record<HobbyCategory, number>;
+  for (const date of monthDates(month)) {
+    if (date > today) break;
+    const d = day(date);
+    if (!d) continue;
+    for (const c of HOBBY_CATEGORIES) if (d.hobbies[c]) out[c] += hobbyHours(d, c);
+  }
+  return out;
 }

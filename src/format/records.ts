@@ -6,6 +6,7 @@ import {
   HOBBY_CATEGORIES,
   isGoalCategory,
   isHobbyCategory,
+  MAX_REMINDERS,
   type Achievement,
   type Bank,
   type BankEntry,
@@ -188,8 +189,25 @@ export function parseSettings(text: string): Settings {
     dayStartHour: Number.isInteger(hour) && hour >= 0 && hour <= 8 ? hour : DEFAULT_SETTINGS.dayStartHour,
     noteToReaders: str(data.note_to_future_readers),
     lastBackup: isISODate(data.last_backup) ? data.last_backup : null,
+    // Before 1.18 every backup was the full ZIP, so an older file's last backup was a full one.
+    lastFullBackup: isISODate(data.last_full_backup)
+      ? data.last_full_backup
+      : isISODate(data.last_backup)
+        ? data.last_backup
+        : null,
     firstUse: isISODate(data.first_use) ? data.first_use : null,
+    reminders: parseReminders(data.reminders),
   };
+}
+
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function parseReminders(v: unknown): Settings['reminders'] {
+  return arr(v)
+    .map((x) => obj(x))
+    .filter((o) => typeof o.time === 'string' && TIME.test(o.time))
+    .map((o) => ({ time: o.time as string, on: o.on !== false }))
+    .slice(0, MAX_REMINDERS);
 }
 
 export function serializeSettings(s: Settings): string {
@@ -198,7 +216,9 @@ export function serializeSettings(s: Settings): string {
     day_starts_at_hour: s.dayStartHour,
     first_use: s.firstUse,
     last_backup: s.lastBackup,
+    last_full_backup: s.lastFullBackup,
     note_to_future_readers: s.noteToReaders,
+    reminders: s.reminders.map((r) => ({ time: r.time, on: r.on })),
   });
 }
 

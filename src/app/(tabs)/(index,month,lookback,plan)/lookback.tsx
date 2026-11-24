@@ -1,56 +1,25 @@
 import { router, type Href } from 'expo-router';
 import type { SFSymbol } from 'expo-symbols';
 import { useMemo, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Settings, StyleSheet, TextInput, View } from 'react-native';
 
 import { monthOf } from '@/domain/dates';
 import { CHALLENGE_KINDS } from '@/domain/types';
 import { CHALLENGE_COPY, CHALLENGE_ROUTE } from '@/features/past/challenges';
-import { useToday } from '@/features/hooks';
-import { EntryRow } from '@/features/past/entry-row';
+import { usePromptInput, useToday } from '@/features/hooks';
+import { backupLine } from '@/domain/prompts';
+import { SearchResults } from '@/features/past/search-results';
 import { Insights } from '@/features/past/insights';
 import { GoodDays, OnThisDay } from '@/features/past/remember';
+import { Weekdays, Writing } from '@/features/past/stats';
 import { useJournal } from '@/state/journal';
 import { Icon } from '@/ui/icon';
-import { Divider, Row, Rows, Screen, Section, TopBar } from '@/ui/layout';
-import { T } from '@/ui/text';
+import { Row, Rows, Screen, Section, TopBar } from '@/ui/layout';
 import { colors, radius, space, type } from '@/ui/theme';
 import { Group } from '@/ui/group';
 import { NAMES } from '@/domain/names';
 
-type Item = { title: string; href: Href; icon: SFSymbol; value: string };
-
-function SearchResults({ query }: { query: string }) {
-  const days = useJournal((s) => s.days);
-  const months = useJournal((s) => s.months);
-  const q = query.trim().toLowerCase();
-  const results = useMemo(() => {
-    if (q.length < 2) return [];
-    return Object.values(days)
-      .filter((d) => d.title.toLowerCase().includes(q) || d.writing.toLowerCase().includes(q))
-      .sort((a, b) => (a.date < b.date ? 1 : -1))
-      .slice(0, 80);
-  }, [days, q]);
-  return (
-    <>
-      <T variant="footnote" tone="ink2" style={styles.count}>
-        {results.length
-          ? `${results.length === 80 ? '80+' : results.length} days`
-          : `Nothing found for “${query.trim()}”.`}
-      </T>
-      {results.length ? (
-        <Section flush>
-          {results.map((d, i) => (
-            <View key={d.date}>
-              {i > 0 ? <Divider /> : null}
-              <EntryRow day={d} highlight={q} incident={months[d.date.slice(0, 7)]?.extremeIncident?.date === d.date} />
-            </View>
-          ))}
-        </Section>
-      ) : null}
-    </>
-  );
-}
+type Item = { title: string; href: Href; icon: SFSymbol; value: string; subtitle?: string };
 
 /** Every list in the archive, grouped by how often it grows, each with a live count. */
 function useArchive(): { title: string; items: Item[] }[] {
@@ -60,6 +29,8 @@ function useArchive(): { title: string; items: Item[] }[] {
   const achievements = useJournal((s) => s.achievements);
   const challenges = useJournal((s) => s.challenges);
   const today = useToday();
+  const settings = useJournal((s) => s.settings);
+  const { driveSync } = usePromptInput();
   return useMemo(() => {
     const dayList = Object.values(days);
     const monthList = Object.values(months);
@@ -151,16 +122,26 @@ function useArchive(): { title: string; items: Item[] }[] {
             icon: 'calendar',
             value: n(Object.values(years).filter((y) => y.defining).length),
           },
-          { title: 'Yearly book', href: '/backup', icon: 'book.closed', value: today.slice(0, 4) },
+          {
+            title: 'Yearly book',
+            href: '/backup',
+            icon: 'book.closed',
+            value: today.slice(0, 4),
+            subtitle: backupLine(settings, driveSync ?? null, today),
+          },
         ],
       },
     ];
-  }, [days, months, years, achievements, challenges, today]);
+  }, [days, months, years, achievements, challenges, today, settings, driveSync]);
 }
 
 /** Look back: one search over everything written, three numbers, and the archive by how often it grows. */
 export default function LookBackHub() {
-  const [query, setQuery] = useState('');
+  // Simulator screenshots fill the field with the launch argument `-LTSearch <words>`. Unused on a phone.
+  const [query, setQuery] = useState(() => {
+    const v: unknown = Settings.get('LTSearch');
+    return typeof v === 'string' ? v : '';
+  });
   const groups = useArchive();
   const searching = query.trim().length >= 2;
   return (
@@ -189,6 +170,8 @@ export default function LookBackHub() {
           <Insights />
           <OnThisDay />
           <GoodDays />
+          <Weekdays />
+          <Writing />
           {groups.map((g) => (
             <Group key={g.title} title={g.title}>
               <Section flush>
@@ -198,6 +181,7 @@ export default function LookBackHub() {
                       key={it.title}
                       leading={<Icon name={it.icon} size={18} color={colors.accent} />}
                       title={it.title}
+                      detail={it.subtitle}
                       value={it.value}
                       onPress={() => router.push(it.href)}
                     />
@@ -214,7 +198,6 @@ export default function LookBackHub() {
 
 const styles = StyleSheet.create({
   groups: { gap: space.xxl },
-  count: { paddingHorizontal: space.xs },
   search: {
     flexDirection: 'row',
     alignItems: 'center',

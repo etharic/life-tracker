@@ -1,3 +1,4 @@
+import { wordsInYear } from '../domain/stats';
 import { daysInMonth, formatLong, MONTHS, toISO } from '../domain/dates';
 import { feeling, FEELINGS } from '../domain/feelings';
 import type { BookNote } from '../domain/book-rules';
@@ -56,6 +57,7 @@ export function bookHtml(input: {
 }): string {
   const { year } = input;
   const player = input.mode === 'player';
+  const words = wordsInYear(input.days, year);
   const days = input.days.filter((d) => d.date.startsWith(year)).sort((a, b) => (a.date < b.date ? -1 : 1));
   const byDate = new Map(days.map((d) => [d.date, d]));
   const months = input.months.filter((m) => m.month.startsWith(year)).sort((a, b) => (a.month < b.month ? -1 : 1));
@@ -173,7 +175,7 @@ article{page-break-inside:avoid;border-top:.5pt solid #E7E2D8;padding:8pt 0}.met
 .ph{margin-top:6pt;font-size:0}.ph img{display:inline-block;width:48%;height:auto;max-height:70mm;object-fit:cover;border-radius:4pt;margin:0 2% 6pt 0;vertical-align:top}
 .listen,.miss{font:9pt -apple-system,Helvetica,sans-serif;color:#66666E;margin-top:6pt}.av{margin-top:8pt}.av audio{display:block;width:100%;margin:4pt 0}.av video{display:block;width:100%;max-height:420px;border-radius:6pt;margin:6pt 0;background:#000}.note{white-space:pre-wrap;font-style:italic;margin-top:30pt}
 </style></head><body>
-<section class="cover"><h1>${year}</h1><div class="sub">A year of the journal${player ? ', with its voice notes and videos' : ''}</div>
+<section class="cover"><h1>${year}</h1><div class="sub">A year of the journal${player ? ', with its voice notes and videos' : ''}</div>${words ? `<div class="sub">Words written this year: ${words.toLocaleString('en-GB')}</div>` : ''}
 ${defining ? `<p style="margin-top:28pt"><b>${NAMES.defining}.</b> ${esc(defining)}</p>` : ''}
 ${misogi}${note}
 ${input.note ? `<div class="note">${para(input.note)}</div>` : ''}</section>

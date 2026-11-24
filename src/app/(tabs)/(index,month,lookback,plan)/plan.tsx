@@ -3,8 +3,9 @@ import type { SFSymbol } from 'expo-symbols';
 import { ActionSheetIOS, StyleSheet, View } from 'react-native';
 
 import { addMonths, formatShort, monthName, monthOf } from '@/domain/dates';
-import { GOAL_CATEGORIES, HOBBY_CATEGORIES } from '@/domain/types';
+import { GOAL_CATEGORIES, HOBBY_CATEGORIES, type Reminder } from '@/domain/types';
 import { useMonth, useToday } from '@/features/hooks';
+import { CheckRates, HobbyBalance } from '@/features/plan/progress-groups';
 import { MisogiLine } from '@/features/year/plan-line';
 import { useSync } from '@/sync/scheduler';
 import { useJournal } from '@/state/journal';
@@ -16,6 +17,12 @@ import { Group } from '@/ui/group';
 const HOURS = [2, 3, 4, 5, 6];
 const hour = (h: number) => `${String(h).padStart(2, '0')}:00`;
 const INSET = space.l + 18 + space.m;
+
+function reminderValue(rs: Reminder[]): string {
+  const on = rs.filter((r) => r.on).map((r) => r.time);
+  if (!on.length) return 'Off';
+  return on.length === 1 ? on[0] : `${on.length} a day`;
+}
 
 /**
  * Plan: what you set up, as quiet lists. Each row says what it is once, with its state on the right.
@@ -71,6 +78,9 @@ export default function PlanScreen() {
             </Rows>
           </Section>
         </Group>
+
+        <CheckRates />
+        <HobbyBalance />
 
         <Group title="Ideas">
           <Section flush>
@@ -128,6 +138,12 @@ export default function PlanScreen() {
                 trailing={<Icon name="chevron.up.chevron.down" size={12} color={colors.ink3} weight="semibold" />}
                 chevron={false}
                 onPress={chooseHour}
+              />
+              <Row
+                leading={icon('bell')}
+                title="Reminders"
+                value={reminderValue(settings.reminders)}
+                onPress={() => router.push('/reminders')}
               />
               <Row
                 leading={icon('envelope')}
