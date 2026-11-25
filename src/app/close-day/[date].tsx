@@ -17,7 +17,7 @@ import { colors, space } from '@/ui/theme';
 const TITLE_LIMIT = 80;
 
 export default function CloseDaySheet() {
-  const params = useLocalSearchParams<{ date: string }>();
+  const params = useLocalSearchParams<{ date: string; focus?: string }>();
   const today = useToday();
   const date = isISODate(params.date) ? params.date : today;
   const day = useDay(date);
@@ -86,6 +86,8 @@ export default function CloseDaySheet() {
             minHeight={160}
             placeholder="Write as much or as little as you like."
             autoCapitalize="sentences"
+            // Opened from a reminder: straight into writing.
+            autoFocus={params.focus === 'writing'}
           />
           <MediaEditor owner={date} media={day.media} />
         </View>

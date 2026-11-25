@@ -111,8 +111,8 @@ function describe(kind: PromptKind, ref: string): { title: string; detail: strin
       return { title: `Review ${ref}`, detail: 'Defining moment, next year’s misogi, a sealed note' };
     case 'backup':
       return ref === 'full'
-        ? { title: 'Yearly backup', detail: 'Save the full ZIP, with photos and voice notes, off this phone' }
-        : { title: 'Monthly backup', detail: 'Save a ZIP of your writing somewhere off this phone' };
+        ? { title: 'Full backup', detail: 'Once a year: everything, with photos and voice notes, off this phone' }
+        : { title: 'Writing backup', detail: 'Once a month: save your writing somewhere off this phone' };
   }
 }
 

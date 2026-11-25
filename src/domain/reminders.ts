@@ -52,3 +52,17 @@ export function reminderSchedule(
 
 export const REMINDER_TITLE = 'Life-Tracker';
 export const REMINDER_BODY = 'How was today? A few lines are enough.';
+
+/** Whole weeks the schedule reaches ahead for this many reminder times (shown on the screen). */
+export function weeksCovered(times: number): number {
+  if (times <= 0) return 0;
+  return Math.floor(Math.max(MIN_DAYS_AHEAD, Math.floor(MAX_PENDING / times)) / 7);
+}
+
+/** The time a newly added reminder starts at: 21:00 first, then an hour after the latest one. */
+export function nextReminderTime(times: string[]): string {
+  if (!times.length) return '21:00';
+  const last = [...times].sort().at(-1)!;
+  const [h, m] = last.split(':').map(Number);
+  return `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}

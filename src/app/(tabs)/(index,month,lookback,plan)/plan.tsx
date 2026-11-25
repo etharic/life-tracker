@@ -2,10 +2,11 @@ import { router } from 'expo-router';
 import type { SFSymbol } from 'expo-symbols';
 import { ActionSheetIOS, StyleSheet, View } from 'react-native';
 
-import { addMonths, formatShort, monthName, monthOf } from '@/domain/dates';
+import { addMonths, monthName, monthOf } from '@/domain/dates';
+import { backupLine } from '@/domain/prompts';
 import { GOAL_CATEGORIES, HOBBY_CATEGORIES, type Reminder } from '@/domain/types';
-import { useMonth, useToday } from '@/features/hooks';
-import { CheckRates, HobbyBalance } from '@/features/plan/progress-groups';
+import { useMonth, usePromptInput, useToday } from '@/features/hooks';
+import { HowItsGoing } from '@/features/plan/progress-groups';
 import { MisogiLine } from '@/features/year/plan-line';
 import { useSync } from '@/sync/scheduler';
 import { useJournal } from '@/state/journal';
@@ -37,6 +38,7 @@ export default function PlanScreen() {
   const bank = useJournal((s) => s.bank);
   const settings = useJournal((s) => s.settings);
   const sync = useSync();
+  const { driveSync } = usePromptInput();
 
   const goalIdeas = GOAL_CATEGORIES.reduce((n, c) => n + bank.goals[c].filter((e) => !e.retired).length, 0);
   const hobbyIdeas = HOBBY_CATEGORIES.reduce((n, c) => n + bank.hobbies[c].filter((e) => !e.retired).length, 0);
@@ -79,8 +81,7 @@ export default function PlanScreen() {
           </Section>
         </Group>
 
-        <CheckRates />
-        <HobbyBalance />
+        <HowItsGoing />
 
         <Group title="Ideas">
           <Section flush>
@@ -121,7 +122,7 @@ export default function PlanScreen() {
               <Row
                 leading={icon('square.and.arrow.up')}
                 title="Export and yearly book"
-                value={settings.lastBackup ? formatShort(settings.lastBackup) : undefined}
+                detail={backupLine(settings, driveSync ?? null, today)}
                 onPress={() => router.push('/backup')}
               />
             </Rows>

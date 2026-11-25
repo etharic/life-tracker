@@ -54,7 +54,7 @@ for r in "year-review/$YEAR:31-year-review" "past/year/$LAST:32-year-last" "past
 done
 if xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BUNDLE"; then echo "  year screens: app still running"; else echo "  year screens: APP NOT RUNNING"; fi
 # 1.18: reminders, the backup screen, and search across every kind of entry.
-for r in "reminders:39-reminders" "backup:40-backup"; do
+for r in "reminders:39-reminders" "backup?due=full:40-backup" "past/writing:42-writing" "crash-check:43-crash"; do
   fresh "${r%%:*}"; shot "${r#*:}" 4
 done
 xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true

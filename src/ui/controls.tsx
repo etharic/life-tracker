@@ -266,13 +266,16 @@ export function TextAction({
   title,
   onPress,
   tone = 'accent',
+  accessibilityLabel,
 }: {
   title: string;
   onPress: () => void;
   tone?: 'accent' | 'ink2';
+  /** When the visible words need context ("Remove" which reminder). */
+  accessibilityLabel?: string;
 }) {
   return (
-    <Press onPress={onPress} hitSlop={12} style={styles.textAction} accessibilityLabel={title}>
+    <Press onPress={onPress} hitSlop={12} style={styles.textAction} accessibilityLabel={accessibilityLabel ?? title}>
       <T variant="subhead" weight="600" tone={tone} chrome>
         {title}
       </T>

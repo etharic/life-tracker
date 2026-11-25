@@ -24,7 +24,7 @@ export function promptHref(p: Prompt): Href {
     case 'year-close':
       return `/year-review/${p.ref}`;
     case 'backup':
-      return '/backup';
+      return `/backup?due=${p.ref === 'full' ? 'full' : 'text'}`;
   }
 }
 

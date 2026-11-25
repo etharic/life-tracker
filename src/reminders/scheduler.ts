@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import { router } from 'expo-router';
 import { AppState } from 'react-native';
 import { create } from 'zustand';
 
@@ -82,8 +83,22 @@ export async function askReminderPermission(): Promise<boolean> {
 
 const isDay = (path: string) => /\/\d{4}-\d{2}-\d{2}\.md$/.test(path);
 
+/** A tapped reminder opens today's entry with the writing field ready. */
+function openToday() {
+  router.push(`/close-day/${useJournal.getState().today}?focus=writing`);
+}
+
 /** Keeps the schedule current. Returns a stop function. */
 export function startReminders(): () => void {
+  // The app may have been opened by tapping a reminder before this listener existed.
+  if (Notifications.getLastNotificationResponse()) {
+    Notifications.clearLastNotificationResponse();
+    setTimeout(openToday, 400);
+  }
+  const tap = Notifications.addNotificationResponseReceivedListener(() => {
+    Notifications.clearLastNotificationResponse();
+    openToday();
+  });
   let timer: ReturnType<typeof setTimeout> | undefined;
   const flush = () => {
     clearTimeout(timer);
@@ -104,5 +119,6 @@ export function startReminders(): () => void {
     clearTimeout(timer);
     stopWrites();
     sub.remove();
+    tap.remove();
   };
 }

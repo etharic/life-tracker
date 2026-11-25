@@ -32,7 +32,7 @@ export function EntryRow({ day, match, incident }: { day: DayEntry; match?: RowM
     <Press
       feedback="highlight"
       onPress={() => router.push(`/day/${day.date}`)}
-      accessibilityLabel={`${weekdayShort(day.date)} ${dayNumber(day.date)} ${monthShort(day.date.slice(0, 7))}: ${day.title || 'no title'}${f ? `, ${f.score} ${f.name}` : ''}`}
+      accessibilityLabel={`${weekdayShort(day.date)} ${dayNumber(day.date)} ${monthShort(day.date.slice(0, 7))}: ${day.title || 'no title'}${f ? `, ${f.score} ${f.name}` : ''}${match && snippet ? `. ${snippet}` : ''}`}
     >
       <View style={styles.row}>
         <View style={[styles.bar, { backgroundColor: f?.color ?? colors.track }]} />

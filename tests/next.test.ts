@@ -1,7 +1,10 @@
 import { addDays, weekOf } from '../src/domain/dates';
 import { checkRates, hobbyBalance } from '../src/domain/progress';
 import { backupDue, backupLine, type PromptInput } from '../src/domain/prompts';
-import { MAX_PENDING, reminderSchedule } from '../src/domain/reminders';
+import { MAX_PENDING, nextReminderTime, reminderSchedule, weeksCovered } from '../src/domain/reminders';
+import { barNeedsOutline, contrastRatio } from '../src/domain/contrast';
+import { FEELINGS } from '../src/domain/feelings';
+import { palette } from '../src/ui/theme';
 import { buildIndex, fold, searchIndex, searchJournal, type Searchable } from '../src/domain/search';
 import { bestWeekdaySentence, weekdayFeelings, wordCount, wordsInYear, writingStats } from '../src/domain/stats';
 import {
@@ -465,5 +468,44 @@ describe('hobby balance', () => {
       creative: 0,
       social: 0,
     });
+  });
+});
+
+// ---------- Design review: reminders copy and the bar rule ----------
+
+describe('reminder screen numbers', () => {
+  it('says how many weeks the schedule reaches', () => {
+    expect(weeksCovered(1)).toBe(9);
+    expect(weeksCovered(2)).toBe(4);
+    expect(weeksCovered(3)).toBe(3);
+    expect(weeksCovered(0)).toBe(0);
+  });
+
+  it('starts a new reminder at 21:00, then an hour after the latest', () => {
+    expect(nextReminderTime([])).toBe('21:00');
+    expect(nextReminderTime(['21:00'])).toBe('22:00');
+    expect(nextReminderTime(['07:30', '21:00'])).toBe('22:00');
+    expect(nextReminderTime(['23:15'])).toBe('00:15');
+  });
+});
+
+describe('bars (DESIGN.md)', () => {
+  it('computes WCAG contrast', () => {
+    expect(contrastRatio('#000000', '#FFFFFF')).toBeCloseTo(21, 0);
+    expect(contrastRatio('#FFFFFF', '#FFFFFF')).toBe(1);
+  });
+
+  it('pen blue stands 3:1 on the track in both appearances', () => {
+    for (const p of [palette.light, palette.dark]) expect(barNeedsOutline(p.accent, p.fill)).toBe(false);
+  });
+
+  it('every feeling colour is either 3:1 on the track or outlined, and the outline itself is 3:1', () => {
+    for (const p of [palette.light, palette.dark]) {
+      for (const f of FEELINGS) {
+        const ok = contrastRatio(f.color, p.fill) >= 3;
+        expect(barNeedsOutline(f.color, p.fill)).toBe(!ok);
+      }
+      expect(contrastRatio(p.ink3, p.fill)).toBeGreaterThanOrEqual(3);
+    }
   });
 });

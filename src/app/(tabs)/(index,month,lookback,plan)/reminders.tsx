@@ -1,8 +1,10 @@
 import { DateTimePicker } from '@expo/ui/community/datetime-picker';
 import { Stack } from 'expo-router';
-import { Linking, StyleSheet, Switch, useColorScheme, View } from 'react-native';
+import { Linking, StyleSheet, Switch, useColorScheme, useWindowDimensions, View } from 'react-native';
 
+import { nextReminderTime, weeksCovered } from '@/domain/reminders';
 import { MAX_REMINDERS, type Reminder } from '@/domain/types';
+import { STACK_SCALE } from '@/ui/bar';
 import { applyReminders, askReminderPermission, useReminderState } from '@/reminders/scheduler';
 import { useJournal } from '@/state/journal';
 import { TextAction } from '@/ui/controls';
@@ -25,6 +27,10 @@ export default function RemindersScreen() {
   const { permission, error } = useReminderState();
   const scheme = useColorScheme();
   const p = palette[scheme === 'dark' ? 'dark' : 'light'];
+  const { fontScale } = useWindowDimensions();
+  const wrap = fontScale > STACK_SCALE;
+  const onCount = reminders.filter((r) => r.on).length;
+  const spoken = (time: string) => toDate(time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
   const save = (next: Reminder[]) => {
     useJournal.getState().updateSettings((s) => void (s.reminders = next));
@@ -43,7 +49,7 @@ export default function RemindersScreen() {
     if (patch.on) void turnOn(next);
     else save(next);
   };
-  const add = () => void turnOn([...reminders, { time: reminders.length ? '12:00' : '21:00', on: true }]);
+  const add = () => void turnOn([...reminders, { time: nextReminderTime(reminders.map((r) => r.time)), on: true }]);
   const remove = (i: number) => save(reminders.filter((_, k) => k !== i));
 
   return (
@@ -57,12 +63,12 @@ export default function RemindersScreen() {
           {reminders.map((r, i) => (
             <View key={i}>
               {i > 0 ? <Divider /> : null}
-              <View style={styles.row}>
+              <View style={[styles.row, wrap && styles.wrap]}>
                 <Switch
                   value={r.on}
                   onValueChange={(on) => set(i, { on })}
                   trackColor={{ true: p.accent }}
-                  accessibilityLabel={`Reminder at ${r.time}`}
+                  accessibilityLabel={`Reminder at ${spoken(r.time)}`}
                 />
                 <View style={styles.flex}>
                   <DateTimePicker
@@ -73,13 +79,28 @@ export default function RemindersScreen() {
                     onValueChange={(_, d) => set(i, { time: fromDate(d) })}
                   />
                 </View>
-                <TextAction title="Remove" tone="ink2" onPress={() => remove(i)} />
+                <TextAction
+                  title="Remove"
+                  tone="ink2"
+                  onPress={() => remove(i)}
+                  accessibilityLabel={`Remove the ${spoken(r.time)} reminder`}
+                />
               </View>
             </View>
           ))}
         </Section>
       ) : null}
-      {reminders.length < MAX_REMINDERS ? (
+      {onCount ? (
+        <T variant="subhead" tone="ink2">
+          {`Opening the app keeps them going. They cover the next ${weeksCovered(onCount)} weeks.`}
+        </T>
+      ) : null}
+      {permission === 'undetermined' && reminders.length < MAX_REMINDERS ? (
+        <T variant="subhead" tone="ink2">
+          iPhone will ask once whether Life-Tracker may send notifications.
+        </T>
+      ) : null}
+      {permission !== 'denied' && reminders.length < MAX_REMINDERS ? (
         <TextAction title={reminders.length ? 'Add another time' : 'Add a reminder'} onPress={add} />
       ) : null}
       {permission === 'denied' ? (
@@ -105,5 +126,6 @@ export default function RemindersScreen() {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.m, minHeight: TARGET, padding: space.m },
   flex: { flex: 1, alignItems: 'flex-start' },
+  wrap: { flexWrap: 'wrap' },
   note: { gap: space.s },
 });

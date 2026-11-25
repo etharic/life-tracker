@@ -6,8 +6,7 @@ import { Settings, StyleSheet, TextInput, View } from 'react-native';
 import { monthOf } from '@/domain/dates';
 import { CHALLENGE_KINDS } from '@/domain/types';
 import { CHALLENGE_COPY, CHALLENGE_ROUTE } from '@/features/past/challenges';
-import { usePromptInput, useToday } from '@/features/hooks';
-import { backupLine } from '@/domain/prompts';
+import { useToday } from '@/features/hooks';
 import { SearchResults } from '@/features/past/search-results';
 import { Insights } from '@/features/past/insights';
 import { GoodDays, OnThisDay } from '@/features/past/remember';
@@ -19,7 +18,7 @@ import { colors, radius, space, type } from '@/ui/theme';
 import { Group } from '@/ui/group';
 import { NAMES } from '@/domain/names';
 
-type Item = { title: string; href: Href; icon: SFSymbol; value: string; subtitle?: string };
+type Item = { title: string; href: Href; icon: SFSymbol; value: string };
 
 /** Every list in the archive, grouped by how often it grows, each with a live count. */
 function useArchive(): { title: string; items: Item[] }[] {
@@ -29,8 +28,6 @@ function useArchive(): { title: string; items: Item[] }[] {
   const achievements = useJournal((s) => s.achievements);
   const challenges = useJournal((s) => s.challenges);
   const today = useToday();
-  const settings = useJournal((s) => s.settings);
-  const { driveSync } = usePromptInput();
   return useMemo(() => {
     const dayList = Object.values(days);
     const monthList = Object.values(months);
@@ -127,12 +124,11 @@ function useArchive(): { title: string; items: Item[] }[] {
             href: '/backup',
             icon: 'book.closed',
             value: today.slice(0, 4),
-            subtitle: backupLine(settings, driveSync ?? null, today),
           },
         ],
       },
     ];
-  }, [days, months, years, achievements, challenges, today, settings, driveSync]);
+  }, [days, months, years, achievements, challenges, today]);
 }
 
 /** Look back: one search over everything written, three numbers, and the archive by how often it grows. */
@@ -152,7 +148,7 @@ export default function LookBackHub() {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search all days"
+          placeholder="Search everything you wrote"
           placeholderTextColor={colors.ink3}
           selectionColor={colors.accent}
           returnKeyType="search"
@@ -160,7 +156,7 @@ export default function LookBackHub() {
           autoCorrect={false}
           autoCapitalize="none"
           style={styles.searchInput}
-          accessibilityLabel="Search all days"
+          accessibilityLabel="Search everything you wrote"
         />
       </View>
       {searching ? (
@@ -181,7 +177,6 @@ export default function LookBackHub() {
                       key={it.title}
                       leading={<Icon name={it.icon} size={18} color={colors.accent} />}
                       title={it.title}
-                      detail={it.subtitle}
                       value={it.value}
                       onPress={() => router.push(it.href)}
                     />
@@ -203,7 +198,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.s,
     paddingHorizontal: space.m,
-    minHeight: 40,
+    minHeight: 44,
     borderRadius: radius.control,
     backgroundColor: colors.fill,
   },

@@ -70,7 +70,7 @@ export function SearchResults({ query }: { query: string }) {
         {hits.length
           ? more
             ? `Showing the newest ${hits.length}`
-            : `${hits.length} ${hits.length === 1 ? 'entry' : 'entries'}`
+            : `${hits.length} ${hits.length === 1 ? 'result' : 'results'}`
           : `Nothing found for “${shown}”.`}
       </T>
       {hits.length ? (
