@@ -170,7 +170,7 @@ export function HoldRing({
         variant="footnote"
         weight={selected ? '600' : '500'}
         tone={checked ? 'ink2' : 'ink'}
-        numberOfLines={3}
+        numberOfLines={2}
         style={styles.label}
       >
         {label}
