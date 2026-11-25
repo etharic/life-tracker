@@ -1,82 +1,8 @@
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { cubicBezier, type CSSTransitionProperties } from 'react-native-reanimated';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { feeling, FEELINGS, type Feeling } from '../domain/feelings';
-import { haptic } from './haptics';
-import { enterSoft } from './motion';
+import { feeling, FEELINGS } from '../domain/feelings';
 import { T } from './text';
 import { colors, radius, space } from './theme';
-import { usePop } from './use-pop';
-
-const cellAnim: CSSTransitionProperties = {
-  transitionProperty: ['transform', 'opacity'],
-  transitionDuration: '160ms',
-  transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1),
-};
-
-/** Today's row of 11 boxes: tap to log, tap another to change, tap the same to clear. */
-export function FeelingRow({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
-  const f = feeling(value);
-  return (
-    <View style={styles.wrap}>
-      <View style={styles.row} accessibilityRole="adjustable" accessibilityLabel="How did today feel">
-        {FEELINGS.map((x) => (
-          <FeelingCell key={x.score} feeling={x} value={value} onChange={onChange} />
-        ))}
-      </View>
-      <View style={styles.ends}>
-        <T variant="caption" tone="ink2">
-          0 worst day ever
-        </T>
-        <T variant="caption" tone="ink2">
-          10 best day ever
-        </T>
-      </View>
-      {f ? (
-        <Animated.View key={f.score} entering={enterSoft}>
-          <FeelingLabel score={f.score} />
-        </Animated.View>
-      ) : null}
-    </View>
-  );
-}
-
-function FeelingCell({
-  feeling: x,
-  value,
-  onChange,
-}: {
-  feeling: Feeling;
-  value: number | null;
-  onChange: (v: number | null) => void;
-}) {
-  const selected = x.score === value;
-  const pop = usePop(selected, 0.2);
-  return (
-    <Pressable
-      hitSlop={{ top: 8, bottom: 8 }}
-      accessibilityRole="radio"
-      accessibilityState={{ selected }}
-      accessibilityLabel={`${x.score}, ${x.name}`}
-      onPress={() => {
-        haptic.select();
-        onChange(selected ? null : x.score);
-      }}
-      style={styles.cellHit}
-    >
-      <Animated.View style={pop}>
-        <Animated.View
-          style={[
-            styles.cell,
-            cellAnim,
-            { backgroundColor: x.color },
-            selected ? styles.cellSelected : value != null ? styles.cellDim : null,
-          ]}
-        />
-      </Animated.View>
-    </Pressable>
-  );
-}
 
 /** "7 · Good" with its swatch: colour is never the only signal. */
 export function FeelingLabel({ score, size = 'large' }: { score: number; size?: 'large' | 'small' }) {
@@ -156,20 +82,6 @@ export function FeelingScale() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: space.s },
-  row: { flexDirection: 'row', gap: 4 },
-  cellHit: { flex: 1 },
-  cell: {
-    height: 40,
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: colors.edge,
-    transform: [{ scale: 1 }],
-    opacity: 1,
-  },
-  cellSelected: { borderWidth: 2.5, borderColor: colors.ink, transform: [{ scale: 1.08 }] },
-  cellDim: { opacity: 0.55 },
-  ends: { flexDirection: 'row', justifyContent: 'space-between' },
   label: { flexDirection: 'row', alignItems: 'center', gap: space.s, marginTop: space.xs },
   swatch: { borderRadius: 5, borderWidth: 1, borderColor: colors.edge },
   box: { borderRadius: radius.s, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },

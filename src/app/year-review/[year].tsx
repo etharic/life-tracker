@@ -13,6 +13,8 @@ import { commitNextMisogi, judgeMisogi } from '@/features/year/commit';
 import { definingFrom, definingKey } from '@/features/year/defining';
 import { SealedCard } from '@/features/year/sealed-card';
 import { useJournal } from '@/state/journal';
+import { recapSlides } from '@/domain/recap';
+import { Stories } from '@/ui/stories';
 import { Button, Segmented } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
 import { Screen, Section } from '@/ui/layout';
@@ -48,6 +50,13 @@ export default function YearReview() {
   // The steps are fixed when the sitting opens, so answering one never moves the dots.
   const [steps] = useState<Step[]>(() => [...sittingSteps(years, y, today), 'end']);
   const [index, setIndex] = useState(0);
+  // The year in a few cards first; the questions come after.
+  const [recap, setRecap] = useState(true);
+  const challenges = useJournal((s) => s.challenges);
+  const slides = useMemo(
+    () => recapSlides({ kind: 'year', year: y || '2000' }, { days, months, challenges, today }),
+    [y, days, months, challenges, today],
+  );
   const step = steps[index];
 
   const last = misogiFor(years, y);
@@ -71,6 +80,12 @@ export default function YearReview() {
   const [misogiPick, setMisogiPick] = useState<string | null>(rec.nextMisogi?.link?.id ?? null);
 
   if (!y) return null;
+
+  if (recap && slides.length > 1) {
+    return (
+      <Stories slides={slides} doneLabel={`Review ${y}`} onDone={() => setRecap(false)} onClose={() => router.back()} />
+    );
+  }
 
   const real = steps.filter((s) => s !== 'end');
   const overline = `Review ${y}`;

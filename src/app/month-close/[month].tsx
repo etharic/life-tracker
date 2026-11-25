@@ -13,6 +13,8 @@ import { AchievementBanner } from '@/features/achievements';
 import { askList } from '@/features/list-question';
 import { useDayLookup, useMonth, useMonthsMap, useToday } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
+import { recapSlides } from '@/domain/recap';
+import { Stories } from '@/ui/stories';
 import { Button, Segmented } from '@/ui/controls';
 import { StepHead } from '@/ui/steps';
 import { SuggestPicker } from '@/ui/suggest-picker';
@@ -76,12 +78,24 @@ export default function CloseMonth() {
   const name = monthName(month || '2000-01');
 
   const [step, setStep] = useState(1);
+  // The month in a few cards first; the questions come after.
+  const [recap, setRecap] = useState(true);
+  const challenges = useJournal((s) => s.challenges);
+  const allDays = useJournal((s) => s.days);
+  const allMonths = useJournal((s) => s.months);
+  const slides = useMemo(
+    () =>
+      recapSlides(
+        { kind: 'month', month: month || '2000-01' },
+        { days: allDays, months: allMonths, challenges, today },
+      ),
+    [month, allDays, allMonths, challenges, today],
+  );
   const [extremeDone, setExtremeDone] = useState<boolean | null>(rec.extremeDone);
   const [incident, setIncident] = useState<ExtremeIncident | null>(rec.extremeIncident);
   const [highlight, setHighlight] = useState(rec.highlight);
   const [fromWeek, setFromWeek] = useState<string | null>(rec.highlightFromWeek);
   const weekItems = useMemo(() => monthSuggestions(month || '2000-01', rec), [month, rec]);
-  const challenges = useJournal((s) => s.challenges);
   const [keepPriority, setKeepPriority] = useState(true);
   const [keepSkill, setKeepSkill] = useState(true);
   const [keepLineup, setKeepLineup] = useState(true);
@@ -375,6 +389,17 @@ export default function CloseMonth() {
           onPress={() => finish(true)}
         />
       </View>
+    );
+  }
+
+  if (recap && slides.length > 1) {
+    return (
+      <Stories
+        slides={slides}
+        doneLabel={`Close ${name}`}
+        onDone={() => setRecap(false)}
+        onClose={() => router.back()}
+      />
     );
   }
 

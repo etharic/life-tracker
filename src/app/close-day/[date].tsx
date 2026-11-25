@@ -8,7 +8,7 @@ import { useDay, useToday } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
 import { Button, Field } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
-import { FeelingRow } from '@/ui/feelings';
+import { FeelingDial } from '@/ui/feeling-dial';
 import { Divider, Screen } from '@/ui/layout';
 import { T } from '@/ui/text';
 import { ModalHeader } from '@/ui/modal';
@@ -61,7 +61,7 @@ export default function CloseDaySheet() {
           <T variant="subhead" weight="600" tone="ink2" accessibilityRole="header">
             {date === today ? 'How did today feel?' : 'How did the day feel?'}
           </T>
-          <FeelingRow
+          <FeelingDial
             value={day.feeling}
             onChange={(v) => useJournal.getState().updateDay(date, (d) => void (d.feeling = v))}
           />
