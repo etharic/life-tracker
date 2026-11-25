@@ -142,7 +142,7 @@ export function FeelingDial({ value, onChange }: { value: number | null; onChang
               {String(f.score)}
             </T>
           ) : (
-            <T variant="footnote" tone="ink2" style={styles.center}>
+            <T variant="footnote" tone="ink2" style={[styles.center, styles.orbHint]}>
               Drag or tap the scale
             </T>
           )}
@@ -200,6 +200,7 @@ const styles = StyleSheet.create({
   halo: { position: 'absolute', width: ORB, height: ORB, borderRadius: ORB / 2 },
   score: { fontSize: 64, lineHeight: 72, fontVariant: ['tabular-nums'] },
   center: { textAlign: 'center' },
+  orbHint: { maxWidth: ORB - 40 },
   nameRow: { alignItems: 'center', minHeight: 30 },
   hit: { height: 48, justifyContent: 'center' },
   gradient: { height: 12, borderRadius: 6, marginHorizontal: THUMB / 2 - 6 },
