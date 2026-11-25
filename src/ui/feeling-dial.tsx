@@ -18,7 +18,7 @@ import { RM } from './motion';
 import { T } from './text';
 import { colors, space, usePalette } from './theme';
 
-const ORB = 156;
+const ORB = 132;
 const THUMB = 30;
 const STOPS = FEELINGS.map((f) => f.score);
 const HUES = FEELINGS.map((f) => f.color);
@@ -142,16 +142,22 @@ export function FeelingDial({ value, onChange }: { value: number | null; onChang
               {String(f.score)}
             </T>
           ) : (
-            <T variant="subhead" tone="ink2" style={styles.center}>
-              Drag the scale
+            <T variant="footnote" tone="ink2" style={styles.center}>
+              Drag or tap the scale
             </T>
           )}
         </Animated.View>
       </View>
       <View style={styles.nameRow}>
-        <T variant="title3" weight="600" style={styles.center} accessibilityLiveRegion="polite">
-          {f ? f.name : 'How did it feel?'}
-        </T>
+        {f ? (
+          <T variant="title3" weight="600" style={styles.center} accessibilityLiveRegion="polite">
+            {f.name}
+          </T>
+        ) : (
+          <T variant="subhead" tone="ink2" style={styles.center}>
+            Not chosen yet
+          </T>
+        )}
       </View>
       <GestureDetector gesture={gesture}>
         <View style={styles.hit} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
@@ -181,7 +187,7 @@ export function FeelingDial({ value, onChange }: { value: number | null; onChang
 
 const styles = StyleSheet.create({
   wrap: { gap: space.m },
-  stage: { height: ORB * 1.3, alignItems: 'center', justifyContent: 'center' },
+  stage: { height: ORB * 1.28, alignItems: 'center', justifyContent: 'center' },
   orb: {
     width: ORB,
     height: ORB,

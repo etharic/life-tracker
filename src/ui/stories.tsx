@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import type { RecapSlide } from '../domain/recap';
@@ -91,6 +92,14 @@ export function Stories({
 
   return (
     <View style={[styles.fill, { backgroundColor: bg }]}>
+      <StatusBar style={fg === '#FFFFFF' ? 'light' : 'dark'} />
+      {/* One large soft circle behind the words, a little different on every card. */}
+      <Animated.View
+        key={`orb-${s.key}`}
+        entering={rise(0)}
+        pointerEvents="none"
+        style={[styles.orb, { backgroundColor: fg, top: 120 + ((i * 97) % 260), right: -140 + ((i * 53) % 90) }]}
+      />
       <View style={[styles.top, { paddingTop: insets.top + space.s }]}>
         <View style={styles.bars} accessible accessibilityLabel={`Card ${i + 1} of ${slides.length}`}>
           {slides.map((x, k) => (
@@ -188,7 +197,8 @@ export function Stories({
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
+  fill: { flex: 1, overflow: 'hidden' },
+  orb: { position: 'absolute', width: 380, height: 380, borderRadius: 190, opacity: 0.08 },
   top: { paddingHorizontal: space.l, gap: space.m },
   bars: { flexDirection: 'row', gap: 4 },
   track: { flex: 1, height: 3, borderRadius: 2, overflow: 'hidden' },
