@@ -6,15 +6,16 @@ import { monthOfWeek, weekDates } from '@/domain/dates';
 import { CHECK_KEYS, type ISODate, type WeekId } from '@/domain/types';
 import { useMonth, useWeek } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
-import { Chip } from '@/ui/controls';
+import { CheckRow } from '@/ui/controls';
+import { Divider } from '@/ui/layout';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
 import { enterRow, exitSoft, layoutMove } from '@/ui/motion';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
-import { colors, radius, space, TARGET, type } from '@/ui/theme';
+import { colors, space, TARGET, type } from '@/ui/theme';
 
-/** A small label over a run of capsules, in sentence case like every other label. */
+/** A small label over a list, in sentence case like every other label. */
 export function SubLabel({ children }: { children: string }) {
   return (
     <T variant="footnote" weight="600" tone="ink2" accessibilityRole="header">
@@ -24,8 +25,8 @@ export function SubLabel({ children }: { children: string }) {
 }
 
 /**
- * A week's commitments as one run of capsules: its priorities first, each starred, then the month's
- * three weekly checks, then a button to add a priority. Capsules flow side by side and wrap.
+ * A week's commitments as one checklist: its own commitments first (priorities starred; touch and
+ * hold for the menu), then the month's three weekly checks, then a row to add one.
  * A week that is not the current one is shown as it was, without being changed.
  */
 export function WeekItems({
@@ -47,6 +48,21 @@ export function WeekItems({
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
   const [starDraft, setStarDraft] = useState(false);
+  const [showDone, setShowDone] = useState(false);
+  // Lines just ticked stay in place for a moment, so the tick is seen before the line folds away.
+  const [lingering, setLingering] = useState<Set<string>>(() => new Set());
+  const linger = (key: string) => {
+    setLingering((s) => new Set(s).add(key));
+    setTimeout(
+      () =>
+        setLingering((s) => {
+          const n = new Set(s);
+          n.delete(key);
+          return n;
+        }),
+      1400,
+    );
+  };
   const doneSet = useMemo(() => new Set(weekDates(week).flatMap((d) => days[d]?.prioritiesDone ?? [])), [days, week]);
   const items = rec.priorities;
 
@@ -92,64 +108,110 @@ export function WeekItems({
       },
     );
 
-  const run = padded ? styles.runPadded : styles.run;
   if (!items.length && !setup && !interactive) return null;
 
+  const rows = [
+    ...items.map((p) => ({
+      key: `p:${p.text}`,
+      label: p.text,
+      checked: doneSet.has(p.text),
+      star: !p.plain,
+      toggle: () => togglePriority(week, p.text, date),
+      menu: () => menu(p.text, !p.plain),
+    })),
+    ...(setup
+      ? CHECK_KEYS.map((k) => ({
+          key: `c:${k}`,
+          label: setup.weeklyChecks[k],
+          checked: rec.checks[k],
+          star: false,
+          toggle: () => updateWeek(week, (w) => void (w.checks[k] = !w.checks[k])),
+          menu: undefined,
+        }))
+      : []),
+  ];
+  // A past week shows everything as it was; this week folds what is done unless asked to show it.
+  const fold = interactive && !showDone;
+  const shown = fold ? rows.filter((r) => !r.checked || lingering.has(r.key)) : rows;
+  const folded = fold ? rows.filter((r) => r.checked && !lingering.has(r.key)) : [];
+
   return (
-    <View style={run}>
-      <SubLabel>Commitments</SubLabel>
-      <View style={styles.chips}>
-        {/* The week's own commitments lead; a priority carries a star, like the priority goal. */}
-        <LayoutAnimationConfig skipEntering>
-          {items.map((p) => (
-            <Animated.View key={p.text} entering={enterRow} exiting={exitSoft} layout={layoutMove}>
-              <Chip
-                label={p.text}
-                wrap
-                starred={!p.plain}
-                starLabel="priority"
-                selected={doneSet.has(p.text)}
-                readOnly={!interactive}
-                onPress={() => togglePriority(week, p.text, date)}
-                onLongPress={() => menu(p.text, !p.plain)}
-                accessibilityHint="Touch and hold to make it a priority or remove it"
-              />
-            </Animated.View>
-          ))}
-        </LayoutAnimationConfig>
-        {setup
-          ? CHECK_KEYS.map((k) => (
-              <Chip
-                key={k}
-                label={setup.weeklyChecks[k]}
-                wrap
-                selected={rec.checks[k]}
-                readOnly={!interactive}
-                onPress={() => updateWeek(week, (w) => void (w.checks[k] = !w.checks[k]))}
-              />
-            ))
-          : null}
-        {interactive ? (
-          adding ? (
-            <View style={[styles.capsule, styles.inputCapsule]}>
+    <View style={padded ? styles.listPadded : styles.list}>
+      <View style={padded ? styles.labelPadded : undefined}>
+        <SubLabel>Commitments</SubLabel>
+      </View>
+      {/*
+        A checklist, as in Things: the box springs and ticks; a ticked line stays a moment, then
+        folds into "n done" at the end, so the list shows only what is left this week. The week's
+        own commitments lead, a priority starred; then the month's weekly checks.
+      */}
+      <LayoutAnimationConfig skipEntering>
+        {shown.map((r, i) => (
+          <Animated.View key={r.key} entering={enterRow} exiting={exitSoft} layout={layoutMove}>
+            {i > 0 ? <Divider inset={INSET} /> : null}
+            <CheckRow
+              checked={r.checked}
+              label={r.label}
+              strike
+              readOnly={!interactive}
+              onToggle={() => {
+                if (!r.checked) linger(r.key);
+                r.toggle();
+              }}
+              onLongPress={interactive ? r.menu : undefined}
+              trailing={
+                r.star ? (
+                  <View accessible accessibilityLabel="Priority">
+                    <Icon name="star.fill" size={13} color={colors.accent} />
+                  </View>
+                ) : null
+              }
+            />
+          </Animated.View>
+        ))}
+      </LayoutAnimationConfig>
+      {folded.length ? (
+        <>
+          {shown.length ? <Divider inset={INSET} /> : null}
+          <Press
+            feedback="highlight"
+            onPress={() => {
+              haptic.select();
+              setShowDone(true);
+            }}
+            accessibilityLabel={`Show ${folded.length} done`}
+            style={styles.addRow}
+          >
+            <View style={styles.addIcon}>
+              <Icon name="checkmark.circle.fill" size={18} color={colors.accent} />
+            </View>
+            <T variant="body" tone="ink2" style={styles.flex}>
+              {`${folded.length} done`}
+            </T>
+            <Icon name="chevron.down" size={12} color={colors.ink3} weight="semibold" />
+          </Press>
+        </>
+      ) : null}
+      {interactive ? (
+        <>
+          {shown.length || folded.length ? <Divider inset={INSET} /> : null}
+          {adding ? (
+            <View style={styles.addRow}>
               {/* The star decides, before the commitment is added, whether it is a priority. */}
               <Press
                 onPress={() => setStarDraft((v) => !v)}
-                hitSlop={8}
+                hitSlop={10}
                 accessibilityRole="switch"
                 accessibilityState={{ checked: starDraft }}
                 accessibilityLabel="Priority"
+                style={styles.addIcon}
               >
                 <Icon
                   name={starDraft ? 'star.fill' : 'star'}
-                  size={17}
+                  size={18}
                   color={starDraft ? colors.accent : colors.ink3}
                 />
               </Press>
-              {/* Said in words too: a bare star does not explain itself. */}
-              <T variant="footnote" weight="600" tone={starDraft ? 'accent' : 'ink3'} chrome>
-                Priority
-              </T>
               <TextInput
                 autoFocus
                 value={draft}
@@ -170,36 +232,40 @@ export function WeekItems({
             </View>
           ) : (
             <Press
+              feedback="highlight"
               onPress={() => setAdding(true)}
               accessibilityLabel="Add a commitment"
-              style={[styles.capsule, styles.addCapsule]}
+              style={styles.addRow}
             >
-              <Icon name="plus" size={14} color={colors.accent} weight="bold" />
-              <T variant="callout" weight="500" tone="accent" chrome>
-                Commitment
+              <View style={styles.addIcon}>
+                <Icon name="plus" size={16} color={colors.accent} weight="semibold" />
+              </View>
+              <T variant="body" tone="accent">
+                Add a commitment
               </T>
             </Press>
-          )
-        ) : null}
-      </View>
+          )}
+        </>
+      ) : null}
     </View>
   );
 }
 
+/** Rows start where the text does, past the box: dividers line up with the words. */
+const INSET = space.l + 26 + space.m;
+
 const styles = StyleSheet.create({
-  run: { gap: space.s },
-  runPadded: { gap: space.s, padding: space.l, paddingTop: space.m },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s },
-  capsule: {
+  list: {},
+  listPadded: { paddingVertical: space.xs },
+  labelPadded: { paddingHorizontal: space.l, paddingTop: space.s },
+  addRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    minHeight: TARGET,
-    paddingHorizontal: space.m,
-    borderRadius: radius.pill,
-    borderWidth: 1.5,
+    gap: space.m,
+    minHeight: TARGET + 8,
+    paddingHorizontal: space.l,
   },
-  addCapsule: { borderColor: colors.hairline, borderStyle: 'dashed', backgroundColor: colors.surface },
-  inputCapsule: { borderColor: colors.accent, backgroundColor: colors.surface, minWidth: 180 },
-  input: { ...type.callout, color: colors.ink, paddingVertical: space.xs, minWidth: 150 },
+  addIcon: { width: 26, alignItems: 'center' },
+  flex: { flex: 1 },
+  input: { ...type.body, flex: 1, color: colors.ink, paddingVertical: space.s },
 });

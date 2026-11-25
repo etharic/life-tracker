@@ -136,88 +136,6 @@ export function CheckRow({
   );
 }
 
-// ---------- Chip (hobby ticks) ----------
-
-export function Chip({
-  label,
-  selected,
-  onPress,
-  onLongPress,
-  starred,
-  starLabel = 'skill hobby',
-  readOnly,
-  wrap,
-  accessibilityHint,
-}: {
-  label: string;
-  selected: boolean;
-  onPress?: () => void;
-  onLongPress?: () => void;
-  starred?: boolean;
-  /** What the star means, for VoiceOver. */
-  starLabel?: string;
-  /** Shown as it is, not toggled (a week that has passed). */
-  readOnly?: boolean;
-  /** Long text wraps instead of being cut. */
-  wrap?: boolean;
-  accessibilityHint?: string;
-}) {
-  const pop = usePop(selected, 0.1);
-  // Done goes quiet, like a line crossed off in a notebook: a soft tint, a tick, softer text.
-  // What is still to do stays the clearest thing in the run.
-  const content = (
-    <>
-      {selected ? (
-        <Icon name="checkmark" size={14} color={colors.accent} weight="bold" />
-      ) : starred ? (
-        <Icon name="star.fill" size={13} color={colors.accent} />
-      ) : null}
-      <T
-        variant="callout"
-        weight="500"
-        tone={selected ? 'ink2' : 'ink'}
-        numberOfLines={wrap ? undefined : 1}
-        chrome
-        style={styles.chipText}
-      >
-        {label}
-      </T>
-      {selected && starred ? <Icon name="star.fill" size={12} color={colors.accent} /> : null}
-    </>
-  );
-  const p = usePalette();
-  const style = [styles.chip, wrap && styles.chipWrap, selected ? styles.chipOn : styles.chipOff];
-  const fill = selected
-    ? { backgroundColor: p.accentSoft, borderColor: p.accentSoft }
-    : { backgroundColor: p.surface, borderColor: p.hairline };
-  if (readOnly || !onPress) {
-    return (
-      <View style={style} accessible accessibilityLabel={`${label}${selected ? ', done' : ''}`}>
-        {content}
-      </View>
-    );
-  }
-  return (
-    <Animated.View style={pop}>
-      <Press
-        onPress={() => {
-          haptic.select();
-          onPress();
-        }}
-        onLongPress={onLongPress}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: selected }}
-        accessibilityLabel={starred ? `${label}, ${starLabel}` : label}
-        accessibilityHint={accessibilityHint}
-        fill={fill}
-        style={style}
-      >
-        {content}
-      </Press>
-    </Animated.View>
-  );
-}
-
 // ---------- Buttons ----------
 
 type ButtonKind = 'primary' | 'secondary' | 'plain';
@@ -385,20 +303,6 @@ const styles = StyleSheet.create({
   checkText: { flex: 1, gap: 1 },
   caption: { fontSize: 11, lineHeight: 13 },
   strike: { textDecorationLine: 'line-through' },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    minHeight: TARGET,
-    paddingHorizontal: space.m,
-    borderRadius: radius.pill,
-    borderWidth: 1.5,
-  },
-  chipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accentSoft },
-  chipOff: { backgroundColor: colors.surface, borderColor: colors.hairline },
-  chipText: { flexShrink: 1 },
-  chipWrap: { paddingVertical: space.s },
   button: {
     flexDirection: 'row',
     gap: space.s,

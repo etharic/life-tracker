@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActionSheetIOS, AppState, StyleSheet, View } from 'react-native';
+import { ActionSheetIOS, AppState, Pressable, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { formatTitle, monthOf } from '@/domain/dates';
@@ -9,7 +9,7 @@ import { misogiOf, NAMES } from '@/domain/names';
 import { JournalGroup, NoSetupNote, TodayGroup, WeekGroup } from '@/features/day/day-layout';
 import { DayWash } from '@/features/day/day-wash';
 import { useDay, useMonth, usePrompts, useStreaks, useToday } from '@/features/hooks';
-import { PromptCard } from '@/features/prompts/prompt-card';
+import { PromptCard, UpkeepRow } from '@/features/prompts/prompt-card';
 import { judgeMisogi } from '@/features/year/commit';
 import { useJournal } from '@/state/journal';
 import { haptic } from '@/ui/haptics';
@@ -25,16 +25,24 @@ function Streak({ days }: { days: number }) {
   const bump = useBump(days);
   if (days < 2) return null;
   return (
-    <Animated.View style={[styles.streak, bump]} accessible accessibilityLabel={`${days}-day streak`}>
-      <Icon name="flame.fill" size={14} color={colors.flame} />
-      <RollingText
-        variant="subhead"
-        weight="700"
-        style={[styles.tabular, styles.streakText]}
-        chrome
-        text={String(days)}
-      />
-    </Animated.View>
+    <Pressable
+      onPress={() => router.push('/streak?view=1')}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={`${days}-day streak`}
+      accessibilityHint="Shows this week and your record"
+    >
+      <Animated.View style={[styles.streak, bump]}>
+        <Icon name="flame.fill" size={14} color={colors.flame} />
+        <RollingText
+          variant="subhead"
+          weight="700"
+          style={[styles.tabular, styles.streakText]}
+          chrome
+          text={String(days)}
+        />
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -157,6 +165,7 @@ export default function TodayScreen() {
         <TodayGroup date={today} />
         <WeekGroup date={today} />
         {evening ? null : <JournalGroup date={today} isToday titled={false} />}
+        <UpkeepRow prompts={prompts} />
       </View>
     </Screen>
   );

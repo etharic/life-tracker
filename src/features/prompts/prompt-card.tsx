@@ -7,6 +7,7 @@ import { promptHome, type Prompt } from '@/domain/prompts';
 import { useJournal } from '@/state/journal';
 import { haptic } from '@/ui/haptics';
 import { exitSoft, layoutMove } from '@/ui/motion';
+import { Icon } from '@/ui/icon';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { colors, radius, space, TARGET, type } from '@/ui/theme';
@@ -96,7 +97,9 @@ function PromptLine({ prompt, single }: { prompt: Prompt; single: boolean }) {
  * The one card at the top of Today. Never a pop-up, never red. Several pending prompts
  * are listed oldest first; a skipped one waits on the Month page.
  */
-export function PromptCard({ prompts }: { prompts: Prompt[] }) {
+export function PromptCard({ prompts: all }: { prompts: Prompt[] }) {
+  // Upkeep (the backup) is not a ritual of the day: it waits in one quiet row at the end of Today.
+  const prompts = all.filter((p) => p.kind !== 'backup');
   if (!prompts.length) return null;
   const single = prompts.length === 1;
   // A closed prompt fades out and the card settles around what is left.
@@ -127,7 +130,57 @@ export function PromptCard({ prompts }: { prompts: Prompt[] }) {
   );
 }
 
+/**
+ * Upkeep at the foot of Today, one row (as iOS Settings suggests things): what is due and why, the
+ * whole row opens it. It never leads the day.
+ */
+export function UpkeepRow({ prompts }: { prompts: Prompt[] }) {
+  const p = prompts.find((x) => x.kind === 'backup');
+  if (!p) return null;
+  return (
+    <Animated.View exiting={exitSoft} layout={layoutMove}>
+      <Press
+        feedback="highlight"
+        onPress={() => router.push(promptHref(p))}
+        accessibilityLabel={`${p.title}. ${p.detail}`}
+        accessibilityHint="Opens Export and backup"
+        style={styles.upkeep}
+      >
+        <View style={styles.upkeepIcon}>
+          <Icon name="externaldrive" size={16} color={colors.accent} weight="semibold" />
+        </View>
+        <View style={styles.flex}>
+          <T variant="subhead" weight="600">
+            {p.title}
+          </T>
+          <T variant="footnote" tone="ink2" numberOfLines={2}>
+            {p.detail}
+          </T>
+        </View>
+        <Icon name="chevron.right" size={13} color={colors.ink3} weight="semibold" />
+      </Press>
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
+  upkeep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.m,
+    padding: space.m,
+    borderRadius: radius.section,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.hairline,
+  },
+  upkeepIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   flex: { flex: 1, gap: 2 },
   card: { backgroundColor: colors.accentSoft, borderRadius: radius.section, padding: space.l, gap: space.m },
   list: { gap: space.s },

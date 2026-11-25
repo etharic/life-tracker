@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Children, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Pressable, Settings, StyleSheet, View } from 'react-native';
+import { Pressable, Settings, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedProps,
@@ -27,6 +27,7 @@ import { T } from '@/ui/text';
 import { RollingText } from '@/ui/rolling-text';
 import { colors, radius, space, TARGET, usePalette } from '@/ui/theme';
 import { usePop } from '@/ui/use-pop';
+import { STACK_SCALE } from '@/ui/bar';
 
 /**
  * Today's goals and hobbies as rings, always in view, four to a row (after Streaks): touch and hold
@@ -49,8 +50,8 @@ export const CATEGORY_ICON: Record<Category, SFSymbol> = {
 };
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const RING = 60;
-const STROKE = 5;
+const RING = 42;
+const STROKE = 4;
 
 export function HoldRing({
   category,
@@ -62,6 +63,7 @@ export function HoldRing({
   readOnly,
   selected,
   detail,
+  meta,
   onToggle,
   onTap,
 }: {
@@ -76,6 +78,8 @@ export function HoldRing({
   selected?: boolean;
   /** A short value under the label, such as 2½ h. */
   detail?: string;
+  /** What keeps it going: its run of days, or how the month is going. */
+  meta?: string;
   onToggle: () => void;
   onTap?: () => void;
 }) {
@@ -120,7 +124,7 @@ export function HoldRing({
     if (!fired.current) hold.set(withTiming(0, { duration: 160, easing: Easing.out(Easing.quad) }));
   };
 
-  const a11y = `${label}, ${caption}${star ? `, ${starLabel}` : ''}${detail ? `, ${detail}` : ''}`;
+  const a11y = `${label}, ${caption}${star ? `, ${starLabel}` : ''}${detail ? `, ${detail}` : ''}${meta ? `, ${meta}` : ''}`;
   return (
     <Pressable
       onPressIn={start}
@@ -139,7 +143,11 @@ export function HoldRing({
       onAccessibilityAction={(e) => {
         if (e.nativeEvent.actionName === 'activate') commit();
       }}
-      style={styles.tile}
+      style={({ pressed }) => [
+        styles.tile,
+        { backgroundColor: p.surface, borderColor: p.hairline },
+        pressed && styles.tilePressed,
+      ]}
     >
       <Animated.View style={[styles.ring, pop]}>
         <Svg width={RING} height={RING} style={StyleSheet.absoluteFill}>
@@ -160,35 +168,34 @@ export function HoldRing({
         <Animated.View style={[styles.done, { backgroundColor: p.accent }, filled]} />
         <Icon
           name={CATEGORY_ICON[category]}
-          size={22}
+          size={17}
           color={checked ? colors.onAccent : colors.ink2}
           weight={checked ? 'semibold' : 'regular'}
         />
         {star ? (
           <View style={[styles.star, { backgroundColor: p.bg }]}>
-            <Icon name="star.fill" size={11} color={colors.accent} />
+            <Icon name="star.fill" size={9} color={colors.accent} />
           </View>
         ) : null}
       </Animated.View>
-      <T
-        variant="footnote"
-        weight={selected ? '600' : '500'}
-        tone={checked ? 'ink2' : 'ink'}
-        numberOfLines={2}
-        style={styles.label}
-      >
-        {label}
-      </T>
-      {detail ? (
-        <T variant="caption" tone="accent" weight="600" style={styles.detail}>
-          {detail}
+      <View style={styles.words}>
+        <T variant="subhead" weight="600" tone={checked ? 'ink2' : 'ink'} numberOfLines={1}>
+          {label}
         </T>
-      ) : null}
+        <T variant="caption" tone="ink2" numberOfLines={1}>
+          {meta ?? caption}
+          {detail ? (
+            <T variant="caption" tone="accent" weight="600">
+              {`  ${detail}`}
+            </T>
+          ) : null}
+        </T>
+      </View>
     </Pressable>
   );
 }
 
-/** A row of four rings with its name and count above. */
+/** Four tiles, two by two, with the group's name and count above (one column at the largest text). */
 export function RingRow({ title, done, children }: { title: string; done: number; children: ReactNode }) {
   // Counts each time the row becomes full while on screen (not when it opens already full).
   const [wave, setWave] = useState(0);
@@ -200,6 +207,8 @@ export function RingRow({ title, done, children }: { title: string; done: number
     const t = setTimeout(() => setWave((w) => w + 1), 120);
     return () => clearTimeout(t);
   }, [done]);
+  const { fontScale } = useWindowDimensions();
+  const one = fontScale > STACK_SCALE;
   return (
     <View style={styles.rowGroup}>
       <View style={styles.rowHead}>
@@ -213,9 +222,9 @@ export function RingRow({ title, done, children }: { title: string; done: number
           text={done === 4 ? 'All done' : `${done} of 4`}
         />
       </View>
-      <View style={styles.rings}>
+      <View style={styles.grid}>
         {Children.map(children, (c, i) => (
-          <Wave index={i} play={wave}>
+          <Wave index={i} play={wave} half={!one}>
             {c}
           </Wave>
         ))}
@@ -228,7 +237,7 @@ export function RingRow({ title, done, children }: { title: string; done: number
  * Closing the last ring of a row sends a wave along it (after Apple Fitness's closed rings):
  * each ring hops in turn, left to right. Once per row each time it fills; nothing with Reduce Motion.
  */
-function Wave({ index, play, children }: { index: number; play: number; children: ReactNode }) {
+function Wave({ index, play, half, children }: { index: number; play: number; half: boolean; children: ReactNode }) {
   const y = useSharedValue(0);
   useEffect(() => {
     if (!play) return;
@@ -236,14 +245,14 @@ function Wave({ index, play, children }: { index: number; play: number; children
       withDelay(
         index * 70,
         withSequence(
-          withTiming(-10, { duration: 140, easing: Easing.out(Easing.quad), reduceMotion: RM }),
+          withTiming(-6, { duration: 140, easing: Easing.out(Easing.quad), reduceMotion: RM }),
           withSpring(0, { damping: 9, stiffness: 260, mass: 0.6, reduceMotion: RM }),
         ),
       ),
     );
   }, [play, index, y]);
   const hop = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
-  return <Animated.View style={[styles.flex, hop]}>{children}</Animated.View>;
+  return <Animated.View style={[half ? styles.half : styles.full, hop]}>{children}</Animated.View>;
 }
 
 // ---------- Challenges: a stack of cards, after Wallet ----------
@@ -445,8 +454,21 @@ const styles = StyleSheet.create({
   tabular: { fontVariant: ['tabular-nums'] },
   rowGroup: { gap: space.m },
   rowHead: { flexDirection: 'row', alignItems: 'baseline', gap: space.m },
-  rings: { flexDirection: 'row', gap: space.s },
-  tile: { flex: 1, alignItems: 'center', gap: space.s, minHeight: TARGET },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s },
+  half: { width: '48.5%', flexGrow: 1 },
+  full: { width: '100%' },
+  tile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.s + 2,
+    minHeight: 60,
+    paddingVertical: space.s,
+    paddingHorizontal: space.s + 2,
+    borderRadius: radius.section - 2,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  tilePressed: { opacity: 0.92 },
+  words: { flex: 1, gap: 1 },
   ring: { width: RING, height: RING, alignItems: 'center', justifyContent: 'center' },
   done: {
     position: 'absolute',
@@ -456,16 +478,14 @@ const styles = StyleSheet.create({
   },
   star: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    top: -4,
+    right: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { textAlign: 'center' },
-  detail: { textAlign: 'center', fontVariant: ['tabular-nums'] },
   cardWrap: {},
   card: {
     borderRadius: radius.section + 2,

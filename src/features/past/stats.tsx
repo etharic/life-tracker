@@ -11,7 +11,7 @@ import { Group } from '@/ui/group';
 import { BarRow } from '@/ui/bar';
 import { Divider, Row, Rows, Section } from '@/ui/layout';
 import { T } from '@/ui/text';
-import { space } from '@/ui/theme';
+import { colors, radius, space } from '@/ui/theme';
 
 const n = (x: number) => x.toLocaleString('en-GB');
 
@@ -33,20 +33,44 @@ export function Weekdays() {
           {sentence}
         </T>
       ) : null}
-      <Section flush>
-        {shown.map((r, i) => (
-          <View key={r.weekday}>
-            {i > 0 ? <Divider /> : null}
-            <BarRow
-              name={r.name}
-              value={r.avg!.toFixed(1)}
-              share={r.avg! / 10}
-              // The colour of the average feeling: the scale's own colours, the only rainbow.
-              color={feeling(Math.round(r.avg!))?.color}
-              label={`${r.name}, average ${r.avg!.toFixed(1)} over ${r.days} days`}
-            />
-          </View>
-        ))}
+      {/* One glance, as Apple Health shows a week: seven columns in the feeling colours. */}
+      <Section>
+        <View style={styles.chart}>
+          {rows.map((r) => {
+            const f = r.avg != null ? feeling(Math.round(r.avg)) : null;
+            return (
+              <View
+                key={r.weekday}
+                style={styles.col}
+                accessible
+                accessibilityLabel={
+                  r.avg != null
+                    ? `${r.name}, average ${r.avg.toFixed(1)} over ${r.days} days`
+                    : `${r.name}, not enough days yet`
+                }
+              >
+                <T variant="caption" weight="600" tone="ink2" style={styles.tabular}>
+                  {r.avg != null ? r.avg.toFixed(1) : ''}
+                </T>
+                <View style={styles.track}>
+                  <View
+                    style={[
+                      styles.fill,
+                      {
+                        height: `${Math.max(4, ((r.avg ?? 0) / 10) * 100)}%`,
+                        backgroundColor: f?.color ?? 'transparent',
+                        borderColor: f ? colors.edge : 'transparent',
+                      },
+                    ]}
+                  />
+                </View>
+                <T variant="caption" weight="600" tone={r.avg != null ? 'ink' : 'ink3'}>
+                  {r.name.slice(0, 3)}
+                </T>
+              </View>
+            );
+          })}
+        </View>
       </Section>
     </Group>
   );
@@ -134,5 +158,10 @@ export function WritingDetail() {
 
 const styles = StyleSheet.create({
   sentence: { paddingHorizontal: space.xs },
+  chart: { flexDirection: 'row', gap: space.s, height: 150, alignItems: 'stretch' },
+  col: { flex: 1, alignItems: 'center', gap: space.xs },
+  track: { flex: 1, width: '100%', justifyContent: 'flex-end', borderRadius: radius.s, backgroundColor: colors.fill },
+  fill: { width: '100%', borderRadius: radius.s, borderWidth: StyleSheet.hairlineWidth },
+  tabular: { fontVariant: ['tabular-nums'] },
   groups: { gap: space.xxl },
 });

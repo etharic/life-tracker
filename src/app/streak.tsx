@@ -34,14 +34,16 @@ const BEAT = 650;
  * week fills. Shown once a day, never for a first day, and closed with one button.
  */
 export default function StreakMoment() {
-  const params = useLocalSearchParams<{ n?: string }>();
+  const params = useLocalSearchParams<{ n?: string; view?: string }>();
+  // Opened from the flame on Today: the same screen, already settled, without the celebration.
+  const viewing = params.view === '1';
   const { current, longest } = useStreaks();
-  const n = Math.max(2, Number(params.n) || current);
+  const n = viewing ? current : Math.max(2, Number(params.n) || current);
   const today = useToday();
   const days = useJournal((s) => s.days);
   const p = usePalette();
-  const [shown, setShown] = useState(n - 1);
-  const [lit, setLit] = useState(false);
+  const [shown, setShown] = useState(viewing ? n : n - 1);
+  const [lit, setLit] = useState(viewing);
 
   const flame = useSharedValue(0);
   const flicker = useSharedValue(1);
@@ -60,24 +62,27 @@ export default function StreakMoment() {
         ),
       ),
     );
+    if (viewing) return;
     const t = setTimeout(() => {
       setShown(n);
       setLit(true);
       haptic.success();
     }, BEAT);
     return () => clearTimeout(t);
-  }, [n, flame, flicker]);
+  }, [n, flame, flicker, viewing]);
   const flameStyle = useAnimatedStyle(() => ({
     opacity: flame.get(),
     transform: [{ scale: (0.4 + flame.get() * 0.6) * flicker.get() }, { translateY: (1 - flame.get()) * 40 }],
   }));
 
-  const record = n >= longest;
+  const record = n >= longest && n > 0;
   const line = record
     ? n === 2
       ? 'Two days in a row. Tomorrow makes three.'
       : 'Your longest run yet.'
-    : `${longest - n} more ${longest - n === 1 ? 'day' : 'days'} to beat your record of ${longest}.`;
+    : n === 0
+      ? 'Write today to start a new run.'
+      : `${longest - n} more ${longest - n === 1 ? 'day' : 'days'} to beat your record of ${longest}.`;
 
   return (
     <SafeAreaView style={styles.fill}>

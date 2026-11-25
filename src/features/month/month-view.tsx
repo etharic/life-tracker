@@ -9,7 +9,7 @@ import { outlookItems, type MonthId } from '@/domain/types';
 import { useDayLookup, useMonth, useMonthRings, usePromptInput, useToday } from '@/features/hooks';
 import { promptHref } from '@/features/prompts/prompt-card';
 import { useJournal } from '@/state/journal';
-import { Button, Chip, Field, TextAction } from '@/ui/controls';
+import { Button, CheckRow, Field, TextAction } from '@/ui/controls';
 import { Divider, Empty, Row, Rows, Section } from '@/ui/layout';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
@@ -22,7 +22,7 @@ import { RingGroup } from './rings';
 /**
  * A month, from the summary down to the detail:
  *   Goals, Hobbies   the eight rings
- *   Plan             the extreme thing, and the outlook as capsules ticked off during the month
+ *   Plan             the extreme thing, and the outlook as a checklist ticked off during the month
  *   Weeks            one strip of weeks, each with its score
  * Prompts that were skipped wait at the top, because they want something done.
  */
@@ -118,9 +118,10 @@ function PlanGroup({ month }: { month: MonthId }) {
               </T>
               <TextAction title="Edit" onPress={edit} />
             </View>
-            <View style={styles.chips}>
+            {/* The same checklist as the week's commitments: tick, grey, crossed through. */}
+            <View style={styles.outlook}>
               {items.map((item) => (
-                <Chip key={item} label={item} wrap selected={done.has(item)} onPress={() => toggle(item)} />
+                <CheckRow key={item} label={item} strike checked={done.has(item)} onToggle={() => toggle(item)} />
               ))}
             </View>
           </View>
@@ -250,5 +251,6 @@ const styles = StyleSheet.create({
   weekPill: { alignItems: 'center', gap: 5, paddingVertical: space.s, borderRadius: radius.control },
   weekPillOn: { backgroundColor: colors.ink },
   weekPillOff: { backgroundColor: colors.fill },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s },
+  // Rows reach the card's edges: the box lines up with the label above it.
+  outlook: { marginHorizontal: -space.l },
 });

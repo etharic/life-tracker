@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { Settings, StyleSheet, View } from 'react-native';
 import Animated, { LayoutAnimationConfig } from 'react-native-reanimated';
 
@@ -10,12 +10,24 @@ import {
   formatHours,
   hobbyHours,
   HOUR_PER_TICK,
+  type GoalCategory,
   type HobbyCategory,
   type ISODate,
   CHALLENGE_KINDS,
   CHECK_KEYS,
 } from '@/domain/types';
-import { orderedGoals, orderedHobbies, useDay, useMonth, useStreaks, useWeek } from '@/features/hooks';
+import {
+  orderedGoals,
+  orderedHobbies,
+  useDay,
+  useDayLookup,
+  useItemStreak,
+  useMonth,
+  useStreaks,
+  useToday,
+  useWeek,
+} from '@/features/hooks';
+import { ringStat } from '@/domain/progress';
 import { useJournal } from '@/state/journal';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
@@ -28,7 +40,7 @@ import { GroupHeader } from '@/ui/group';
 
 import { AllDone } from './all-done';
 import { MediaStrip } from './media';
-import { ChallengeStack, HoldRing, RingRow, type ActiveChallenge } from './today-board';
+import { HoldRing, RingRow, type ActiveChallenge } from './today-board';
 import { WeekItems } from './week-items';
 
 /**
@@ -70,9 +82,16 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
   const day = useDay(date);
   const { current } = useStreaks();
   const setup = month.setup;
-  const active = useActiveChallenges();
   const [timing, setTiming] = useState<HobbyCategory | null>(null);
   const [hint, setHint] = useState(false);
+  // Until the first ring is ticked by holding, a quiet line under the rings says how. Kept on the
+  // phone, not in the journal.
+  const [learned, setLearned] = useState(() => !!Settings.get('LTRingsLearned'));
+  const learn = () => {
+    if (learned) return;
+    Settings.set({ LTRingsLearned: 1 });
+    setLearned(true);
+  };
   useEffect(() => {
     if (!hint) return;
     const t = setTimeout(() => setHint(false), 2200);
@@ -105,7 +124,8 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
       <View style={styles.board}>
         <RingRow title="Goals" done={goalsDone}>
           {orderedGoals(setup).map((c) => (
-            <HoldRing
+            <HabitTile
+              date={date}
               key={c}
               category={c}
               label={setup.goals[c].text}
@@ -114,7 +134,10 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
               star={c === setup.priority}
               starLabel="priority goal"
               readOnly={locked}
-              onToggle={() => updateDay(date, (d) => void (d.goals[c] = !d.goals[c]))}
+              onToggle={() => {
+                learn();
+                updateDay(date, (d) => void (d.goals[c] = !d.goals[c]));
+              }}
               onTap={() => setHint(true)}
             />
           ))}
@@ -123,7 +146,8 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
           {orderedHobbies(setup).map((c) => {
             const hours = hobbyHours(day, c);
             return (
-              <HoldRing
+              <HabitTile
+                date={date}
                 key={c}
                 category={c}
                 label={setup.hobbies[c].text}
@@ -134,12 +158,13 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
                 readOnly={locked}
                 selected={timing === c}
                 detail={hours > HOUR_PER_TICK ? formatHours(hours) : undefined}
-                onToggle={() =>
+                onToggle={() => {
+                  learn();
                   updateDay(date, (d) => {
                     d.hobbies[c] = !d.hobbies[c];
                     delete d.hobbyHours[c];
-                  })
-                }
+                  });
+                }}
                 onTap={() => {
                   haptic.select();
                   setTiming((t) => (t === c ? null : c));
@@ -148,6 +173,14 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
             );
           })}
         </RingRow>
+        {!learned && !locked && !hint ? (
+          <View style={styles.tip}>
+            <Icon name="hand.tap" size={14} color={colors.ink2} />
+            <T variant="footnote" tone="ink2">
+              Touch and hold a ring to tick it off.
+            </T>
+          </View>
+        ) : null}
         {hint ? (
           <Animated.View entering={enterSoft} exiting={exitSoft}>
             <T variant="footnote" tone="ink2" style={styles.hint} accessibilityLiveRegion="polite">
@@ -159,10 +192,28 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
           <HoursRow date={date} category={timing} name={setup.hobbies[timing].text} onClose={() => setTiming(null)} />
         ) : null}
       </View>
-      {locked ? null : <ChallengeStack active={active} />}
       <AllDone date={date} done={goalsDone === 4 && hobbiesDone === 4} streak={current} />
     </View>
   );
+}
+
+/**
+ * One goal or hobby on Today: the hold-to-tick tile, with the line that keeps it going under its
+ * name. A run of days once there is one (the pull of not breaking it), otherwise how the month
+ * is going, so every tile says something true about you, not only "tap here".
+ */
+function HabitTile({ date, ...props }: { date: ISODate } & ComponentProps<typeof HoldRing>) {
+  const setup = useMonth(monthOf(date)).setup;
+  const c = props.category;
+  const bankId = setup
+    ? (c in setup.goals ? setup.goals[c as GoalCategory] : setup.hobbies[c as HobbyCategory]).bankId
+    : undefined;
+  const run = useItemStreak(c, bankId);
+  const lookup = useDayLookup();
+  const today = useToday();
+  const stat = useMemo(() => ringStat(monthOf(date), c, date > today ? date : today, lookup), [date, c, today, lookup]);
+  const meta = run >= 2 ? `${run} days running` : stat.passed ? `${stat.ticked} of ${stat.passed} days` : undefined;
+  return <HoldRing {...props} meta={meta} />;
 }
 
 /**
@@ -384,7 +435,7 @@ export function WeekGroup({ date, locked }: { date: ISODate; locked?: boolean })
 }
 
 /** Every active challenge, from every list there is, newest first. */
-function useActiveChallenges(): ActiveChallenge[] {
+export function useActiveChallenges(): ActiveChallenge[] {
   const challenges = useJournal((s) => s.challenges);
   return useMemo(
     () =>
@@ -401,6 +452,7 @@ const styles = StyleSheet.create({
   group: { gap: space.m },
   board: { gap: space.xl },
   hint: { textAlign: 'center' },
+  tip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs },
   card: { borderRadius: radius.section, backgroundColor: colors.surface, ...elevation.card },
   /**
    * Content that belongs to the page sits on it, without a box: rows reach out to the screen

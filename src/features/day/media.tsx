@@ -1,7 +1,8 @@
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { createVideoPlayer, type VideoThumbnail } from 'expo-video';
+import { useEffect, useState } from 'react';
 import { ActionSheetIOS, StyleSheet, View } from 'react-native';
 import Animated, { LayoutAnimationConfig } from 'react-native-reanimated';
 
@@ -82,8 +83,38 @@ export function PhotoThumb({
   );
 }
 
-/** A video: a dark tile with a play mark; tapping plays it full screen. */
+/** First frames already taken, by file: a strip that scrolls back into view does not redo the work. */
+const posters = new Map<string, VideoThumbnail>();
+
+/** The video's first frame (half a second in, past a black fade-in), taken once and kept. */
+function usePoster(uri: string): VideoThumbnail | null {
+  const [poster, setPoster] = useState<VideoThumbnail | null>(() => posters.get(uri) ?? null);
+  useEffect(() => {
+    if (posters.has(uri)) return;
+    let live = true;
+    const player = createVideoPlayer(uri);
+    player
+      .generateThumbnailsAsync(0.5, { maxWidth: 256, maxHeight: 256 })
+      .then(([t]) => {
+        if (!t) return;
+        posters.set(uri, t);
+        if (live) setPoster(t);
+      })
+      .catch(() => undefined)
+      .finally(() => player.release());
+    return () => {
+      live = false;
+    };
+  }, [uri]);
+  return poster;
+}
+
+/**
+ * A video: its own first frame with a play mark over it (as Photos shows one), dark until the
+ * frame is ready; tapping plays it full screen.
+ */
 export function VideoTile({ date, media, onRemove }: { date: ISODate; media: MediaRef; onRemove?: () => void }) {
+  const poster = usePoster(mediaUri(date, media));
   return (
     <Press
       onPress={() => router.push({ pathname: '/video/[owner]', params: { owner: date, path: media.path } })}
@@ -92,7 +123,10 @@ export function VideoTile({ date, media, onRemove }: { date: ISODate; media: Med
       accessibilityHint={onRemove ? 'Long press to remove' : undefined}
       style={styles.video}
     >
-      <Icon name="play.fill" size={20} color="#FFFFFF" />
+      {poster ? <Image source={poster} style={StyleSheet.absoluteFill} contentFit="cover" transition={160} /> : null}
+      <View style={styles.playMark}>
+        <Icon name="play.fill" size={14} color="#FFFFFF" />
+      </View>
     </Press>
   );
 }
@@ -152,6 +186,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.control,
     // Video is dark in both appearances, like a player: ink turned white at night.
     backgroundColor: '#1F1E1C',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  playMark: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    paddingLeft: 2,
+    backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
   },
