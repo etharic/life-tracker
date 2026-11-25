@@ -61,9 +61,9 @@ xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
 xcrun simctl launch "$UDID" "$BUNDLE" -LTRoute "/(tabs)/(lookback)/lookback" -LTSearch "marathon" >/dev/null
 sleep 7; xcrun simctl io "$UDID" screenshot "$OUT/41-search.png" >/dev/null; echo "  41-search"
 if xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BUNDLE"; then echo "  1.18 screens: app still running"; else echo "  1.18 screens: APP NOT RUNNING"; fi
-# Switching between Goals, Hobbies and Challenges (a crash once): the app must still be there.
+# The rings with a hobby's time open, and a challenge card lifted out of the stack.
 xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
-xcrun simctl launch "$UDID" "$BUNDLE" -LTOpen goals,hobbies,challenges,goals,challenges,hobbies >/dev/null
+xcrun simctl launch "$UDID" "$BUNDLE" -LTOpen hours,challenge >/dev/null
 sleep 6; xcrun simctl io "$UDID" screenshot "$OUT/29-today-lists.png" >/dev/null; echo "  29-today-lists"
 sleep 4; xcrun simctl io "$UDID" screenshot "$OUT/30-today-lists-end.png" >/dev/null; echo "  30-today-lists-end"
 if xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BUNDLE"; then echo "  lists: app still running"; else echo "  lists: APP NOT RUNNING"; fi

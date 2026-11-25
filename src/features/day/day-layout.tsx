@@ -14,30 +14,27 @@ import {
   type ISODate,
   CHALLENGE_KINDS,
   CHECK_KEYS,
-  type ChallengeItem,
-  type ChallengeKind,
 } from '@/domain/types';
 import { orderedGoals, orderedHobbies, useDay, useMonth, useStreaks, useWeek } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
-import { CHALLENGE_COPY, CHALLENGE_ROUTE, ChallengeRow } from '@/features/past/challenges';
-import { CheckRow, TextAction } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
 import { Divider } from '@/ui/layout';
 import { enterRow, enterSoft, exitSoft, layoutMove } from '@/ui/motion';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
-import { colors, elevation, radius, space, TARGET, usePalette } from '@/ui/theme';
+import { colors, elevation, radius, space, TARGET } from '@/ui/theme';
 import { GroupHeader } from '@/ui/group';
 
 import { AllDone } from './all-done';
 import { MediaStrip } from './media';
+import { ChallengeStack, HoldRing, RingRow, type ActiveChallenge } from './today-board';
 import { WeekItems } from './week-items';
 
 /**
  * The day, in three groups that follow how a day is lived:
  *   Journal    how the day felt, its one line, the writing and the photos: one entry card
- *   Today      the four goals and four hobbies, two pills that open their list
+ *   Today      the four goals and four hobbies as rings to hold, then the challenges as a stack
  *   This week  the week's priorities and its other commitments, as capsules
  * Group titles are plain text on the paper (no box), and only the content sits on cards.
  */
@@ -60,260 +57,129 @@ export function NoSetupNote({ date }: { date: ISODate }) {
   );
 }
 
-// ---------- Goals and hobbies ----------
-
-type ListKey = 'goals' | 'hobbies' | 'challenges';
+// ---------- Goals, hobbies and challenges ----------
 
 /**
- * One pill per list: the open one is filled. The count is part of the pill, said once: done of four
- * for goals and hobbies, the number under way for challenges.
+ * Today's goals and hobbies as two rows of rings, always in view: hold a ring to tick it. The
+ * priority goal and the skill hobby come first, starred. Under them, the challenges under way as a
+ * stack of cards. `locked`: a past day shown as it was; nothing can be ticked and challenges,
+ * which are not tied to a day, are left out.
  */
-function ListSwitch({
-  value,
-  onChange,
-  options,
-}: {
-  value: string | null;
-  onChange: (k: ListKey) => void;
-  options: { key: ListKey; label: string; count: string; a11y: string }[];
-}) {
-  const p = usePalette();
-  return (
-    <View style={styles.switch} accessibilityRole="tablist">
-      {options.map((o) => {
-        const on = o.key === value;
-        return (
-          <Press
-            key={o.key}
-            onPress={() => onChange(o.key)}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: on, expanded: on }}
-            accessibilityLabel={`${o.label}, ${o.a11y}`}
-            containerStyle={styles.pillCell}
-            fill={{ backgroundColor: on ? p.ink : p.fill }}
-            style={styles.pill}
-          >
-            <T
-              variant="subhead"
-              weight="600"
-              chrome
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              style={{ color: on ? colors.bg : colors.ink }}
-            >
-              {o.label}
-              <T
-                variant="subhead"
-                weight="400"
-                chrome
-                style={[styles.tabular, { color: on ? colors.bg : colors.ink2 }]}
-              >
-                {`  ${o.count}`}
-              </T>
-            </T>
-          </Press>
-        );
-      })}
-    </View>
-  );
-}
-
-/**
- * Today's goals and hobbies: two pills, collapsed until one is tapped; its plain list of four opens
- * below and a second tap closes it. The priority goal and the skill hobby come first, starred.
- */
-/** `locked`: a past day shown as it was; the lists still open, nothing can be ticked. */
 export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }) {
   const month = useMonth(monthOf(date));
   const day = useDay(date);
   const { current } = useStreaks();
   const setup = month.setup;
-  const goalsDone = setup ? orderedGoals(setup).filter((c) => day.goals[c]).length : 0;
-  const hobbiesDone = setup ? orderedHobbies(setup).filter((c) => day.hobbies[c]).length : 0;
-  const [open, setOpen] = useState<ListKey | null>(null);
   const active = useActiveChallenges();
-  // A swipe on Today ends a challenge and takes it off this list: for a few seconds it can be taken back.
-  const [ended, setEnded] = useState<{ kind: ChallengeKind; before: ChallengeItem; outcome: string } | null>(null);
+  const [timing, setTiming] = useState<HobbyCategory | null>(null);
+  const [hint, setHint] = useState(false);
   useEffect(() => {
-    if (!ended) return;
-    const t = setTimeout(() => setEnded(null), 6000);
+    if (!hint) return;
+    const t = setTimeout(() => setHint(false), 2200);
     return () => clearTimeout(t);
-  }, [ended]);
-  // Simulator check only: `-LTOpen goals,hobbies,challenges` opens the lists one after another,
-  // the way switching between them by hand does. Unused on a phone.
+  }, [hint]);
+  // Simulator check only: `-LTOpen hours` opens the first hobby's time, as a tap does. Unused on a phone.
   useEffect(() => {
     const seq: unknown = Settings.get('LTOpen');
-    if (typeof seq !== 'string' || locked) return;
-    const keys = seq.split(',').filter((k): k is ListKey => ['goals', 'hobbies', 'challenges'].includes(k));
-    const timers = keys.map((k, i) => setTimeout(() => setOpen(k), 1200 * (i + 1)));
+    if (typeof seq !== 'string' || locked || !setup) return;
+    const timers = seq.split(',').map((k, i) =>
+      setTimeout(
+        () => {
+          if (k === 'hours') setTiming(orderedHobbies(setup)[0]);
+        },
+        1200 * (i + 1),
+      ),
+    );
     return () => timers.forEach(clearTimeout);
-  }, [locked]);
-  const [timing, setTiming] = useState<HobbyCategory | null>(null);
+    // Once, at launch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locked, !!setup]);
   if (!setup) return null;
 
-  const rows =
-    !open || open === 'challenges'
-      ? []
-      : open === 'goals'
-        ? orderedGoals(setup).map((c) => ({
-            c,
-            text: setup.goals[c].text,
-            checked: day.goals[c],
-            caption: CATEGORY_LABEL[c],
-            star: c === setup.priority,
-            hobby: null,
-            toggle: () => useJournal.getState().updateDay(date, (d) => void (d.goals[c] = !d.goals[c])),
-          }))
-        : orderedHobbies(setup).map((c) => ({
-            c,
-            text: setup.hobbies[c].text,
-            checked: day.hobbies[c],
-            caption: CATEGORY_LABEL[c],
-            star: c === setup.skill,
-            hobby: c,
-            toggle: () =>
-              useJournal.getState().updateDay(date, (d) => {
-                d.hobbies[c] = !d.hobbies[c];
-                delete d.hobbyHours[c];
-              }),
-          }));
+  const goalsDone = orderedGoals(setup).filter((c) => day.goals[c]).length;
+  const hobbiesDone = orderedHobbies(setup).filter((c) => day.hobbies[c]).length;
+  const { updateDay } = useJournal.getState();
 
   return (
     <View style={styles.group}>
-      <ListSwitch
-        value={open}
-        onChange={(k) => {
-          haptic.select();
-          setOpen((o) => (o === k ? null : k));
-        }}
-        options={[
-          { key: 'goals', label: 'Goals', count: fourCount(goalsDone), a11y: `${goalsDone} of 4 done` },
-          { key: 'hobbies', label: 'Hobbies', count: fourCount(hobbiesDone), a11y: `${hobbiesDone} of 4 done` },
-          // Challenges are not tied to a day: a past day shows only what that day had.
-          ...(locked
-            ? []
-            : [
-                {
-                  key: 'challenges' as const,
-                  label: 'Challenges',
-                  count: String(active.length),
-                  a11y: `${active.length} active`,
-                },
-              ]),
-        ]}
-      />
-      {/*
-        One container for whichever list is open: it fades in when a list opens and out when it
-        closes. Switching lists changes what is inside, in place, so two containers never animate
-        in and out at the same moment.
-      */}
-      {open ? (
-        <Animated.View entering={enterSoft} exiting={exitSoft} layout={layoutMove} style={styles.bare}>
-          <Animated.View key={open} entering={enterSoft}>
-            {open === 'challenges' ? (
-              <View>
-                {ended ? (
-                  <Animated.View entering={enterSoft} exiting={exitSoft} style={styles.undoRow}>
-                    <T variant="subhead" tone="ink2" numberOfLines={1} style={styles.flex}>
-                      {`${ended.outcome}: ${ended.before.title}`}
-                    </T>
-                    <TextAction
-                      title="Undo"
-                      onPress={() => {
-                        haptic.select();
-                        useJournal.getState().saveChallenge(ended.kind, ended.before);
-                        setEnded(null);
-                      }}
-                    />
-                  </Animated.View>
-                ) : null}
-                {active.length ? (
-                  active.map(({ kind, item }, i) => (
-                    <Animated.View key={`${kind}/${item.id}`} exiting={exitSoft} layout={layoutMove}>
-                      {i > 0 ? <Divider inset={space.l + 26 + space.m} /> : null}
-                      <ChallengeRow
-                        item={item}
-                        kind={kind}
-                        caption={CHALLENGE_COPY[kind].title}
-                        onPaper
-                        onConcluded={(before, outcome) =>
-                          setEnded({
-                            kind,
-                            before,
-                            outcome:
-                              outcome === 'failed' ? CHALLENGE_COPY[kind].failed : CHALLENGE_COPY[kind].succeeded,
-                          })
-                        }
-                      />
-                    </Animated.View>
-                  ))
-                ) : (
-                  <View style={styles.challengeEmpty}>
-                    <T variant="subhead" tone="ink2">
-                      Nothing under way. Tap the box in front of an item on a list to start it.
-                    </T>
-                    <View style={styles.challengeLinks}>
-                      {CHALLENGE_KINDS.map((k) => (
-                        <TextAction
-                          key={k}
-                          title={CHALLENGE_COPY[k].title}
-                          onPress={() => router.push(CHALLENGE_ROUTE[k])}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                )}
-              </View>
-            ) : (
-              <View>
-                {rows.map((r, i) => (
-                  <View key={r.c}>
-                    {i > 0 ? <Divider inset={space.l + 26 + space.m} /> : null}
-                    <CheckRow
-                      checked={r.checked}
-                      label={r.text}
-                      caption={r.caption}
-                      onToggle={r.toggle}
-                      readOnly={locked}
-                      onPressRow={
-                        r.hobby && !locked
-                          ? () => {
-                              haptic.select();
-                              setTiming((t) => (t === r.hobby ? null : r.hobby));
-                            }
-                          : undefined
-                      }
-                      expanded={!!r.hobby && timing === r.hobby}
-                      trailing={
-                        <View style={styles.trail}>
-                          {r.hobby && hobbyHours(day, r.hobby) > HOUR_PER_TICK ? (
-                            <T variant="subhead" tone="ink2" style={styles.tabular}>
-                              {formatHours(hobbyHours(day, r.hobby))}
-                            </T>
-                          ) : null}
-                          {r.star ? <Icon name="star.fill" size={13} color={colors.accent} /> : null}
-                        </View>
-                      }
-                    />
-                    {r.hobby && !locked && timing === r.hobby ? <HoursRow date={date} category={r.hobby} /> : null}
-                  </View>
-                ))}
-              </View>
-            )}
+      <View style={styles.board}>
+        <RingRow title="Goals" done={goalsDone}>
+          {orderedGoals(setup).map((c) => (
+            <HoldRing
+              key={c}
+              category={c}
+              label={setup.goals[c].text}
+              caption={CATEGORY_LABEL[c]}
+              checked={day.goals[c]}
+              star={c === setup.priority}
+              starLabel="priority goal"
+              readOnly={locked}
+              onToggle={() => updateDay(date, (d) => void (d.goals[c] = !d.goals[c]))}
+              onTap={() => setHint(true)}
+            />
+          ))}
+        </RingRow>
+        <RingRow title="Hobbies" done={hobbiesDone}>
+          {orderedHobbies(setup).map((c) => {
+            const hours = hobbyHours(day, c);
+            return (
+              <HoldRing
+                key={c}
+                category={c}
+                label={setup.hobbies[c].text}
+                caption={CATEGORY_LABEL[c]}
+                checked={day.hobbies[c]}
+                star={c === setup.skill}
+                starLabel="skill hobby"
+                readOnly={locked}
+                selected={timing === c}
+                detail={hours > HOUR_PER_TICK ? formatHours(hours) : undefined}
+                onToggle={() =>
+                  updateDay(date, (d) => {
+                    d.hobbies[c] = !d.hobbies[c];
+                    delete d.hobbyHours[c];
+                  })
+                }
+                onTap={() => {
+                  haptic.select();
+                  setTiming((t) => (t === c ? null : c));
+                }}
+              />
+            );
+          })}
+        </RingRow>
+        {hint ? (
+          <Animated.View entering={enterSoft} exiting={exitSoft}>
+            <T variant="footnote" tone="ink2" style={styles.hint} accessibilityLiveRegion="polite">
+              Touch and hold a ring to tick it off. Tap a hobby for its time.
+            </T>
           </Animated.View>
-        </Animated.View>
-      ) : null}
+        ) : null}
+        {timing && !locked ? (
+          <HoursRow date={date} category={timing} name={setup.hobbies[timing].text} onClose={() => setTiming(null)} />
+        ) : null}
+      </View>
+      {locked ? null : <ChallengeStack active={active} />}
       <AllDone date={date} done={goalsDone === 4 && hobbiesDone === 4} streak={current} />
     </View>
   );
 }
 
 /**
- * Time on a hobby today, under its row: a tick is an hour; more can be added in half hours.
+ * Time on a hobby today, under the rings: a tick is an hour; more can be added in half hours.
  * Down to nothing clears the tick.
  */
-function HoursRow({ date, category }: { date: ISODate; category: HobbyCategory }) {
+function HoursRow({
+  date,
+  category,
+  name,
+  onClose,
+}: {
+  date: ISODate;
+  category: HobbyCategory;
+  name: string;
+  onClose: () => void;
+}) {
   const day = useDay(date);
   const hours = hobbyHours(day, category);
   const set = (h: number) => {
@@ -325,10 +191,15 @@ function HoursRow({ date, category }: { date: ISODate; category: HobbyCategory }
     });
   };
   return (
-    <Animated.View entering={enterSoft} style={styles.hoursRow}>
-      <T variant="subhead" tone="ink2" style={styles.flex}>
-        Time today
-      </T>
+    <Animated.View entering={enterSoft} exiting={exitSoft} layout={layoutMove} style={[styles.card, styles.hoursRow]}>
+      <View style={styles.flex}>
+        <T variant="footnote" tone="ink2">
+          Time today
+        </T>
+        <T variant="subhead" weight="600" numberOfLines={1}>
+          {name}
+        </T>
+      </View>
       <Press
         onPress={() => set(Math.max(0, hours - 0.5))}
         disabled={hours <= 0}
@@ -347,6 +218,9 @@ function HoursRow({ date, category }: { date: ISODate; category: HobbyCategory }
         style={styles.stepper}
       >
         <Icon name="plus" size={14} color={colors.ink} weight="semibold" />
+      </Press>
+      <Press onPress={onClose} accessibilityLabel="Close the time" hitSlop={10} style={styles.close}>
+        <Icon name="xmark" size={12} color={colors.ink3} weight="semibold" />
       </Press>
     </Animated.View>
   );
@@ -509,10 +383,8 @@ export function WeekGroup({ date, locked }: { date: ISODate; locked?: boolean })
   );
 }
 
-const fourCount = (n: number) => (n === 4 ? '✓' : `${n}/4`);
-
 /** Every active challenge, from every list there is, newest first. */
-function useActiveChallenges(): { kind: ChallengeKind; item: ChallengeItem }[] {
+function useActiveChallenges(): ActiveChallenge[] {
   const challenges = useJournal((s) => s.challenges);
   return useMemo(
     () =>
@@ -525,23 +397,10 @@ function useActiveChallenges(): { kind: ChallengeKind; item: ChallengeItem }[] {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  challengeEmpty: { padding: space.l, gap: space.s },
-  undoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingHorizontal: space.l, minHeight: TARGET },
-  challengeLinks: { flexDirection: 'row', gap: space.l },
   tabular: { fontVariant: ['tabular-nums'] },
   group: { gap: space.m },
-  switch: { flexDirection: 'row', gap: space.s },
-  // Each pill takes the room its words need, and gives some back when the line is short.
-  pillCell: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minWidth: 0 },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.s,
-    justifyContent: 'center',
-    minHeight: 36,
-    paddingHorizontal: space.m,
-    borderRadius: radius.pill,
-  },
+  board: { gap: space.xl },
+  hint: { textAlign: 'center' },
   card: { borderRadius: radius.section, backgroundColor: colors.surface, ...elevation.card },
   /**
    * Content that belongs to the page sits on it, without a box: rows reach out to the screen
@@ -568,14 +427,8 @@ const styles = StyleSheet.create({
   },
   note: { padding: space.l, gap: space.xs },
   trail: { flexDirection: 'row', alignItems: 'center', gap: space.s },
-  hoursRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.m,
-    paddingLeft: space.l + 26 + space.m,
-    paddingRight: space.l,
-    paddingBottom: space.m,
-  },
+  hoursRow: { flexDirection: 'row', alignItems: 'center', gap: space.m, padding: space.m, paddingLeft: space.l },
+  close: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   stepper: {
     width: 36,
     height: 32,
