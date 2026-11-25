@@ -65,6 +65,8 @@ fresh "close-day/$(python3 -c 'import datetime; print((datetime.date.today() - d
 xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
 xcrun simctl launch "$UDID" "$BUNDLE" -LTRoute "/month-close/$PREV" -LTSlide 3 >/dev/null
 sleep 7; xcrun simctl io "$UDID" screenshot "$OUT/45-recap.png" >/dev/null; echo "  45-recap"
+# 1.20: the streak moment, after the number has rolled and today's circle has filled.
+fresh "streak?n=86"; shot 46-streak 2
 if xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BUNDLE"; then echo "  1.18 screens: app still running"; else echo "  1.18 screens: APP NOT RUNNING"; fi
 # The rings with a hobby's time open, and a challenge card lifted out of the stack.
 xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true

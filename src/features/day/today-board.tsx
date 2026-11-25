@@ -1,11 +1,14 @@
 import { router } from 'expo-router';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Children, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, Settings, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
+  withSequence,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
@@ -21,6 +24,7 @@ import { Icon } from '@/ui/icon';
 import { enterSoft, exitSoft, layoutMove, RM } from '@/ui/motion';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
+import { RollingText } from '@/ui/rolling-text';
 import { colors, radius, space, TARGET, usePalette } from '@/ui/theme';
 import { usePop } from '@/ui/use-pop';
 
@@ -186,19 +190,60 @@ export function HoldRing({
 
 /** A row of four rings with its name and count above. */
 export function RingRow({ title, done, children }: { title: string; done: number; children: ReactNode }) {
+  // Counts each time the row becomes full while on screen (not when it opens already full).
+  const [wave, setWave] = useState(0);
+  const was = useRef(done);
+  useEffect(() => {
+    const full = done === 4 && was.current < 4;
+    was.current = done;
+    if (!full) return;
+    const t = setTimeout(() => setWave((w) => w + 1), 120);
+    return () => clearTimeout(t);
+  }, [done]);
   return (
     <View style={styles.rowGroup}>
       <View style={styles.rowHead}>
         <T variant="footnote" weight="600" tone="ink2" accessibilityRole="header" style={styles.flex}>
           {title}
         </T>
-        <T variant="footnote" tone="ink2" style={styles.tabular}>
-          {done === 4 ? 'All done' : `${done} of 4`}
-        </T>
+        <RollingText
+          variant="footnote"
+          tone="ink2"
+          style={styles.tabular}
+          text={done === 4 ? 'All done' : `${done} of 4`}
+        />
       </View>
-      <View style={styles.rings}>{children}</View>
+      <View style={styles.rings}>
+        {Children.map(children, (c, i) => (
+          <Wave index={i} play={wave}>
+            {c}
+          </Wave>
+        ))}
+      </View>
     </View>
   );
+}
+
+/**
+ * Closing the last ring of a row sends a wave along it (after Apple Fitness's closed rings):
+ * each ring hops in turn, left to right. Once per row each time it fills; nothing with Reduce Motion.
+ */
+function Wave({ index, play, children }: { index: number; play: number; children: ReactNode }) {
+  const y = useSharedValue(0);
+  useEffect(() => {
+    if (!play) return;
+    y.set(
+      withDelay(
+        index * 70,
+        withSequence(
+          withTiming(-10, { duration: 140, easing: Easing.out(Easing.quad), reduceMotion: RM }),
+          withSpring(0, { damping: 9, stiffness: 260, mass: 0.6, reduceMotion: RM }),
+        ),
+      ),
+    );
+  }, [play, index, y]);
+  const hop = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
+  return <Animated.View style={[styles.flex, hop]}>{children}</Animated.View>;
 }
 
 // ---------- Challenges: a stack of cards, after Wallet ----------

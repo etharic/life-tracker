@@ -15,9 +15,9 @@ import { colors } from './theme';
 const DOTS = 10;
 const DISTANCE = 46;
 
-function Dot({ i, t }: { i: number; t: SharedValue<number> }) {
+function Dot({ i, t, color, far: reach }: { i: number; t: SharedValue<number>; color?: string; far: number }) {
   const angle = (i / DOTS) * Math.PI * 2 - Math.PI / 2;
-  const far = DISTANCE * (i % 2 ? 0.75 : 1);
+  const far = reach * (i % 2 ? 0.75 : 1);
   const style = useAnimatedStyle(() => {
     const v = t.get();
     return {
@@ -29,14 +29,18 @@ function Dot({ i, t }: { i: number; t: SharedValue<number> }) {
       ],
     };
   });
-  return <Animated.View style={[styles.dot, i % 2 ? styles.soft : styles.strong, style]} />;
+  return (
+    <Animated.View
+      style={[styles.dot, i % 2 ? styles.soft : styles.strong, color ? { backgroundColor: color } : null, style]}
+    />
+  );
 }
 
 /**
  * A small, quiet burst of dots in the accent colour, played once when `play` turns true.
  * Not confetti: ten dots, 650 ms, then gone. Nothing at all with Reduce Motion.
  */
-export function Burst({ play }: { play: boolean }) {
+export function Burst({ play, color, distance = DISTANCE }: { play: boolean; color?: string; distance?: number }) {
   const reduced = useReducedMotion();
   const t = useSharedValue(0);
   useEffect(() => {
@@ -49,7 +53,7 @@ export function Burst({ play }: { play: boolean }) {
   return (
     <View pointerEvents="none" style={styles.wrap}>
       {Array.from({ length: DOTS }, (_, i) => (
-        <Dot key={i} i={i} t={t} />
+        <Dot key={i} i={i} t={t} color={color} far={distance} />
       ))}
     </View>
   );

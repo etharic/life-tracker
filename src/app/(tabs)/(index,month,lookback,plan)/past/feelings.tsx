@@ -30,6 +30,7 @@ import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
 import { Screen, Section } from '@/ui/layout';
 import { Press } from '@/ui/press';
+import { DayLink } from '@/features/past/day-link';
 import { T } from '@/ui/text';
 import { colors, GUTTER, radius, space, TARGET } from '@/ui/theme';
 
@@ -105,28 +106,17 @@ function Selection({ date }: { date: ISODate | null }) {
   );
 }
 
-function WeekView({
-  week,
-  selected,
-  onSelect,
-  today,
-}: {
-  week: WeekId;
-  selected: ISODate | null;
-  onSelect: (d: ISODate) => void;
-  today: ISODate;
-}) {
+function WeekView({ week, selected, today }: { week: WeekId; selected: ISODate | null; today: ISODate }) {
   const days = useJournal((s) => s.days);
   return (
     <View style={styles.weekList}>
       {weekDates(week).map((d) => {
         const f = feeling(days[d]?.feeling);
         const future = d > today;
-        return (
+        const row = (
           <Pressable
             key={d}
             disabled={future}
-            onPress={() => onSelect(d)}
             accessibilityRole="button"
             accessibilityLabel={`${weekdayShort(d)} ${dayNumber(d)}: ${f ? `${f.score}, ${f.name}` : 'no feeling'}`}
             style={styles.weekRow}
@@ -145,22 +135,19 @@ function WeekView({
             </T>
           </Pressable>
         );
+        return future ? (
+          row
+        ) : (
+          <DayLink key={d} date={d}>
+            {row}
+          </DayLink>
+        );
       })}
     </View>
   );
 }
 
-function MonthGrid({
-  month,
-  selected,
-  onSelect,
-  today,
-}: {
-  month: MonthId;
-  selected: ISODate | null;
-  onSelect: (d: ISODate) => void;
-  today: ISODate;
-}) {
+function MonthGrid({ month, selected, today }: { month: MonthId; selected: ISODate | null; today: ISODate }) {
   const days = useJournal((s) => s.days);
   const weeks = weeksOfMonth(month);
   return (
@@ -184,13 +171,13 @@ function MonthGrid({
             const outside = monthOf(d) !== month;
             const future = d > today;
             const score = days[d]?.feeling ?? null;
-            return (
+            const cell = (
               <Pressable
                 key={d}
                 disabled={future}
-                onPress={() => onSelect(d)}
                 accessibilityRole="button"
                 accessibilityLabel={`${formatShort(d)}: ${feeling(score) ? `${score}, ${feeling(score)!.name}` : 'no feeling'}`}
+                accessibilityHint={future ? undefined : 'Opens the day'}
                 style={styles.monthCell}
               >
                 <FeelingBox
@@ -201,6 +188,14 @@ function MonthGrid({
                   style={styles.fill}
                 />
               </Pressable>
+            );
+            // A tap zooms the box open into its day; touch and hold peeks at it.
+            return future ? (
+              cell
+            ) : (
+              <DayLink key={d} date={d} zoom>
+                {cell}
+              </DayLink>
             );
           })}
         </View>
@@ -367,10 +362,16 @@ export default function Feelings() {
         }}
       />
       <Pager title={pager.title} sub={pager.sub} onPrev={pager.prev} onNext={pager.next} canNext={pager.canNext} />
-      {scope === 'week' ? <WeekView week={week} selected={selected} onSelect={select} today={today} /> : null}
-      {scope === 'month' ? <MonthGrid month={month} selected={selected} onSelect={select} today={today} /> : null}
+      {scope === 'week' ? <WeekView week={week} selected={selected} today={today} /> : null}
+      {scope === 'month' ? <MonthGrid month={month} selected={selected} today={today} /> : null}
       {scope === 'year' ? <YearGrid year={year} selected={selected} onSelect={select} today={today} /> : null}
-      <Selection date={selected} />
+      {scope === 'year' ? (
+        <Selection date={selected} />
+      ) : (
+        <T variant="footnote" tone="ink2" center>
+          Tap a day to open it. Touch and hold to look without opening.
+        </T>
+      )}
       {scope === 'month' ? <MonthStats month={month} /> : null}
       {scope === 'month' ? (
         <T variant="footnote" tone="ink2">

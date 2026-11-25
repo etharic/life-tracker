@@ -1,8 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Settings, StyleSheet, View } from 'react-native';
 
 import { formatLong, isISODate } from '@/domain/dates';
+import { isActive, runEndingToday } from '@/domain/progress';
+import type { ISODate } from '@/domain/types';
 import { MediaEditor } from '@/features/day/media-editor';
 import { useDay, useToday } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
@@ -15,6 +17,23 @@ import { ModalHeader } from '@/ui/modal';
 import { colors, space } from '@/ui/theme';
 
 const TITLE_LIMIT = 80;
+
+/**
+ * The run that today's entry makes, when it deserves the streak moment: today counts with what is
+ * being saved, the run is at least two days, and the moment has not been shown today. Remembered
+ * on the phone only (it is not part of the journal).
+ */
+function streakMoment(today: ISODate, title: string, writing: string): number {
+  if (Settings.get('LTStreakShown') === today) return 0;
+  const days = useJournal.getState().days;
+  const cur = days[today];
+  const counts = isActive(cur) || title.trim() !== '' || writing.trim() !== '';
+  if (!counts) return 0;
+  const n = runEndingToday(today, (d) => (d === today ? true : isActive(days[d])));
+  if (n < 2) return 0;
+  Settings.set({ LTStreakShown: today });
+  return n;
+}
 
 export default function CloseDaySheet() {
   const params = useLocalSearchParams<{ date: string; focus?: string }>();
@@ -44,6 +63,13 @@ export default function CloseDaySheet() {
   );
 
   const save = () => {
+    // Closing today in a way that keeps a run going earns the streak moment, once a day.
+    const run = date === today ? streakMoment(today, title, writing) : 0;
+    if (run) {
+      haptic.commit();
+      router.replace(`/streak?n=${run}`);
+      return;
+    }
     haptic.success();
     router.back();
   };

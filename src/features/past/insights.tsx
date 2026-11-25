@@ -5,6 +5,7 @@ import { isActive } from '@/domain/progress';
 import { useStreaks, useToday } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
 import { T } from '@/ui/text';
+import { RollingText } from '@/ui/rolling-text';
 import { space } from '@/ui/theme';
 
 const days_ = (n: number) => `${n} ${n === 1 ? 'day' : 'days'}`;
@@ -34,9 +35,7 @@ export function Insights() {
 
   return (
     <View style={styles.wrap} accessible accessibilityLabel={`${headline}. ${record} ${written}`}>
-      <T variant="display" style={styles.headline}>
-        {headline}
-      </T>
+      <RollingText variant="display" style={styles.headline} text={headline} />
       <T variant="subhead" tone="ink2">
         {[record, written].filter(Boolean).join(' ')}
       </T>

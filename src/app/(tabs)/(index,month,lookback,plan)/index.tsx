@@ -16,9 +16,9 @@ import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
 import { Press } from '@/ui/press';
 import { Screen, TopBar } from '@/ui/layout';
-import { T } from '@/ui/text';
 import { colors, space } from '@/ui/theme';
 import { useBump } from '@/ui/use-pop';
+import { RollingText } from '@/ui/rolling-text';
 
 /** The streak in the navigation bar: a flame and a number, bumping when it grows. */
 function Streak({ days }: { days: number }) {
@@ -27,9 +27,13 @@ function Streak({ days }: { days: number }) {
   return (
     <Animated.View style={[styles.streak, bump]} accessible accessibilityLabel={`${days}-day streak`}>
       <Icon name="flame.fill" size={14} color={colors.flame} />
-      <T variant="subhead" weight="700" style={[styles.tabular, styles.streakText]} chrome>
-        {String(days)}
-      </T>
+      <RollingText
+        variant="subhead"
+        weight="700"
+        style={[styles.tabular, styles.streakText]}
+        chrome
+        text={String(days)}
+      />
     </Animated.View>
   );
 }

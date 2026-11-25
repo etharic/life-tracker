@@ -18,6 +18,7 @@ import { Button } from './controls';
 import { haptic } from './haptics';
 import { Icon } from './icon';
 import { RM } from './motion';
+import { RollingText } from './rolling-text';
 import { T } from './text';
 import { space } from './theme';
 
@@ -164,16 +165,21 @@ export function Stories({
             </T>
           </Animated.View>
           <Animated.View entering={rise(180)}>
-            <T
-              variant="pageTitle"
-              chrome
-              numberOfLines={4}
-              adjustsFontSizeToFit
-              minimumFontScale={0.5}
-              style={[styles.big, { color: fg }]}
-            >
-              {s.big}
-            </T>
+            {/^\d/.test(s.big) ? (
+              // A number is revealed: its digits roll up from 0.
+              <RollingText variant="pageTitle" chrome fromZero style={[styles.big, { color: fg }]} text={s.big} />
+            ) : (
+              <T
+                variant="pageTitle"
+                chrome
+                numberOfLines={4}
+                adjustsFontSizeToFit
+                minimumFontScale={0.5}
+                style={[styles.big, { color: fg }]}
+              >
+                {s.big}
+              </T>
+            )}
           </Animated.View>
           {s.line ? (
             <Animated.View entering={rise(320)}>

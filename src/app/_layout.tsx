@@ -135,6 +135,7 @@ export default function RootLayout() {
         <Stack.Screen name="year-close/[year]" options={modal} />
         <Stack.Screen name="year-review/[year]" options={{ ...modal, presentation: 'fullScreenModal' }} />
         <Stack.Screen name="misogi/[year]" options={modal} />
+        <Stack.Screen name="streak" options={{ ...modal, presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="conflict/[id]" options={modal} />
         <Stack.Screen name="challenge/[kind]/[id]" options={modal} />
         <Stack.Screen
