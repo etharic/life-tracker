@@ -285,6 +285,7 @@ export function ChallengeStack({ active }: { active: ActiveChallenge[] }) {
             const isOpen = open === key;
             const prevOpen = i > 0 && open === `${active[i - 1].kind}/${active[i - 1].item.id}`;
             const last = i === active.length - 1;
+            const nextOpen = !last && open === `${active[i + 1].kind}/${active[i + 1].item.id}`;
             // Each card tucks under the one before it, leaving its top band in view; an open card
             // and the one after it stand apart.
             const overlap = i === 0 ? 0 : isOpen || prevOpen ? space.s : -(CARD - PEEK);
@@ -307,7 +308,7 @@ export function ChallengeStack({ active }: { active: ActiveChallenge[] }) {
                   style={[
                     styles.card,
                     { backgroundColor: p.surface, borderColor: p.hairline },
-                    !isOpen && !last && styles.cardTucked,
+                    !isOpen && !last && !nextOpen && styles.cardTucked,
                   ]}
                 >
                   <View style={styles.cardTop}>
@@ -422,7 +423,6 @@ const styles = StyleSheet.create({
   detail: { textAlign: 'center', fontVariant: ['tabular-nums'] },
   cardWrap: {},
   card: {
-    minHeight: CARD,
     borderRadius: radius.section + 2,
     borderWidth: StyleSheet.hairlineWidth,
     padding: space.l,
