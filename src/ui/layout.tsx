@@ -1,5 +1,14 @@
-import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, type ScrollViewProps, type StyleProp, type ViewStyle } from 'react-native';
+import { useEffect, useRef, type ReactNode } from 'react';
+import {
+  ScrollView,
+  Settings,
+  StyleSheet,
+  View,
+  type ScrollViewInstance,
+  type ScrollViewProps,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from './icon';
@@ -18,9 +27,18 @@ interface ScreenProps extends ScrollViewProps {
 
 export function Screen({ children, topInset, footer, contentContainerStyle, ...rest }: ScreenProps) {
   const insets = useSafeAreaInsets();
+  const ref = useRef<ScrollViewInstance>(null);
+  // Simulator check only: `-LTScroll 700` scrolls down that far, so screenshots reach lower parts.
+  useEffect(() => {
+    const y = Number(Settings.get('LTScroll'));
+    if (!y) return;
+    const t = setTimeout(() => ref.current?.scrollTo({ y, animated: false }), 2000);
+    return () => clearTimeout(t);
+  }, []);
   return (
     <View style={styles.screen}>
       <ScrollView
+        ref={ref}
         contentInsetAdjustmentBehavior="automatic"
         automaticallyAdjustKeyboardInsets
         keyboardDismissMode="interactive"
