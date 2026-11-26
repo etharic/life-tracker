@@ -137,7 +137,7 @@ export default function TodayScreen() {
         {/* Two rows that each open their own screen sit together, as one group. */}
         <View>
           <ChallengesRow active={challenges} />
-          {/* The row itself says "Write today’s journal": no title over it. */}
+          {/* The row itself says "Journal": no title over it. */}
           <JournalGroup date={today} isToday titled={false} />
         </View>
         <WeekGroup date={today} />

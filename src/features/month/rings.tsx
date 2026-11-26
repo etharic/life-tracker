@@ -7,6 +7,7 @@ import type { RingStat } from '@/domain/progress';
 import { CATEGORY_LABEL, formatHours, type Choice, type MonthSetup } from '@/domain/types';
 import { useItemStreak } from '@/features/hooks';
 import { Bar, DayStrip, Ring } from '@/ui/charts';
+import { StarBadge } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
 import { Section } from '@/ui/layout';
 import { Ribbon } from '@/ui/ribbon';
@@ -127,13 +128,17 @@ export function RingGroup({
                 containerStyle={styles.ringColumn}
                 style={[styles.ringCell, isOpen && styles.ringOpen]}
               >
-                <Ring
-                  color={kind === 'goal' ? 'accent' : 'hobby'}
-                  percent={s.percent}
-                  size={ringSize}
-                  stroke={ringSize > 58 ? 6.5 : 5.5}
-                  label={s.hours != null ? `${Number.isInteger(s.hours) ? s.hours : s.hours.toFixed(1)}h` : undefined}
-                />
+                <View>
+                  <Ring
+                    color={kind === 'goal' ? 'accent' : 'hobby'}
+                    percent={s.percent}
+                    size={ringSize}
+                    stroke={ringSize > 58 ? 6.5 : 5.5}
+                    label={s.hours != null ? `${Number.isInteger(s.hours) ? s.hours : s.hours.toFixed(1)}h` : undefined}
+                  />
+                  {/* The priority goal and the skill hobby: a star on the ring's corner. */}
+                  {starred ? <StarBadge color={tint} top={-2} right={-2} /> : null}
+                </View>
                 <View style={styles.ringLabel}>
                   <T
                     variant="footnote"

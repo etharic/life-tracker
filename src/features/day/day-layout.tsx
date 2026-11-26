@@ -432,7 +432,7 @@ export function JournalGroup({
                 <Press
                   feedback="highlight"
                   onPress={write}
-                  accessibilityLabel={isToday ? 'Write today’s journal' : 'Write about this day'}
+                  accessibilityLabel={isToday ? 'Journal' : 'Write about this day'}
                 >
                   <View style={styles.writeRow}>
                     <View style={styles.writeIcon}>
@@ -440,9 +440,7 @@ export function JournalGroup({
                       <Icon name="square.and.pencil" size={16} color={colors.onAccent} weight="semibold" />
                     </View>
                     <View style={styles.flex}>
-                      <T variant="headline" tone="accent">
-                        {isToday ? 'Write today’s journal' : 'Write about this day'}
-                      </T>
+                      <T variant="headline">{isToday ? 'Journal' : 'Write about this day'}</T>
                     </View>
                     <Icon name="chevron.right" size={13} color={colors.ink3} weight="semibold" />
                   </View>
@@ -479,7 +477,7 @@ export function WeekGroup({ date, locked }: { date: ISODate; locked?: boolean })
   const week = weekOf(date);
   return (
     <View style={styles.group}>
-      <Ribbon label="This week’s commitments" tint={colors.ink2} soft={colors.fill}>
+      <Ribbon label="Commitments" tint={colors.ink2} soft={colors.fill}>
         <WeekItems week={week} date={date} interactive={!locked} padded label={null} />
       </Ribbon>
     </View>

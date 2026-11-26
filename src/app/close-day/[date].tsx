@@ -94,23 +94,24 @@ export default function CloseDaySheet() {
         </View>
         <Divider inset={0} />
         <Field
-          label="One line for the day"
+          // The field's name sits inside it, as its placeholder: no line spent on a label.
           value={title}
           onChangeText={setTitle}
           limit={TITLE_LIMIT}
-          placeholder="Finished the valuation chapter"
+          placeholder="One line for the day"
+          accessibilityLabel="One line for the day"
           returnKeyType="next"
           autoCapitalize="sentences"
         />
         <Divider inset={0} />
         <View style={styles.gap}>
           <Field
-            label="Anything else about the day"
             value={writing}
             onChangeText={setWriting}
             multiline
             minHeight={160}
-            placeholder="Write as much or as little as you like."
+            placeholder="Anything else about the day"
+            accessibilityLabel="Anything else about the day"
             autoCapitalize="sentences"
             // Opened from a reminder: straight into writing.
             autoFocus={params.focus === 'writing'}

@@ -170,13 +170,7 @@ export function WeekItems({
                     r.toggle();
                   }}
                   onLongPress={interactive ? r.menu : undefined}
-                  trailing={
-                    r.star ? (
-                      <View accessible accessibilityLabel="Priority">
-                        <Icon name="star.fill" size={13} color={colors.accent} />
-                      </View>
-                    ) : null
-                  }
+                  star={r.star}
                 />
               </View>
               {plusOnLast && i === shown.length - 1 ? <View style={styles.plusEnd}>{plus}</View> : null}

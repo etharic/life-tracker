@@ -1,6 +1,6 @@
 import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import { useEffect, type ReactNode } from 'react';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { StyleSheet, TextInput, View, type ColorValue, type TextInputProps } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { haptic } from './haptics';
@@ -13,7 +13,18 @@ import { usePop } from './use-pop';
 
 // ---------- Checkbox ----------
 
-export function CheckBox({ checked, size = 26, dashed }: { checked: boolean; size?: number; dashed?: boolean }) {
+export function CheckBox({
+  checked,
+  size = 26,
+  dashed,
+  star,
+}: {
+  checked: boolean;
+  size?: number;
+  dashed?: boolean;
+  /** A priority: a small star sits on the box's top right corner. */
+  star?: boolean;
+}) {
   // The box pops and the check springs in when ticked; unticking is quiet.
   const pop = usePop(checked, 0.12);
   const p = usePalette();
@@ -43,6 +54,7 @@ export function CheckBox({ checked, size = 26, dashed }: { checked: boolean; siz
       <Animated.View style={markStyle}>
         <Icon name="checkmark" size={size * 0.55} color={colors.onAccent} weight="bold" />
       </Animated.View>
+      {star ? <StarBadge /> : null}
     </Animated.View>
   );
 }
@@ -61,14 +73,28 @@ interface CheckRowProps {
   expanded?: boolean;
   /** Shown as it is, not changed (a past day before Edit is chosen). */
   readOnly?: boolean;
+  /** A priority: the star sits on the box's corner. */
+  star?: boolean;
 }
 
 /** A tickable line: priorities, goals, weekly checks. */
 /**
+ * The priority mark: a small star in a round badge, set on the corner of a box, a circle or a ring
+ * (on Today's circles, the commitments' boxes and Month's rings alike).
+ */
+export function StarBadge({ color, top = -6, right = -6 }: { color?: ColorValue; top?: number; right?: number }) {
+  return (
+    <View style={[styles.starBadge, { top, right }]} accessible accessibilityLabel="Priority">
+      <Icon name="star.fill" size={9} color={color ?? colors.accent} />
+    </View>
+  );
+}
+
+/**
  * A small round "+" that sits at the end of a list's last line instead of taking a line of its
  * own: it opens the list for adding or editing.
  */
-export function AddButton({ onPress, label }: { onPress: () => void; label: string }) {
+export function AddButton({ onPress, label, size = 30 }: { onPress: () => void; label: string; size?: number }) {
   return (
     <Press
       onPress={() => {
@@ -77,9 +103,9 @@ export function AddButton({ onPress, label }: { onPress: () => void; label: stri
       }}
       hitSlop={10}
       accessibilityLabel={label}
-      style={styles.addButton}
+      style={[styles.addButton, { width: size, height: size, borderRadius: size / 2 }]}
     >
-      <Icon name="plus" size={14} color={colors.accent} weight="bold" />
+      <Icon name="plus" size={Math.round(size * 0.46)} color={colors.accent} weight="bold" />
     </Press>
   );
 }
@@ -96,6 +122,7 @@ export function CheckRow({
   onPressRow,
   expanded,
   readOnly,
+  star,
 }: CheckRowProps) {
   const toggle = () => {
     haptic.select();
@@ -120,7 +147,7 @@ export function CheckRow({
         accessible
         accessibilityLabel={`${caption ? `${caption}: ` : ''}${label}${checked ? ', done' : ', not done'}`}
       >
-        <CheckBox checked={checked} />
+        <CheckBox checked={checked} star={star} />
         {text}
         {trailing}
       </View>
@@ -145,10 +172,10 @@ export function CheckRow({
           accessibilityState={{ checked }}
           accessibilityLabel={`Done: ${label}`}
         >
-          <CheckBox checked={checked} />
+          <CheckBox checked={checked} star={star} />
         </Press>
       ) : (
-        <CheckBox checked={checked} />
+        <CheckBox checked={checked} star={star} />
       )}
       {text}
       {trailing}
@@ -310,10 +337,16 @@ export function Field({ label, limit, multiline, minHeight, value, style, ...res
 }
 
 const styles = StyleSheet.create({
+  starBadge: {
+    position: 'absolute',
+    width: 15,
+    height: 15,
+    borderRadius: 8,
+    backgroundColor: colors.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   addButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
     backgroundColor: colors.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',
