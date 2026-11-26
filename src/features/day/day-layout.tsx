@@ -177,14 +177,14 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
           <View style={styles.tip}>
             <Icon name="hand.tap" size={14} color={colors.ink2} />
             <T variant="footnote" tone="ink2">
-              Touch and hold a ring to tick it off.
+              Touch and hold a tile to tick it off.
             </T>
           </View>
         ) : null}
         {hint ? (
           <Animated.View entering={enterSoft} exiting={exitSoft}>
             <T variant="footnote" tone="ink2" style={styles.hint} accessibilityLiveRegion="polite">
-              Touch and hold a ring to tick it off. Tap a hobby for its time.
+              Touch and hold a tile to tick it off. Tap a hobby for its time.
             </T>
           </Animated.View>
         ) : null}
