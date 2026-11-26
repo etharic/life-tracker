@@ -30,9 +30,14 @@ export function Screen({ children, topInset, footer, contentContainerStyle, ...r
   const ref = useRef<ScrollViewInstance>(null);
   // Simulator check only: `-LTScroll 700` scrolls down that far, so screenshots reach lower parts.
   useEffect(() => {
-    const y = Number(Settings.get('LTScroll'));
-    if (!y) return;
-    const t = setTimeout(() => ref.current?.scrollTo({ y, animated: false }), 2000);
+    const v: unknown = Settings.get('LTScroll');
+    const y = Number(v);
+    if (v !== 'end' && !y) return;
+    const t = setTimeout(
+      () =>
+        v === 'end' ? ref.current?.scrollToEnd({ animated: false }) : ref.current?.scrollTo({ y, animated: false }),
+      2000,
+    );
     return () => clearTimeout(t);
   }, []);
   return (
@@ -47,7 +52,9 @@ export function Screen({ children, topInset, footer, contentContainerStyle, ...r
           styles.content,
           {
             paddingTop: topInset ? space.xs : space.s,
-            paddingBottom: footer ? space.l : insets.bottom + space.huge,
+            // The system already insets the content for the tab bar and the home indicator
+            // (contentInsetAdjustmentBehavior), so only a little breathing room is added.
+            paddingBottom: space.xl,
           },
           contentContainerStyle,
         ]}

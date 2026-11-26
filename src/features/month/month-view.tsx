@@ -9,12 +9,11 @@ import { outlookItems, type MonthId } from '@/domain/types';
 import { useDayLookup, useMonth, useMonthRings, usePromptInput, useToday } from '@/features/hooks';
 import { promptHref } from '@/features/prompts/prompt-card';
 import { useJournal } from '@/state/journal';
-import { Button, CheckRow, Field, TextAction } from '@/ui/controls';
-import { Divider, Empty, Row, Rows, Section } from '@/ui/layout';
+import { AddButton, Button, CheckRow, Field, TextAction } from '@/ui/controls';
+import { Empty, Row, Rows, Section } from '@/ui/layout';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { colors, radius, space } from '@/ui/theme';
-import { Group, Panel } from '@/ui/group';
 import { Ribbon } from '@/ui/ribbon';
 
 import { DoneStamp, STAMP_ROOM } from './done-stamp';
@@ -23,7 +22,7 @@ import { RingGroup } from './rings';
 /**
  * A month, from the summary down to the detail:
  *   Goals, Hobbies   the eight rings, on an ember and a sage band
- *   (untitled)       the extreme thing, and the outlook as a checklist ticked off during the month
+ *   Kevin's Rule, Outlook   ribbons: the extreme thing, and the outlook as a checklist ticked off during the month
  *   Weeks            one ribbon of weeks, each with its score
  * Prompts that were skipped wait at the top, because they want something done.
  */
@@ -66,7 +65,10 @@ function PlanRow({
   );
 }
 
-/** The month's plan in one card: the extreme thing, the outlook (tap to edit), the incident once chosen. */
+/**
+ * The month's plan as ribbons: Kevin's Rule, the Outlook (a checklist, + to add or edit), and the
+ * extreme incident once chosen.
+ */
 function PlanGroup({ month }: { month: MonthId }) {
   const rec = useMonth(month);
   const today = useToday();
@@ -94,54 +96,66 @@ function PlanGroup({ month }: { month: MonthId }) {
   };
 
   return (
-    <Group>
-      <Panel>
-        <View style={rec.extremeDone === true ? styles.stampRoom : undefined}>
-          <PlanRow label="Kevin’s Rule" text={setup.extremeThing || 'Not set'} note={status} />
+    <View style={styles.planRibbons}>
+      <Ribbon label="Kevin’s Rule" tint={colors.accent} soft={colors.fill}>
+        <View style={[styles.ribbonText, rec.extremeDone === true && styles.stampRoom]}>
+          <T variant="journalBody" weight="600">
+            {setup.extremeThing || 'Not set'}
+          </T>
+          {status ? (
+            <T variant="footnote" tone="ink2">
+              {status}
+            </T>
+          ) : null}
           {rec.extremeDone === true ? <DoneStamp date={rec.extremeDoneOn} fresh={rec.extremeDoneOn === today} /> : null}
         </View>
-        <Divider />
+      </Ribbon>
+      <Ribbon label="Outlook" tint={colors.ink2} soft={colors.fill}>
         {editing ? (
-          <View style={styles.planRow}>
-            <T variant="footnote" weight="600" tone="ink2">
-              Outlook
-            </T>
+          <View style={styles.ribbonText}>
             <Field value={draft} onChangeText={setDraft} multiline autoFocus minHeight={110} />
             <View style={styles.actions}>
               <TextAction title="Done" onPress={save} />
             </View>
           </View>
         ) : items.length ? (
-          <View style={styles.planRow}>
-            <View style={styles.labelRow}>
-              <T variant="footnote" weight="600" tone="ink2" style={styles.flex}>
-                Outlook
-              </T>
-              <TextAction title="Edit" onPress={edit} />
-            </View>
-            {/* The same checklist as the week's commitments: tick, grey, crossed through. */}
-            <View style={styles.outlook}>
-              {items.map((item) => (
-                <CheckRow key={item} label={item} strike checked={done.has(item)} onToggle={() => toggle(item)} />
-              ))}
-            </View>
+          // The same checklist as the week's commitments; the + sits at the end of the last line.
+          <View>
+            {items.map((item, i) => (
+              <View key={item} style={styles.line}>
+                <View style={styles.flex}>
+                  <CheckRow label={item} strike checked={done.has(item)} onToggle={() => toggle(item)} />
+                </View>
+                {i === items.length - 1 ? (
+                  <View style={styles.plusEnd}>
+                    <AddButton onPress={edit} label="Add to or edit the outlook" />
+                  </View>
+                ) : null}
+              </View>
+            ))}
           </View>
         ) : (
-          <PlanRow label="Outlook" text="Tap to write the outlook for the month" onPress={edit} />
+          <View style={styles.line}>
+            <T variant="body" tone="ink2" style={[styles.flex, styles.ribbonText]}>
+              The outlook for the month
+            </T>
+            <View style={styles.plusEnd}>
+              <AddButton onPress={edit} label="Write the outlook" />
+            </View>
+          </View>
         )}
-        {inc ? (
-          <>
-            <Divider />
-            <PlanRow
-              label={`Extreme incident, ${inc.mark}`}
-              text={inc.title || formatFull(inc.date)}
-              note={formatFull(inc.date)}
-              onPress={() => router.push(`/day/${inc.date}`)}
-            />
-          </>
-        ) : null}
-      </Panel>
-    </Group>
+      </Ribbon>
+      {inc ? (
+        <Ribbon label="Incident" tint={colors.ink2} soft={colors.fill}>
+          <PlanRow
+            label={`Extreme incident, ${inc.mark}`}
+            text={inc.title || formatFull(inc.date)}
+            note={formatFull(inc.date)}
+            onPress={() => router.push(`/day/${inc.date}`)}
+          />
+        </Ribbon>
+      ) : null}
+    </View>
   );
 }
 
@@ -255,5 +269,9 @@ const styles = StyleSheet.create({
   weekPillOn: { backgroundColor: colors.ink },
   weekPillOff: { backgroundColor: colors.surface },
   // Rows reach the card's edges: the box lines up with the label above it.
-  outlook: { marginHorizontal: -space.l },
+  // Kevin's Rule and the Outlook lie one on the other, a hairline of paper between them.
+  planRibbons: { gap: 2 },
+  ribbonText: { paddingHorizontal: space.s, paddingVertical: space.s, gap: space.xs },
+  line: { flexDirection: 'row', alignItems: 'center' },
+  plusEnd: { paddingLeft: space.xs },
 });

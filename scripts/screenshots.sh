@@ -76,6 +76,13 @@ xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
 xcrun simctl launch "$UDID" "$BUNDLE" -LTOpen hours,challenge >/dev/null
 sleep 7; xcrun simctl io "$UDID" screenshot "$OUT/30-today-lists-end.png" >/dev/null; echo "  30-today-lists-end"
 if xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BUNDLE"; then echo "  lists: app still running"; else echo "  lists: APP NOT RUNNING"; fi
+# 1.24: the foot of Today and of Month, scrolled to the end: no dead space above the tab bar.
+xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
+xcrun simctl launch "$UDID" "$BUNDLE" -LTScroll end >/dev/null
+sleep 7; xcrun simctl io "$UDID" screenshot "$OUT/48-today-end.png" >/dev/null; echo "  48-today-end"
+xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
+xcrun simctl launch "$UDID" "$BUNDLE" -LTRoute "/(tabs)/(month)/month" -LTScroll end >/dev/null
+sleep 8; xcrun simctl io "$UDID" screenshot "$OUT/49-month-end.png" >/dev/null; echo "  49-month-end"
 
 # The same main screens at night.
 xcrun simctl ui "$UDID" appearance dark || true

@@ -64,6 +64,26 @@ interface CheckRowProps {
 }
 
 /** A tickable line: priorities, goals, weekly checks. */
+/**
+ * A small round "+" that sits at the end of a list's last line instead of taking a line of its
+ * own: it opens the list for adding or editing.
+ */
+export function AddButton({ onPress, label }: { onPress: () => void; label: string }) {
+  return (
+    <Press
+      onPress={() => {
+        haptic.select();
+        onPress();
+      }}
+      hitSlop={10}
+      accessibilityLabel={label}
+      style={styles.addButton}
+    >
+      <Icon name="plus" size={14} color={colors.accent} weight="bold" />
+    </Press>
+  );
+}
+
 export function CheckRow({
   checked,
   onToggle,
@@ -290,6 +310,14 @@ export function Field({ label, limit, multiline, minHeight, value, style, ...res
 }
 
 const styles = StyleSheet.create({
+  addButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   box: { alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
   boxDashed: { backgroundColor: 'transparent', borderColor: colors.boxBorder, borderStyle: 'dashed' },
   checkRow: {

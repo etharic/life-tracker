@@ -49,6 +49,8 @@ const styles = StyleSheet.create({
     paddingLeft: space.s,
     paddingRight: GUTTER - space.xs,
     paddingVertical: space.s,
+    // Tall enough for the side word to fit along it.
+    minHeight: 96,
   },
   // The name, turned to read upwards, in a narrow column at the ribbon's left end.
   side: { width: 22, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },

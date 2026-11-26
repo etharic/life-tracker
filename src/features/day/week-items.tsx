@@ -6,7 +6,7 @@ import { monthOfWeek, weekDates } from '@/domain/dates';
 import { CHECK_KEYS, type ISODate, type WeekId } from '@/domain/types';
 import { useMonth, useWeek } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
-import { CheckRow } from '@/ui/controls';
+import { AddButton, CheckRow } from '@/ui/controls';
 import { Divider } from '@/ui/layout';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
@@ -26,7 +26,8 @@ export function SubLabel({ children }: { children: string }) {
 
 /**
  * A week's commitments as one checklist: its own commitments first (priorities starred; touch and
- * hold for the menu), then the month's three weekly checks, then a row to add one.
+ * hold for the menu), then the month's three weekly checks. A small + at the end of the last
+ * line adds one.
  * A week that is not the current one is shown as it was, without being changed.
  */
 export function WeekItems({
@@ -137,6 +138,9 @@ export function WeekItems({
   const fold = interactive && !showDone;
   const shown = fold ? rows.filter((r) => !r.checked || lingering.has(r.key)) : rows;
   const folded = fold ? rows.filter((r) => r.checked && !lingering.has(r.key)) : [];
+  // The "+" takes no line of its own: it sits at the end of the "n done" line, or of the last item.
+  const plus = interactive && !adding ? <AddButton onPress={() => setAdding(true)} label="Add a commitment" /> : null;
+  const plusOnLast = plus && !folded.length;
 
   return (
     <View style={padded ? styles.listPadded : styles.list}>
@@ -154,50 +158,58 @@ export function WeekItems({
         {shown.map((r, i) => (
           <Animated.View key={r.key} entering={enterRow} exiting={exitSoft} layout={layoutMove}>
             {i > 0 ? <Divider inset={INSET} /> : null}
-            <CheckRow
-              checked={r.checked}
-              label={r.label}
-              strike
-              readOnly={!interactive}
-              onToggle={() => {
-                if (!r.checked) linger(r.key);
-                r.toggle();
-              }}
-              onLongPress={interactive ? r.menu : undefined}
-              trailing={
-                r.star ? (
-                  <View accessible accessibilityLabel="Priority">
-                    <Icon name="star.fill" size={13} color={colors.accent} />
-                  </View>
-                ) : null
-              }
-            />
+            <View style={styles.line}>
+              <View style={styles.flex}>
+                <CheckRow
+                  checked={r.checked}
+                  label={r.label}
+                  strike
+                  readOnly={!interactive}
+                  onToggle={() => {
+                    if (!r.checked) linger(r.key);
+                    r.toggle();
+                  }}
+                  onLongPress={interactive ? r.menu : undefined}
+                  trailing={
+                    r.star ? (
+                      <View accessible accessibilityLabel="Priority">
+                        <Icon name="star.fill" size={13} color={colors.accent} />
+                      </View>
+                    ) : null
+                  }
+                />
+              </View>
+              {plusOnLast && i === shown.length - 1 ? <View style={styles.plusEnd}>{plus}</View> : null}
+            </View>
           </Animated.View>
         ))}
       </LayoutAnimationConfig>
       {folded.length ? (
         <>
           {shown.length ? <Divider inset={INSET} /> : null}
-          <Press
-            feedback="highlight"
-            onPress={() => {
-              haptic.select();
-              setShowDone(true);
-            }}
-            accessibilityLabel={`Show ${folded.length} done`}
-            style={styles.addRow}
-          >
-            <View style={styles.addIcon}>
-              <Icon name="checkmark.circle.fill" size={18} color={colors.accent} />
-            </View>
-            <T variant="body" tone="ink2" style={styles.flex}>
-              {`${folded.length} done`}
-            </T>
-            <Icon name="chevron.down" size={12} color={colors.ink3} weight="semibold" />
-          </Press>
+          <View style={styles.line}>
+            <Press
+              feedback="highlight"
+              onPress={() => {
+                haptic.select();
+                setShowDone(true);
+              }}
+              accessibilityLabel={`Show ${folded.length} done`}
+              containerStyle={styles.flex}
+              style={styles.addRow}
+            >
+              <View style={styles.addIcon}>
+                <Icon name="checkmark.circle.fill" size={18} color={colors.accent} />
+              </View>
+              <T variant="body" tone="ink2" style={styles.flex}>
+                {`${folded.length} done`}
+              </T>
+            </Press>
+            {plus ? <View style={styles.plusEnd}>{plus}</View> : null}
+          </View>
         </>
       ) : null}
-      {interactive ? (
+      {interactive && (adding || (!shown.length && !folded.length)) ? (
         <>
           {shown.length || folded.length ? <Divider inset={INSET} /> : null}
           {adding ? (
@@ -271,6 +283,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.l,
   },
   addIcon: { width: 26, alignItems: 'center' },
+  line: { flexDirection: 'row', alignItems: 'center' },
+  plusEnd: { paddingRight: space.l, paddingLeft: space.xs },
   flex: { flex: 1 },
   input: { ...type.body, flex: 1, color: colors.ink, paddingVertical: space.s },
 });
