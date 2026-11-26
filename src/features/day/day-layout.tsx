@@ -199,7 +199,6 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
         />
         {!learned && !locked && !info && !timing ? (
           <View style={styles.tip}>
-            <Icon name="hand.tap" size={14} color={colors.ink2} />
             <T variant="footnote" tone="ink2" style={styles.tipText}>
               {TIP}
             </T>
