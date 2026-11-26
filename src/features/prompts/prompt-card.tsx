@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, gap: 2 },
   card: { backgroundColor: colors.accentSoft, borderRadius: radius.section, padding: space.l, gap: space.m },
   list: { gap: space.s },
-  item: { backgroundColor: colors.surface, borderRadius: radius.control + 2, padding: space.m + 2 },
+  item: { backgroundColor: colors.surface, borderRadius: radius.control, padding: space.m + 2 },
   line: { gap: space.m },
   lineRow: { flexDirection: 'row', alignItems: 'center' },
   actions: { flexDirection: 'row', gap: space.s, justifyContent: 'flex-end' },

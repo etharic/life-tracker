@@ -8,7 +8,6 @@ import { CATEGORY_LABEL, formatHours, type Choice, type MonthSetup } from '@/dom
 import { useItemStreak } from '@/features/hooks';
 import { Bar, DayStrip, Ring } from '@/ui/charts';
 import { haptic } from '@/ui/haptics';
-import { Icon } from '@/ui/icon';
 import { Section } from '@/ui/layout';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
@@ -84,7 +83,7 @@ function RingDetail({ setup, stat }: { setup: MonthSetup; stat: RingStat }) {
 }
 
 /**
- * The four goals or the four hobbies of a month on one coloured band (pen blue for goals, plum for
+ * The four goals or the four hobbies of a month on one coloured band (ember for goals, sage for
  * hobbies), named by a word turned on its side at the band's left edge, so no line is spent on a
  * title. Tap a ring for its days.
  */
@@ -141,7 +140,6 @@ export function RingGroup({
                   label={s.hours != null ? `${Number.isInteger(s.hours) ? s.hours : s.hours.toFixed(1)}h` : undefined}
                 />
                 <View style={styles.ringLabel}>
-                  {starred ? <Icon name="star.fill" size={10} color={tint} /> : null}
                   <T
                     variant="footnote"
                     weight={starred ? '600' : '400'}

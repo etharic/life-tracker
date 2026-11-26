@@ -81,7 +81,7 @@ export function viewerHtml(input: {
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Journal</title>
 <style>
-:root{--paper:#F7F7F4;--ink:#15181C;--ink2:#55595F;--line:#E2E3DF;--accent:#2B4C7E;--wash:#E6ECF5}
+:root{--paper:#FBF5EC;--ink:#2A1E16;--ink2:#5E4D40;--line:#EADFD0;--accent:#A84F1A;--wash:#F7E3D1}
 *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif}
 main{max-width:760px;margin:0 auto;padding:32px 20px 80px}h1{font-size:34px;margin:0 0 4px}h2{font-size:22px;margin:40px 0 8px}
 .muted{color:var(--ink2)}.note{white-space:pre-wrap;background:var(--wash);border-radius:10px;padding:14px 16px;margin:24px 0}

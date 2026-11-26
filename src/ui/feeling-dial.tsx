@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector, useExclusiveGestures, usePanGesture, useTapGesture } from 'react-native-gesture-handler';
@@ -161,12 +160,12 @@ export function FeelingDial({ value, onChange }: { value: number | null; onChang
       </View>
       <GestureDetector gesture={gesture}>
         <View style={styles.hit} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
-          <LinearGradient
-            colors={HUES as unknown as [string, string, ...string[]]}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-            style={styles.gradient}
-          />
+          {/* Eleven solid steps, one per feeling: no blend between them. */}
+          <View style={styles.steps}>
+            {HUES.map((h, i) => (
+              <View key={i} style={[styles.step, { backgroundColor: h }]} />
+            ))}
+          </View>
           <Animated.View style={[styles.thumb, { backgroundColor: p.surface }, thumb]} />
         </View>
       </GestureDetector>
@@ -203,7 +202,8 @@ const styles = StyleSheet.create({
   orbHint: { maxWidth: ORB - 40 },
   nameRow: { alignItems: 'center', minHeight: 30 },
   hit: { height: 48, justifyContent: 'center' },
-  gradient: { height: 12, borderRadius: 6, marginHorizontal: THUMB / 2 - 6 },
+  steps: { flexDirection: 'row', gap: 2, height: 12, marginHorizontal: THUMB / 2 - 6 },
+  step: { flex: 1, borderRadius: 3, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.edge },
   thumb: {
     position: 'absolute',
     left: 0,

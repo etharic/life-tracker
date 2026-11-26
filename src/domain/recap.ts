@@ -20,14 +20,14 @@ import {
 /**
  * The recap that opens Close month and the year review, one card at a time (after Spotify
  * Wrapped): a small line above, one big thing, a line under it. A card is left out when there
- * is nothing true to say on it. Feeling cards take that feeling's colour; the rest are pen blue.
+ * is nothing true to say on it. Feeling cards take that feeling's colour; the rest are ember.
  */
 export interface RecapSlide {
   key: string;
   kicker: string;
   big: string;
   line: string;
-  /** A feeling score whose colour the card takes; otherwise the card is pen blue or ink. */
+  /** A feeling score whose colour the card takes; otherwise the card is ember or ink. */
   feeling?: number;
   tone?: 'accent' | 'ink';
 }

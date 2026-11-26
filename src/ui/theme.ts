@@ -1,64 +1,64 @@
 import { DynamicColorIOS, Platform, useColorScheme, type ColorValue, type TextStyle } from 'react-native';
 
 /**
- * Ink on paper. A journal is written with a pen: day paper and pen ink, one deep pen-blue for
- * everything that can be acted on, a leaf green for a yes and a muted brick for a no. Blue is calm
- * on purpose (the evening ritual, decades of use); warm colours are left to the day itself, whose
- * feeling colour tints Today (src/domain/feelings.ts). Every text pairing is at least 4.5:1.
+ * A night by the fire, just before sleep: hearth-brown paper, cream ink, and one ember amber for
+ * everything that can be acted on. Hobbies take a quiet sage beside the amber goals. No gradients,
+ * no cool blues: warmth comes from the colours themselves. Daytime is the same room with the lamp
+ * on: warm paper, brown ink, a deeper ember. Every text pairing is at least 4.5:1.
  */
 const light = {
-  bg: '#F7F7F4', // day paper
-  surface: '#FFFFFF',
-  fill: '#ECEDEA', // inputs, pills, segmented track
-  ink: '#15181C',
-  ink2: '#55595F', // secondary text
-  ink3: '#6E7278', // placeholders and quiet hints
-  hairline: '#E2E3DF',
-  track: '#E2E3DF', // empty ring track, missed strip cells
-  boxBorder: '#B6B9BE', // unticked checkbox
-  accent: '#2B4C7E', // pen blue: actions, selection, rings
-  accentText: '#2B4C7E', // blue words (8:1 on paper)
-  accentStrong: '#2B4C7E', // fill behind white words
-  accentSoft: '#E6ECF5', // pen-blue wash: done, chosen
-  hobby: '#7A3E8E', // plum: hobbies, beside the pen-blue goals
-  hobbySoft: '#F2E8F5',
+  bg: '#FBF5EC', // lamplit paper
+  surface: '#FFFDF9',
+  fill: '#F1E8DB', // inputs, pills, segmented track
+  ink: '#2A1E16',
+  ink2: '#5E4D40', // secondary text
+  ink3: '#776555', // placeholders and quiet hints
+  hairline: '#EADFD0',
+  track: '#E8DCCB', // empty ring track, missed strip cells
+  boxBorder: '#BFAD99', // unticked checkbox
+  accent: '#A84F1A', // ember: actions, selection, goals
+  accentText: '#A84F1A',
+  accentStrong: '#A84F1A', // fill behind white words
+  accentSoft: '#F7E3D1', // ember wash: done, chosen
+  hobby: '#55713D', // sage: hobbies, beside the ember goals
+  hobbySoft: '#E6EDDB',
   onAccent: '#FFFFFF',
-  good: '#2F7A4A', // a yes
-  goodStrong: '#2F7A4A',
-  goodSoft: '#E3F0E7',
+  good: '#4C7536', // a yes
+  goodStrong: '#4C7536',
+  goodSoft: '#E5EEDC',
   bad: '#A8432F', // a no, a rejection: muted brick, never alarm red
   badStrong: '#A8432F',
-  flame: '#B3591F', // the streak's flame
-  scrim: 'rgba(21,24,28,0.05)',
-  edge: 'rgba(21,24,28,0.08)', // the thin edge around colour swatches
+  flame: '#C2571A', // the streak's flame
+  scrim: 'rgba(42,30,22,0.05)',
+  edge: 'rgba(42,30,22,0.10)', // the thin edge around colour swatches
 };
 
-/** Night: blue-black paper, lighter ink, the pen-blue lifted so it reads on dark. */
+/** Night by the hearth: charred-wood paper, cream ink, the ember glowing. */
 const dark: typeof light = {
-  bg: '#12161C',
-  surface: '#1A2028',
-  fill: '#232A33',
-  ink: '#ECEEF1',
-  ink2: '#AEB4BC',
-  ink3: '#8C939C',
-  hairline: '#2A313A',
-  track: '#2E3540',
-  boxBorder: '#4C545E',
-  accent: '#93B4E8',
-  accentText: '#93B4E8',
-  accentStrong: '#93B4E8',
-  accentSoft: '#1E2A3B',
-  hobby: '#D2A6E2',
-  hobbySoft: '#2C2234',
-  onAccent: '#0E1726', // dark words on the light night blue
-  good: '#7CC495',
-  goodStrong: '#7CC495',
-  goodSoft: '#1D3126',
+  bg: '#16110D',
+  surface: '#201914',
+  fill: '#2A211B',
+  ink: '#F3E9DC',
+  ink2: '#CDBCA9',
+  ink3: '#A08E7C',
+  hairline: '#30261E',
+  track: '#3A2E25',
+  boxBorder: '#5E4D3F',
+  accent: '#F0A35E',
+  accentText: '#F0A35E',
+  accentStrong: '#F0A35E',
+  accentSoft: '#3A2617',
+  hobby: '#AFC48F',
+  hobbySoft: '#252B1C',
+  onAccent: '#1E130B', // dark words on the light ember
+  good: '#A3C98C',
+  goodStrong: '#A3C98C',
+  goodSoft: '#22301C',
   bad: '#E8907F',
   badStrong: '#E8907F',
-  flame: '#E9A15F',
-  scrim: 'rgba(236,238,241,0.07)',
-  edge: 'rgba(236,238,241,0.12)',
+  flame: '#FF9F4A',
+  scrim: 'rgba(243,233,220,0.07)',
+  edge: 'rgba(243,233,220,0.12)',
 };
 
 export type ColorName = keyof typeof light;
@@ -99,10 +99,14 @@ export const space = {
 /** Screen side padding, locked app-wide. */
 export const GUTTER = 20;
 
+/**
+ * One corner for every box (cards, controls, sheets, tiles): 14. `s` is only for the ends of thin
+ * bars and grid cells; circles are circles.
+ */
 export const radius = {
   s: 6,
-  control: 10,
-  section: 16,
+  control: 14,
+  section: 14,
   pill: 999,
 } as const;
 
@@ -114,6 +118,12 @@ export const TARGET = 44;
  * the interface stays in SF Pro. iOS resolves 'ui-serif' to New York.
  */
 export const SERIF = 'ui-serif';
+
+/**
+ * SF Pro Rounded for titles and big numbers: soft, warm and very easy to read. The person's own
+ * writing stays in the serif.
+ */
+export const ROUNDED = 'ui-rounded';
 
 /** Surfaces are flat, as in Claude: a hairline edge, no shadow. (Kept as a token so one change restores depth.) */
 export const elevation = {
@@ -157,9 +167,9 @@ export const type: Record<Variant, TextStyle> = {
   /** A small group label inside a list, in sentence case like the rest of the interface. */
   overline: { fontSize: 13, lineHeight: 18, fontWeight: '600', letterSpacing: -0.08 },
   number: { fontSize: 17, lineHeight: 22, fontWeight: '600', fontVariant: ['tabular-nums'] },
-  display: { fontFamily: SERIF, fontSize: 30, lineHeight: 36, fontWeight: '500', letterSpacing: -0.2 },
-  /** The title of a pushed screen or a flow: large-title size, in the serif the tabs use. */
-  pageTitle: { fontFamily: SERIF, fontSize: 34, lineHeight: 41, fontWeight: '600' },
+  display: { fontFamily: ROUNDED, fontSize: 30, lineHeight: 36, fontWeight: '600', letterSpacing: -0.2 },
+  /** The title of a pushed screen or a flow: large-title size, rounded like the tabs. */
+  pageTitle: { fontFamily: ROUNDED, fontSize: 34, lineHeight: 41, fontWeight: '700' },
   journalTitle: { fontFamily: SERIF, fontSize: 21, lineHeight: 27, fontWeight: '600' },
   journalBody: { fontFamily: SERIF, fontSize: 18, lineHeight: 27, fontWeight: '400' },
 };

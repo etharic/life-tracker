@@ -57,9 +57,12 @@ const SPLIT = 14;
 
 export type HabitKind = 'goal' | 'hobby';
 
+/** The hello hop plays once per launch, the first time the circles are seen. */
+let introduced = false;
+
 /**
  * One goal or hobby on Today as a small circle with its symbol (after Instagram's story circles,
- * smaller): goals in pen blue, hobbies in plum. Touch and hold and the ring fills under the
+ * smaller): goals in ember, hobbies in sage. Touch and hold and the ring fills under the
  * finger; when it closes, the item is done and the circle fills with its colour. Holding a done
  * circle empties it. A tap never ticks: it says what the circle is.
  */
@@ -187,11 +190,6 @@ export function HoldDot({
           color={checked ? p.onAccent : tint}
           weight={checked ? 'semibold' : 'medium'}
         />
-        {star ? (
-          <View style={[styles.star, { backgroundColor: p.bg }]}>
-            <Icon name="star.fill" size={8} color={tint} />
-          </View>
-        ) : null}
         {selected ? <View style={[styles.selected, { backgroundColor: tint }]} /> : null}
       </Animated.View>
     </Pressable>
@@ -215,13 +213,24 @@ export function DotStrip({
 }) {
   const [width, setWidth] = useState(0);
   const size = width ? Math.min(DOT_MAX, Math.floor((width - 6 * DOT_GAP - SPLIT) / 8)) : 0;
+  // Motion says what can be touched: the first time the circles appear, a small hop runs along
+  // them from left to right, once per launch.
+  const [intro] = useState(() => {
+    if (introduced) return false;
+    introduced = true;
+    return true;
+  });
   return (
     <View style={styles.strip} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
       {size ? (
         <>
-          <WaveGroup done={goalsDone}>{goals(size)}</WaveGroup>
+          <WaveGroup done={goalsDone} intro={intro} offset={0}>
+            {goals(size)}
+          </WaveGroup>
           <View style={{ width: SPLIT }} />
-          <WaveGroup done={hobbiesDone}>{hobbies(size)}</WaveGroup>
+          <WaveGroup done={hobbiesDone} intro={intro} offset={4}>
+            {hobbies(size)}
+          </WaveGroup>
         </>
       ) : null}
     </View>
@@ -229,7 +238,17 @@ export function DotStrip({
 }
 
 /** Four circles that hop in turn when the last of them is ticked (after Apple Fitness's closed rings). */
-function WaveGroup({ done, children }: { done: number; children: ReactNode }) {
+function WaveGroup({
+  done,
+  intro,
+  offset,
+  children,
+}: {
+  done: number;
+  intro: boolean;
+  offset: number;
+  children: ReactNode;
+}) {
   // Counts each time the group becomes full while on screen (not when it opens already full).
   const [wave, setWave] = useState(0);
   const was = useRef(done);
@@ -243,7 +262,7 @@ function WaveGroup({ done, children }: { done: number; children: ReactNode }) {
   return (
     <View style={styles.wave}>
       {Children.map(children, (c, i) => (
-        <Wave index={i} play={wave}>
+        <Wave index={i} play={wave} intro={intro ? offset + i : undefined}>
           {c}
         </Wave>
       ))}
@@ -252,8 +271,33 @@ function WaveGroup({ done, children }: { done: number; children: ReactNode }) {
 }
 
 /** One circle's hop in the wave. Nothing with Reduce Motion. */
-function Wave({ index, play, children }: { index: number; play: number; children: ReactNode }) {
+function Wave({
+  index,
+  play,
+  intro,
+  children,
+}: {
+  index: number;
+  play: number;
+  /** Its place in the hello hop, when it plays. */
+  intro?: number;
+  children: ReactNode;
+}) {
   const y = useSharedValue(0);
+  useEffect(() => {
+    if (intro == null) return;
+    y.set(
+      withDelay(
+        500 + intro * 60,
+        withSequence(
+          withTiming(-5, { duration: 150, easing: Easing.out(Easing.quad), reduceMotion: RM }),
+          withSpring(0, { damping: 10, stiffness: 240, mass: 0.6, reduceMotion: RM }),
+        ),
+      ),
+    );
+    // Once, when the circles first appear.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     if (!play) return;
     y.set(
@@ -319,16 +363,7 @@ export function ChallengeStack({ active }: { active: ActiveChallenge[] }) {
 
   return (
     <View style={styles.rowGroup}>
-      <GroupHeader
-        title="Challenges"
-        trailing={
-          active.length ? (
-            <T variant="subhead" tone="ink2" style={styles.tabular}>
-              {`${active.length} under way`}
-            </T>
-          ) : null
-        }
-      />
+      <GroupHeader title="Challenges" />
       {ended ? (
         <Animated.View entering={enterSoft} exiting={exitSoft} style={styles.undoRow}>
           <T variant="subhead" tone="ink2" numberOfLines={1} style={styles.flex}>
@@ -383,9 +418,6 @@ export function ChallengeStack({ active }: { active: ActiveChallenge[] }) {
                   ]}
                 >
                   <View style={styles.cardTop}>
-                    <View style={[styles.badge, { backgroundColor: p.accentSoft }]}>
-                      <Icon name={copy.icon} size={16} color={colors.accent} weight="semibold" />
-                    </View>
                     <View style={styles.flex}>
                       <T variant="callout" weight="600" numberOfLines={isOpen ? undefined : 1}>
                         {item.title}
@@ -476,19 +508,9 @@ const styles = StyleSheet.create({
   dotFace: { position: 'absolute', borderRadius: 999 },
   dotPressed: { opacity: 0.85 },
   selected: { position: 'absolute', bottom: -7, width: 4, height: 4, borderRadius: 2 },
-  star: {
-    position: 'absolute',
-    top: -3,
-    right: -3,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   cardWrap: {},
   card: {
-    borderRadius: radius.section + 2,
+    borderRadius: radius.section,
     borderWidth: StyleSheet.hairlineWidth,
     padding: space.l,
     gap: space.m,
@@ -499,7 +521,6 @@ const styles = StyleSheet.create({
   },
   cardTucked: { height: CARD },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: space.m, minHeight: PEEK - 2 * space.l + 4 },
-  badge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   cardBody: { gap: space.m },
   cardButtons: { flexDirection: 'row', gap: space.s },
   listLink: { minHeight: TARGET, justifyContent: 'center', alignSelf: 'flex-start' },

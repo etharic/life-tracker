@@ -1,6 +1,6 @@
 import type { ExpoConfig } from 'expo/config';
 
-const PAPER = '#F7F7F4';
+const PAPER = '#FBF5EC';
 const PHOTOS = 'Photos you choose are added to that day in your journal.';
 // One wording for every plugin that touches the microphone (the last plugin to run wins).
 const MIC = 'Record voice notes for a day in your journal.';
@@ -35,7 +35,7 @@ const config: ExpoConfig = {
         backgroundColor: PAPER,
         image: './assets/splash.png',
         imageWidth: 120,
-        dark: { backgroundColor: '#12161C', image: './assets/splash-dark.png' },
+        dark: { backgroundColor: '#16110D', image: './assets/splash-dark.png' },
       },
     ],
     // The Journal folder appears in the Files app: On My iPhone > Life-Tracker.

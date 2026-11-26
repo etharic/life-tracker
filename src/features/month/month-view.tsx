@@ -21,7 +21,7 @@ import { RingGroup } from './rings';
 
 /**
  * A month, from the summary down to the detail:
- *   Goals, Hobbies   the eight rings, on a blue and a plum band
+ *   Goals, Hobbies   the eight rings, on an ember and a sage band
  *   (untitled)       the extreme thing, and the outlook as a checklist ticked off during the month
  *   Weeks            one strip of weeks, each with its score
  * Prompts that were skipped wait at the top, because they want something done.

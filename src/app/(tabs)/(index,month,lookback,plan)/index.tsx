@@ -7,7 +7,6 @@ import { unjudgedMisogi } from '@/domain/misogi';
 import { misogiOf, NAMES } from '@/domain/names';
 import { JournalGroup, NoSetupNote, TodayGroup, useActiveChallenges, WeekGroup } from '@/features/day/day-layout';
 import { ChallengeStack } from '@/features/day/today-board';
-import { DayWash } from '@/features/day/day-wash';
 import { useMonth, usePrompts, useStreaks, useToday } from '@/features/hooks';
 import { PromptCard, UpkeepRow } from '@/features/prompts/prompt-card';
 import { judgeMisogi } from '@/features/year/commit';
@@ -122,7 +121,6 @@ export default function TodayScreen() {
 
   return (
     <Screen topInset>
-      <DayWash date={today} />
       <TopBar
         title={formatTitle(today)}
         trailing={

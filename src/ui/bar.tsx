@@ -7,7 +7,7 @@ import { T } from './text';
 import { radius, space, usePalette } from './theme';
 
 /**
- * A bar, as DESIGN.md (Bars) sets it: 6 pt tall, the `fill` track, pen blue unless it shows a
+ * A bar, as DESIGN.md (Bars) sets it: 6 pt tall, the `fill` track, ember unless it shows a
  * feeling. A fill below 3:1 against the track gets a 1 pt ink3 outline so it stays visible.
  */
 export function Bar({ share, color }: { share: number; color?: string }) {

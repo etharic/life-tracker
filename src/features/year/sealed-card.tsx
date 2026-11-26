@@ -22,7 +22,7 @@ function clock(sec: number): string {
 const days = (n: number) => `${n} ${n === 1 ? 'day' : 'days'}`;
 
 /**
- * The voice note sealed at a year's review (`year`). Its own card, in the pen-blue wash:
+ * The voice note sealed at a year's review (`year`). Its own card, in the ember wash:
  *   locked     a lock, when it was made and when it opens; only its length is read
  *   editable   during the edit window after the sitting: play back, record again or remove
  *   open       from its date: tap to play, never on its own

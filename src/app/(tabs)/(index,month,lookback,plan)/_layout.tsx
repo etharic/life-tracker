@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router/stack';
 import { useColorScheme } from 'react-native';
 
-import { colors, palette, SERIF } from '@/ui/theme';
+import { colors, palette, ROUNDED } from '@/ui/theme';
 
 export const unstable_settings = {
   index: { anchor: 'index' },
@@ -29,9 +29,9 @@ export default function TabStack({ segment }: { segment: string }) {
         headerLargeTitleShadowVisible: false,
         headerLargeStyle: { backgroundColor: p.bg },
         headerTintColor: p.accent,
-        // Every page title in the app's serif, like the tab pages' own titles (New York on iOS).
-        headerTitleStyle: { color: p.ink, fontFamily: SERIF, fontWeight: '600' },
-        headerLargeTitleStyle: { color: p.ink, fontFamily: SERIF, fontWeight: '600' },
+        // Every page title rounded, like the tab pages' own titles (SF Pro Rounded).
+        headerTitleStyle: { color: p.ink, fontFamily: ROUNDED, fontWeight: '700' },
+        headerLargeTitleStyle: { color: p.ink, fontFamily: ROUNDED, fontWeight: '700' },
         headerBackButtonDisplayMode: 'minimal',
       }}
     >

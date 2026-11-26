@@ -24,8 +24,8 @@ import { space } from './theme';
 
 /** How long a card stays before the next one comes, unless held. */
 const SLIDE_MS = 6000;
-const PEN = '#2B4C7E';
-const INK = '#16181D';
+const PEN = '#8E3F12'; // deep ember
+const INK = '#16110D'; // the hearth at night
 
 function look(s: RecapSlide): { bg: string; fg: string } {
   const f = s.feeling != null ? feeling(s.feeling) : null;

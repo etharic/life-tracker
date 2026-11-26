@@ -78,7 +78,7 @@ function snippetOf(writing: string): string {
   return writing.replace(/\s+/g, ' ').trim();
 }
 
-/** Text with its matched spans in pen blue (search results). */
+/** Text with its matched spans in ember (search results). */
 export function Marked({ text, marks }: { text: string; marks: Span[] }) {
   if (!marks.length) return <>{text}</>;
   const parts: React.ReactNode[] = [];

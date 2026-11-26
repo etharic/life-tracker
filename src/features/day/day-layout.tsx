@@ -1,7 +1,14 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { Settings, StyleSheet, View } from 'react-native';
-import Animated, { LayoutAnimationConfig } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  LayoutAnimationConfig,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { monthName, monthOf, weekOf } from '@/domain/dates';
 import { feeling } from '@/domain/feelings';
@@ -31,7 +38,7 @@ import { useJournal } from '@/state/journal';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
 import { Divider } from '@/ui/layout';
-import { enterRow, enterSoft, exitSoft, layoutMove } from '@/ui/motion';
+import { enterRow, enterSoft, exitSoft, layoutMove, RM } from '@/ui/motion';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { colors, elevation, radius, space, TARGET } from '@/ui/theme';
@@ -70,8 +77,8 @@ export function NoSetupNote({ date }: { date: ISODate }) {
 
 // ---------- Goals and hobbies ----------
 
-/** Goals in pen blue, hobbies in plum: said once, until the first circle is held. */
-const TIP = 'Touch and hold a circle to tick it off. Blue circles are goals, purple are hobbies.';
+/** Goals in ember, hobbies in sage: said once, until the first circle is held. */
+const TIP = 'Touch and hold a circle to tick it off. Orange circles are goals, green are hobbies.';
 
 /**
  * Today's goals and hobbies as eight circles in one line, always in view: hold one to tick it.
@@ -429,6 +436,7 @@ export function JournalGroup({
                 >
                   <View style={styles.writeRow}>
                     <View style={styles.writeIcon}>
+                      {isToday ? <Ember /> : null}
                       <Icon name="square.and.pencil" size={16} color={colors.onAccent} weight="semibold" />
                     </View>
                     <View style={styles.flex}>
@@ -449,6 +457,23 @@ export function JournalGroup({
       </Animated.View>
     </View>
   );
+}
+
+/**
+ * A soft glow that swells and fades behind today's unwritten journal, like an ember breathing:
+ * the one thing on Today that moves on its own, because it is the one thing waiting for you.
+ * Still under Reduce Motion.
+ */
+function Ember() {
+  const t = useSharedValue(0);
+  useEffect(() => {
+    t.set(withRepeat(withTiming(1, { duration: 2400, easing: Easing.out(Easing.quad), reduceMotion: RM }), -1));
+  }, [t]);
+  const glow = useAnimatedStyle(() => ({
+    opacity: 0.45 * (1 - t.get()),
+    transform: [{ scale: 1 + t.get() * 0.7 }],
+  }));
+  return <Animated.View pointerEvents="none" style={[styles.ember, glow]} />;
 }
 
 // ---------- This week: its commitments ----------
@@ -513,6 +538,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   note: { padding: space.l, gap: space.xs },
+  ember: { position: 'absolute', width: 32, height: 32, borderRadius: 16, backgroundColor: colors.accent },
   trail: { flexDirection: 'row', alignItems: 'center', gap: space.s },
   hoursRow: { flexDirection: 'row', alignItems: 'center', gap: space.m, padding: space.m, paddingLeft: space.l },
   close: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },

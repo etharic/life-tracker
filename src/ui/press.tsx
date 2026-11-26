@@ -53,25 +53,19 @@ export function Press({
       pressRetentionOffset={16}
       style={containerStyle}
       onPressIn={(e) => {
-        if (feedback === 'scale') scale.set(withTiming(0.97, PRESS_IN));
-        else lit.set(1);
+        // Everything that can be pressed gives a little under the finger; rows also light up.
+        scale.set(withTiming(feedback === 'scale' ? 0.97 : 0.985, PRESS_IN));
+        if (feedback === 'highlight') lit.set(1);
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        if (feedback === 'scale') scale.set(withSpring(1, RELEASE));
-        else lit.set(withTiming(0, FADE_OUT));
+        scale.set(withSpring(1, RELEASE));
+        if (feedback === 'highlight') lit.set(withTiming(0, FADE_OUT));
         onPressOut?.(e);
       }}
       {...rest}
     >
-      <Animated.View
-        style={[
-          feedback === 'scale' ? animated : null,
-          style,
-          fill ? [colorEase, fill] : null,
-          rest.disabled && styles.disabled,
-        ]}
-      >
+      <Animated.View style={[animated, style, fill ? [colorEase, fill] : null, rest.disabled && styles.disabled]}>
         {feedback === 'highlight' ? (
           <Animated.View pointerEvents="none" style={[styles.highlighted, highlight]} />
         ) : null}

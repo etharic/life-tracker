@@ -31,7 +31,7 @@ export function Ring({
   size?: number;
   stroke?: number;
   label?: string;
-  /** The arc's colour: pen blue for goals, plum for hobbies. */
+  /** The arc's colour: ember for goals, sage for hobbies. */
   color?: 'accent' | 'hobby';
 }) {
   const reduced = useReducedMotion();
