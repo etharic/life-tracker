@@ -92,19 +92,14 @@ function useArchive(): { title: string; items: Item[] }[] {
             title: 'Month highlights',
             href: '/past/month-highlights',
             icon: 'sparkles',
-            value: n(monthList.filter((m) => m.highlight).length),
+            // Good or bad: the closing highlight and the extreme incident count together.
+            value: n(monthList.reduce((k, m) => k + (m.highlight ? 1 : 0) + (m.extremeIncident ? 1 : 0), 0)),
           },
           {
             title: 'Kevin’s Rules',
             href: '/past/extremes',
             icon: 'flag',
             value: n(monthList.filter((m) => m.setup?.extremeThing).length),
-          },
-          {
-            title: 'Extreme incidents',
-            href: '/past/incidents',
-            icon: 'bolt',
-            value: n(monthList.filter((m) => m.extremeIncident).length),
           },
           { title: 'Goals and hobbies', href: '/past/archive', icon: 'circle.circle', value: n(used.size) },
           { title: 'Achievements', href: '/past/achievements', icon: 'star', value: n(achievements.length) },

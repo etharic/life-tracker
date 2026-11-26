@@ -229,57 +229,47 @@ export function ExtremesList() {
   );
 }
 
-export function IncidentsList() {
-  const months = useJournal((s) => s.months);
-  const days = useJournal((s) => s.days);
-  const items = sortedMonths(months).filter((m) => m.extremeIncident);
-  return (
-    <ListScreen
-      explainer="Extreme incident: the day of each month that turned out most memorable."
-      empty={items.length ? null : 'No extreme incidents yet'}
-    >
-      {byYear(items).map(([y, ms]) => (
-        <Group key={y} label={y}>
-          {ms.map((m) => {
-            const inc = m.extremeIncident!;
-            return (
-              <Line
-                key={m.month}
-                serif
-                over={`${monthName(m.month)}, ${inc.mark}`}
-                title={inc.title}
-                sub={formatShort(inc.date)}
-                color={feeling(days[inc.date]?.feeling)?.color ?? null}
-                onPress={() => router.push(`/day/${inc.date}`)}
-              />
-            );
-          })}
-        </Group>
-      ))}
-    </ListScreen>
-  );
-}
-
-/** The month highlights, chosen at each month close: the best of the month, in a line. */
+/**
+ * Month highlights: each month's best moments, good or bad. A month shows its highlight, chosen
+ * when it closes (with the week it came from), and its extreme incident, the day that stood out
+ * most, marked positive or negative, in that day's feeling colour; a tap on it opens the day.
+ */
 export function MonthHighlightsList() {
   const months = useJournal((s) => s.months);
-  const items = sortedMonths(months).filter((m) => m.highlight);
+  const days = useJournal((s) => s.days);
+  const items = sortedMonths(months).filter((m) => m.highlight || m.extremeIncident);
   return (
     <ListScreen
-      explainer="One line for each month, chosen when it closes, often from its week highlights."
+      explainer="Each month’s highlights, good or bad: the line chosen when it closes, and the day that stood out most."
       empty={items.length ? null : 'No month highlights yet'}
     >
       {byYear(items).map(([year, ms]) => (
         <Group key={year} label={year}>
-          {ms.map((m) => (
-            <Line
-              key={m.month}
-              serif
-              over={monthName(m.month)}
-              title={m.highlight}
-              sub={m.highlightFromWeek ? `From week ${weekIndexInMonth(m.highlightFromWeek)}` : undefined}
-            />
-          ))}
+          {ms.flatMap((m) => {
+            const inc = m.extremeIncident;
+            return [
+              m.highlight ? (
+                <Line
+                  key={`${m.month}/h`}
+                  serif
+                  over={monthName(m.month)}
+                  title={m.highlight}
+                  sub={m.highlightFromWeek ? `From week ${weekIndexInMonth(m.highlightFromWeek)}` : undefined}
+                />
+              ) : null,
+              inc ? (
+                <Line
+                  key={`${m.month}/i`}
+                  serif
+                  over={`${monthName(m.month)}, the day that stood out, ${inc.mark}`}
+                  title={inc.title || formatShort(inc.date)}
+                  sub={formatShort(inc.date)}
+                  color={feeling(days[inc.date]?.feeling)?.color ?? null}
+                  onPress={() => router.push(`/day/${inc.date}`)}
+                />
+              ) : null,
+            ].filter(Boolean);
+          })}
         </Group>
       ))}
     </ListScreen>
