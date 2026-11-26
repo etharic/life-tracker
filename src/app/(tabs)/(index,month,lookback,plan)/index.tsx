@@ -134,9 +134,12 @@ export default function TodayScreen() {
       {setupSkipped ? <NoSetupNote date={today} /> : null}
       <View style={styles.groups}>
         <TodayGroup date={today} />
-        <ChallengesRow active={challenges} />
-        {/* The row itself says "Write today’s journal": no title over it. */}
-        <JournalGroup date={today} isToday titled={false} />
+        {/* Two rows that each open their own screen sit together, as one group. */}
+        <View>
+          <ChallengesRow active={challenges} />
+          {/* The row itself says "Write today’s journal": no title over it. */}
+          <JournalGroup date={today} isToday titled={false} />
+        </View>
         <WeekGroup date={today} />
         <UpkeepRow prompts={prompts} />
       </View>
