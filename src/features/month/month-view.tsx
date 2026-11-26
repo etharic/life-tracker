@@ -21,8 +21,8 @@ import { RingGroup } from './rings';
 
 /**
  * A month, from the summary down to the detail:
- *   Goals, Hobbies   the eight rings
- *   Plan             the extreme thing, and the outlook as a checklist ticked off during the month
+ *   Goals, Hobbies   the eight rings, on a blue and a plum band
+ *   (untitled)       the extreme thing, and the outlook as a checklist ticked off during the month
  *   Weeks            one strip of weeks, each with its score
  * Prompts that were skipped wait at the top, because they want something done.
  */
@@ -93,7 +93,7 @@ function PlanGroup({ month }: { month: MonthId }) {
   };
 
   return (
-    <Group title="Plan">
+    <Group>
       <Panel>
         <View style={rec.extremeDone === true ? styles.stampRoom : undefined}>
           <PlanRow label="Kevin’s Rule" text={setup.extremeThing || 'Not set'} note={status} />
@@ -231,8 +231,10 @@ export function MonthView({ month }: { month: MonthId }) {
   return (
     <View style={styles.groups}>
       <Waiting month={month} />
-      <RingGroup label="Goals" setup={rec.setup} stats={rings.goals} />
-      <RingGroup label="Hobbies" setup={rec.setup} stats={rings.hobbies} />
+      <View style={styles.bands}>
+        <RingGroup label="Goals" kind="goal" setup={rec.setup} stats={rings.goals} />
+        <RingGroup label="Hobbies" kind="hobby" setup={rec.setup} stats={rings.hobbies} />
+      </View>
       <PlanGroup month={month} />
       <WeeksGroup month={month} />
     </View>
@@ -244,6 +246,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   tabular: { fontVariant: ['tabular-nums'] },
   groups: { gap: space.xxl },
+  bands: { gap: space.s },
   actions: { flexDirection: 'row', justifyContent: 'flex-end' },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   planRow: { gap: space.xs, paddingHorizontal: space.l, paddingVertical: space.m + 2 },

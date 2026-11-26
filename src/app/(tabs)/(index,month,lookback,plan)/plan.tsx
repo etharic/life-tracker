@@ -8,8 +8,6 @@ import { GOAL_CATEGORIES, HOBBY_CATEGORIES, type Reminder } from '@/domain/types
 import { useMonth, usePromptInput, useToday } from '@/features/hooks';
 import { HowItsGoing } from '@/features/plan/progress-groups';
 import { MisogiLine } from '@/features/year/plan-line';
-import { useActiveChallenges } from '@/features/day/day-layout';
-import { ChallengeStack } from '@/features/day/today-board';
 import { useSync } from '@/sync/scheduler';
 import { useJournal } from '@/state/journal';
 import { Icon } from '@/ui/icon';
@@ -41,7 +39,6 @@ export default function PlanScreen() {
   const settings = useJournal((s) => s.settings);
   const sync = useSync();
   const { driveSync } = usePromptInput();
-  const active = useActiveChallenges();
 
   const goalIdeas = GOAL_CATEGORIES.reduce((n, c) => n + bank.goals[c].filter((e) => !e.retired).length, 0);
   const hobbyIdeas = HOBBY_CATEGORIES.reduce((n, c) => n + bank.hobbies[c].filter((e) => !e.retired).length, 0);
@@ -65,8 +62,6 @@ export default function PlanScreen() {
       <TopBar title="Plan" />
       <View style={styles.groups}>
         <MisogiLine />
-        {/* Challenges run for weeks or months, so they live with the long view, not on Today. */}
-        <ChallengeStack active={active} />
         <Group title="Months">
           <Section flush>
             <Rows inset={INSET}>

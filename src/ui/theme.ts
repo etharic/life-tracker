@@ -20,6 +20,8 @@ const light = {
   accentText: '#2B4C7E', // blue words (8:1 on paper)
   accentStrong: '#2B4C7E', // fill behind white words
   accentSoft: '#E6ECF5', // pen-blue wash: done, chosen
+  hobby: '#7A3E8E', // plum: hobbies, beside the pen-blue goals
+  hobbySoft: '#F2E8F5',
   onAccent: '#FFFFFF',
   good: '#2F7A4A', // a yes
   goodStrong: '#2F7A4A',
@@ -46,6 +48,8 @@ const dark: typeof light = {
   accentText: '#93B4E8',
   accentStrong: '#93B4E8',
   accentSoft: '#1E2A3B',
+  hobby: '#D2A6E2',
+  hobbySoft: '#2C2234',
   onAccent: '#0E1726', // dark words on the light night blue
   good: '#7CC495',
   goodStrong: '#7CC495',

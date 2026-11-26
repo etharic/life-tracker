@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Children, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Pressable, Settings, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, Settings, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedProps,
@@ -24,16 +24,14 @@ import { Icon } from '@/ui/icon';
 import { enterSoft, exitSoft, layoutMove, RM } from '@/ui/motion';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
-import { RollingText } from '@/ui/rolling-text';
 import { colors, radius, space, TARGET, usePalette } from '@/ui/theme';
 import { usePop } from '@/ui/use-pop';
-import { STACK_SCALE } from '@/ui/bar';
+import { GroupHeader } from '@/ui/group';
 
 /**
- * Today's goals and hobbies as rings, always in view, four to a row (after Streaks): touch and hold
- * a ring and it fills under the finger; when it closes, the item is done. Holding a done ring
- * empties it again. A quick tap never ticks anything by accident: it says to hold (a goal) or
- * opens the time spent (a hobby).
+ * Today's goals and hobbies as eight small circles in one line (after Streaks and Instagram's
+ * story circles): touch and hold one and it fills under the finger; when it closes, the item is
+ * done. Holding a done circle empties it again. A quick tap never ticks anything by accident.
  */
 
 export const HOLD_MS = 450;
@@ -50,11 +48,24 @@ export const CATEGORY_ICON: Record<Category, SFSymbol> = {
 };
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const RING = 42;
-const STROKE = 4;
+const STROKE = 3;
+/** The largest a circle grows on a wide phone; on a small one the eight share the width. */
+const DOT_MAX = 46;
+const DOT_GAP = 6;
+/** The extra space between the four goals and the four hobbies. */
+const SPLIT = 14;
 
-export function HoldRing({
+export type HabitKind = 'goal' | 'hobby';
+
+/**
+ * One goal or hobby on Today as a small circle with its symbol (after Instagram's story circles,
+ * smaller): goals in pen blue, hobbies in plum. Touch and hold and the ring fills under the
+ * finger; when it closes, the item is done and the circle fills with its colour. Holding a done
+ * circle empties it. A tap never ticks: it says what the circle is.
+ */
+export function HoldDot({
   category,
+  kind,
   label,
   caption,
   checked,
@@ -64,36 +75,41 @@ export function HoldRing({
   selected,
   detail,
   meta,
+  size,
   onToggle,
   onTap,
 }: {
   category: Category;
+  kind: HabitKind;
   label: string;
   caption: string;
   checked: boolean;
   star: boolean;
   starLabel: string;
   readOnly?: boolean;
-  /** Its time row is open below. */
+  /** Its line or its time is showing below. */
   selected?: boolean;
-  /** A short value under the label, such as 2½ h. */
+  /** Time today, such as 2½ h. */
   detail?: string;
   /** What keeps it going: its run of days, or how the month is going. */
   meta?: string;
+  size: number;
   onToggle: () => void;
   onTap?: () => void;
 }) {
   const p = usePalette();
-  const r = (RING - STROKE) / 2;
+  const tint = kind === 'goal' ? p.accent : p.hobby;
+  const soft = kind === 'goal' ? p.accentSoft : p.hobbySoft;
+  const r = (size - STROKE) / 2;
   const c = 2 * Math.PI * r;
-  // How far the finger has held, 0 to 1. A done ring shows it draining instead of filling.
+  // How far the finger has held, 0 to 1. A done circle shows it draining instead of filling.
   const hold = useSharedValue(0);
   const on = useSharedValue(checked ? 1 : 0);
   useEffect(() => on.set(checked ? 1 : 0), [checked, on]);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const fired = useRef(false);
   useEffect(() => () => clearTimeout(timer.current), []);
-  const pop = usePop(checked, 0.16);
+  const pop = usePop(checked, 0.18);
 
   const arc = useAnimatedProps(() => {
     const v = on.get() ? 1 - hold.get() : hold.get();
@@ -124,15 +140,17 @@ export function HoldRing({
     if (!fired.current) hold.set(withTiming(0, { duration: 160, easing: Easing.out(Easing.quad) }));
   };
 
-  const a11y = `${label}, ${caption}${star ? `, ${starLabel}` : ''}${detail ? `, ${detail}` : ''}${meta ? `, ${meta}` : ''}`;
+  const inner = size - 2 * STROKE - 3;
+  const a11y = `${kind === 'goal' ? 'Goal' : 'Hobby'}: ${label}, ${caption}${star ? `, ${starLabel}` : ''}${detail ? `, ${detail}` : ''}${meta ? `, ${meta}` : ''}`;
   return (
     <Pressable
       onPressIn={start}
       onPressOut={release}
       onPress={() => {
-        if (!fired.current && !readOnly) onTap?.();
+        if (!fired.current) onTap?.();
       }}
       disabled={readOnly && !onTap}
+      hitSlop={{ top: 8, bottom: 8 }}
       accessible
       accessibilityRole="checkbox"
       accessibilityState={{ checked, disabled: readOnly, expanded: selected }}
@@ -143,61 +161,76 @@ export function HoldRing({
       onAccessibilityAction={(e) => {
         if (e.nativeEvent.actionName === 'activate') commit();
       }}
-      style={({ pressed }) => [
-        styles.tile,
-        { backgroundColor: p.surface, borderColor: p.hairline },
-        pressed && styles.tilePressed,
-      ]}
+      style={({ pressed }) => [pressed && styles.dotPressed]}
     >
-      <Animated.View style={[styles.ring, pop]}>
-        <Svg width={RING} height={RING} style={StyleSheet.absoluteFill}>
-          <Circle cx={RING / 2} cy={RING / 2} r={r} stroke={p.track} strokeWidth={STROKE} fill="none" />
+      <Animated.View style={[{ width: size, height: size }, styles.dot, pop]}>
+        <View style={[styles.dotFace, { width: inner, height: inner, backgroundColor: soft }]} />
+        <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
+          <Circle cx={size / 2} cy={size / 2} r={r} stroke={soft} strokeWidth={STROKE} fill="none" />
           <AnimatedCircle
-            cx={RING / 2}
-            cy={RING / 2}
+            cx={size / 2}
+            cy={size / 2}
             r={r}
-            stroke={p.accent}
+            stroke={tint}
             strokeWidth={STROKE}
             strokeLinecap="round"
             fill="none"
             strokeDasharray={`${c} ${c}`}
             animatedProps={arc}
-            transform={`rotate(-90 ${RING / 2} ${RING / 2})`}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
           />
         </Svg>
-        <Animated.View style={[styles.done, { backgroundColor: p.accent }, filled]} />
+        <Animated.View style={[styles.dotFace, { width: inner, height: inner, backgroundColor: tint }, filled]} />
         <Icon
           name={CATEGORY_ICON[category]}
-          size={17}
-          color={checked ? colors.onAccent : colors.ink2}
-          weight={checked ? 'semibold' : 'regular'}
+          size={Math.round(size * 0.4)}
+          color={checked ? p.onAccent : tint}
+          weight={checked ? 'semibold' : 'medium'}
         />
         {star ? (
           <View style={[styles.star, { backgroundColor: p.bg }]}>
-            <Icon name="star.fill" size={9} color={colors.accent} />
+            <Icon name="star.fill" size={8} color={tint} />
           </View>
         ) : null}
+        {selected ? <View style={[styles.selected, { backgroundColor: tint }]} /> : null}
       </Animated.View>
-      <View style={styles.words}>
-        <T variant="subhead" weight="600" tone={checked ? 'ink2' : 'ink'} numberOfLines={1}>
-          {label}
-        </T>
-        <T variant="caption" tone="ink2" numberOfLines={1}>
-          {meta ?? caption}
-          {detail ? (
-            <T variant="caption" tone="accent" weight="600">
-              {`  ${detail}`}
-            </T>
-          ) : null}
-        </T>
-      </View>
     </Pressable>
   );
 }
 
-/** Four tiles, two by two, with the group's name and count above (one column at the largest text). */
-export function RingRow({ title, done, children }: { title: string; done: number; children: ReactNode }) {
-  // Counts each time the row becomes full while on screen (not when it opens already full).
+/**
+ * Today's eight circles in one line, never scrolled: the four goals, a little space, the four
+ * hobbies. They share the width of the screen, up to DOT_MAX each.
+ */
+export function DotStrip({
+  goalsDone,
+  hobbiesDone,
+  goals,
+  hobbies,
+}: {
+  goalsDone: number;
+  hobbiesDone: number;
+  goals: (size: number) => ReactNode[];
+  hobbies: (size: number) => ReactNode[];
+}) {
+  const [width, setWidth] = useState(0);
+  const size = width ? Math.min(DOT_MAX, Math.floor((width - 6 * DOT_GAP - SPLIT) / 8)) : 0;
+  return (
+    <View style={styles.strip} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      {size ? (
+        <>
+          <WaveGroup done={goalsDone}>{goals(size)}</WaveGroup>
+          <View style={{ width: SPLIT }} />
+          <WaveGroup done={hobbiesDone}>{hobbies(size)}</WaveGroup>
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+/** Four circles that hop in turn when the last of them is ticked (after Apple Fitness's closed rings). */
+function WaveGroup({ done, children }: { done: number; children: ReactNode }) {
+  // Counts each time the group becomes full while on screen (not when it opens already full).
   const [wave, setWave] = useState(0);
   const was = useRef(done);
   useEffect(() => {
@@ -207,37 +240,19 @@ export function RingRow({ title, done, children }: { title: string; done: number
     const t = setTimeout(() => setWave((w) => w + 1), 120);
     return () => clearTimeout(t);
   }, [done]);
-  const { fontScale } = useWindowDimensions();
-  const one = fontScale > STACK_SCALE;
   return (
-    <View style={styles.rowGroup}>
-      <View style={styles.rowHead}>
-        <T variant="footnote" weight="600" tone="ink2" accessibilityRole="header" style={styles.flex}>
-          {title}
-        </T>
-        <RollingText
-          variant="footnote"
-          tone="ink2"
-          style={styles.tabular}
-          text={done === 4 ? 'All done' : `${done} of 4`}
-        />
-      </View>
-      <View style={styles.grid}>
-        {Children.map(children, (c, i) => (
-          <Wave index={i} play={wave} half={!one}>
-            {c}
-          </Wave>
-        ))}
-      </View>
+    <View style={styles.wave}>
+      {Children.map(children, (c, i) => (
+        <Wave index={i} play={wave}>
+          {c}
+        </Wave>
+      ))}
     </View>
   );
 }
 
-/**
- * Closing the last ring of a row sends a wave along it (after Apple Fitness's closed rings):
- * each ring hops in turn, left to right. Once per row each time it fills; nothing with Reduce Motion.
- */
-function Wave({ index, play, half, children }: { index: number; play: number; half: boolean; children: ReactNode }) {
+/** One circle's hop in the wave. Nothing with Reduce Motion. */
+function Wave({ index, play, children }: { index: number; play: number; children: ReactNode }) {
   const y = useSharedValue(0);
   useEffect(() => {
     if (!play) return;
@@ -252,7 +267,7 @@ function Wave({ index, play, half, children }: { index: number; play: number; ha
     );
   }, [play, index, y]);
   const hop = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
-  return <Animated.View style={[half ? styles.half : styles.full, hop]}>{children}</Animated.View>;
+  return <Animated.View style={hop}>{children}</Animated.View>;
 }
 
 // ---------- Challenges: a stack of cards, after Wallet ----------
@@ -304,14 +319,16 @@ export function ChallengeStack({ active }: { active: ActiveChallenge[] }) {
 
   return (
     <View style={styles.rowGroup}>
-      <View style={styles.rowHead}>
-        <T variant="footnote" weight="600" tone="ink2" accessibilityRole="header" style={styles.flex}>
-          Challenges
-        </T>
-        <T variant="footnote" tone="ink2" style={styles.tabular}>
-          {active.length ? `${active.length} under way` : ''}
-        </T>
-      </View>
+      <GroupHeader
+        title="Challenges"
+        trailing={
+          active.length ? (
+            <T variant="subhead" tone="ink2" style={styles.tabular}>
+              {`${active.length} under way`}
+            </T>
+          ) : null
+        }
+      />
       {ended ? (
         <Animated.View entering={enterSoft} exiting={exitSoft} style={styles.undoRow}>
           <T variant="subhead" tone="ink2" numberOfLines={1} style={styles.flex}>
@@ -453,36 +470,19 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   tabular: { fontVariant: ['tabular-nums'] },
   rowGroup: { gap: space.m },
-  rowHead: { flexDirection: 'row', alignItems: 'baseline', gap: space.m },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s },
-  half: { width: '48.5%', flexGrow: 1 },
-  full: { width: '100%' },
-  tile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.s + 2,
-    minHeight: 60,
-    paddingVertical: space.s,
-    paddingHorizontal: space.s + 2,
-    borderRadius: radius.section - 2,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  tilePressed: { opacity: 0.92 },
-  words: { flex: 1, gap: 1 },
-  ring: { width: RING, height: RING, alignItems: 'center', justifyContent: 'center' },
-  done: {
-    position: 'absolute',
-    width: RING - 2 * STROKE - 2,
-    height: RING - 2 * STROKE - 2,
-    borderRadius: RING,
-  },
+  strip: { flexDirection: 'row', justifyContent: 'center' },
+  wave: { flexDirection: 'row', gap: DOT_GAP },
+  dot: { alignItems: 'center', justifyContent: 'center' },
+  dotFace: { position: 'absolute', borderRadius: 999 },
+  dotPressed: { opacity: 0.85 },
+  selected: { position: 'absolute', bottom: -7, width: 4, height: 4, borderRadius: 2 },
   star: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    top: -3,
+    right: -3,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
   },

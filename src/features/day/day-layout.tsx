@@ -3,18 +3,18 @@ import { useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { Settings, StyleSheet, View } from 'react-native';
 import Animated, { LayoutAnimationConfig } from 'react-native-reanimated';
 
-import { monthName, monthOf, monthOfWeek, weekDates, weekIndexInMonth, weekOf } from '@/domain/dates';
+import { monthName, monthOf, weekOf } from '@/domain/dates';
 import { feeling } from '@/domain/feelings';
 import {
   CATEGORY_LABEL,
   formatHours,
   hobbyHours,
   HOUR_PER_TICK,
+  type Category,
   type GoalCategory,
   type HobbyCategory,
   type ISODate,
   CHALLENGE_KINDS,
-  CHECK_KEYS,
 } from '@/domain/types';
 import {
   orderedGoals,
@@ -25,7 +25,6 @@ import {
   useMonth,
   useStreaks,
   useToday,
-  useWeek,
 } from '@/features/hooks';
 import { ringStat } from '@/domain/progress';
 import { useJournal } from '@/state/journal';
@@ -40,7 +39,7 @@ import { GroupHeader } from '@/ui/group';
 
 import { AllDone } from './all-done';
 import { MediaStrip } from './media';
-import { HoldRing, RingRow, type ActiveChallenge } from './today-board';
+import { DotStrip, HoldDot, type ActiveChallenge } from './today-board';
 import { WeekItems } from './week-items';
 
 /**
@@ -69,13 +68,15 @@ export function NoSetupNote({ date }: { date: ISODate }) {
   );
 }
 
-// ---------- Goals, hobbies and challenges ----------
+// ---------- Goals and hobbies ----------
+
+/** Goals in pen blue, hobbies in plum: said once, until the first circle is held. */
+const TIP = 'Touch and hold a circle to tick it off. Blue circles are goals, purple are hobbies.';
 
 /**
- * Today's goals and hobbies as two rows of rings, always in view: hold a ring to tick it. The
- * priority goal and the skill hobby come first, starred. Under them, the challenges under way as a
- * stack of cards. `locked`: a past day shown as it was; nothing can be ticked and challenges,
- * which are not tied to a day, are left out.
+ * Today's goals and hobbies as eight circles in one line, always in view: hold one to tick it.
+ * The priority goal and the skill hobby come first, starred. A tap says what a circle is (a goal)
+ * or opens its time (a hobby). `locked`: a past day shown as it was; nothing can be ticked.
  */
 export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }) {
   const month = useMonth(monthOf(date));
@@ -83,8 +84,8 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
   const { current } = useStreaks();
   const setup = month.setup;
   const [timing, setTiming] = useState<HobbyCategory | null>(null);
-  const [hint, setHint] = useState(false);
-  // Until the first ring is ticked by holding, a quiet line under the rings says how. Kept on the
+  const [info, setInfo] = useState<GoalCategory | null>(null);
+  // Until the first circle is ticked by holding, a quiet line under them says how. Kept on the
   // phone, not in the journal.
   const [learned, setLearned] = useState(() => !!Settings.get('LTRingsLearned'));
   const learn = () => {
@@ -93,11 +94,12 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
     setLearned(true);
   };
   useEffect(() => {
-    if (!hint) return;
-    const t = setTimeout(() => setHint(false), 2200);
+    if (!info) return;
+    const t = setTimeout(() => setInfo(null), 3200);
     return () => clearTimeout(t);
-  }, [hint]);
-  // Simulator check only: `-LTOpen hours` opens the first hobby's time, as a tap does. Unused on a phone.
+  }, [info]);
+  // Simulator check only: `-LTOpen hours` opens the first hobby's time and `goal` names the first
+  // goal, as taps do. Unused on a phone.
   useEffect(() => {
     const seq: unknown = Settings.get('LTOpen');
     if (typeof seq !== 'string' || locked || !setup) return;
@@ -105,6 +107,7 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
       setTimeout(
         () => {
           if (k === 'hours') setTiming(orderedHobbies(setup)[0]);
+          if (k === 'goal') setInfo(orderedGoals(setup)[0]);
         },
         1200 * (i + 1),
       ),
@@ -122,71 +125,81 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
   return (
     <View style={styles.group}>
       <View style={styles.board}>
-        <RingRow title="Goals" done={goalsDone}>
-          {orderedGoals(setup).map((c) => (
-            <HabitTile
-              date={date}
-              key={c}
-              category={c}
-              label={setup.goals[c].text}
-              caption={CATEGORY_LABEL[c]}
-              checked={day.goals[c]}
-              star={c === setup.priority}
-              starLabel="priority goal"
-              readOnly={locked}
-              onToggle={() => {
-                learn();
-                updateDay(date, (d) => void (d.goals[c] = !d.goals[c]));
-              }}
-              onTap={() => setHint(true)}
-            />
-          ))}
-        </RingRow>
-        <RingRow title="Hobbies" done={hobbiesDone}>
-          {orderedHobbies(setup).map((c) => {
-            const hours = hobbyHours(day, c);
-            return (
-              <HabitTile
+        <DotStrip
+          goalsDone={goalsDone}
+          hobbiesDone={hobbiesDone}
+          goals={(size) =>
+            orderedGoals(setup).map((c) => (
+              <HabitDot
                 date={date}
                 key={c}
+                size={size}
+                kind="goal"
                 category={c}
-                label={setup.hobbies[c].text}
+                label={setup.goals[c].text}
                 caption={CATEGORY_LABEL[c]}
-                checked={day.hobbies[c]}
-                star={c === setup.skill}
-                starLabel="skill hobby"
+                checked={day.goals[c]}
+                star={c === setup.priority}
+                starLabel="priority goal"
                 readOnly={locked}
-                selected={timing === c}
-                detail={hours > HOUR_PER_TICK ? formatHours(hours) : undefined}
+                selected={info === c}
                 onToggle={() => {
                   learn();
-                  updateDay(date, (d) => {
-                    d.hobbies[c] = !d.hobbies[c];
-                    delete d.hobbyHours[c];
-                  });
+                  updateDay(date, (d) => void (d.goals[c] = !d.goals[c]));
                 }}
                 onTap={() => {
                   haptic.select();
-                  setTiming((t) => (t === c ? null : c));
+                  setTiming(null);
+                  setInfo((x) => (x === c ? null : c));
                 }}
               />
-            );
-          })}
-        </RingRow>
-        {!learned && !locked && !hint ? (
+            ))
+          }
+          hobbies={(size) =>
+            orderedHobbies(setup).map((c) => {
+              const hours = hobbyHours(day, c);
+              return (
+                <HabitDot
+                  date={date}
+                  key={c}
+                  size={size}
+                  kind="hobby"
+                  category={c}
+                  label={setup.hobbies[c].text}
+                  caption={CATEGORY_LABEL[c]}
+                  checked={day.hobbies[c]}
+                  star={c === setup.skill}
+                  starLabel="skill hobby"
+                  readOnly={locked}
+                  selected={timing === c}
+                  detail={hours > HOUR_PER_TICK ? formatHours(hours) : undefined}
+                  onToggle={() => {
+                    learn();
+                    updateDay(date, (d) => {
+                      d.hobbies[c] = !d.hobbies[c];
+                      delete d.hobbyHours[c];
+                    });
+                  }}
+                  onTap={() => {
+                    haptic.select();
+                    setInfo(null);
+                    if (!locked) setTiming((t) => (t === c ? null : c));
+                  }}
+                />
+              );
+            })
+          }
+        />
+        {!learned && !locked && !info && !timing ? (
           <View style={styles.tip}>
             <Icon name="hand.tap" size={14} color={colors.ink2} />
-            <T variant="footnote" tone="ink2">
-              Touch and hold a tile to tick it off.
+            <T variant="footnote" tone="ink2" style={styles.tipText}>
+              {TIP}
             </T>
           </View>
         ) : null}
-        {hint ? (
-          <Animated.View entering={enterSoft} exiting={exitSoft}>
-            <T variant="footnote" tone="ink2" style={styles.hint} accessibilityLiveRegion="polite">
-              Touch and hold a tile to tick it off. Tap a hobby for its time.
-            </T>
-          </Animated.View>
+        {info ? (
+          <GoalInfo date={date} category={info} name={setup.goals[info].text} done={day.goals[info]} locked={locked} />
         ) : null}
         {timing && !locked ? (
           <HoursRow date={date} category={timing} name={setup.hobbies[timing].text} onClose={() => setTiming(null)} />
@@ -198,13 +211,11 @@ export function TodayGroup({ date, locked }: { date: ISODate; locked?: boolean }
 }
 
 /**
- * One goal or hobby on Today: the hold-to-tick tile, with the line that keeps it going under its
- * name. A run of days once there is one (the pull of not breaking it), otherwise how the month
- * is going, so every tile says something true about you, not only "tap here".
+ * What keeps a goal or hobby going: its run of days once there is one (the pull of not breaking
+ * it), otherwise how the month is going.
  */
-function HabitTile({ date, ...props }: { date: ISODate } & ComponentProps<typeof HoldRing>) {
+function useHabitMeta(date: ISODate, c: Category): string | undefined {
   const setup = useMonth(monthOf(date)).setup;
-  const c = props.category;
   const bankId = setup
     ? (c in setup.goals ? setup.goals[c as GoalCategory] : setup.hobbies[c as HobbyCategory]).bankId
     : undefined;
@@ -212,8 +223,46 @@ function HabitTile({ date, ...props }: { date: ISODate } & ComponentProps<typeof
   const lookup = useDayLookup();
   const today = useToday();
   const stat = useMemo(() => ringStat(monthOf(date), c, date > today ? date : today, lookup), [date, c, today, lookup]);
-  const meta = run >= 2 ? `${run} days running` : stat.passed ? `${stat.ticked} of ${stat.passed} days` : undefined;
-  return <HoldRing {...props} meta={meta} />;
+  return run >= 2 ? `${run} days running` : stat.passed ? `${stat.ticked} of ${stat.passed} days` : undefined;
+}
+
+function HabitDot({ date, ...props }: { date: ISODate } & Omit<ComponentProps<typeof HoldDot>, 'meta'>) {
+  const meta = useHabitMeta(date, props.category);
+  return <HoldDot {...props} meta={meta} />;
+}
+
+/** A tapped goal's name and how it is going, in its colour, for a few seconds. */
+function GoalInfo({
+  date,
+  category,
+  name,
+  done,
+  locked,
+}: {
+  date: ISODate;
+  category: GoalCategory;
+  name: string;
+  done: boolean;
+  locked?: boolean;
+}) {
+  const meta = useHabitMeta(date, category);
+  const how = locked ? undefined : done ? 'Hold to untick' : 'Hold to tick';
+  return (
+    <Animated.View
+      key={category}
+      entering={enterSoft}
+      exiting={exitSoft}
+      style={styles.info}
+      accessibilityLiveRegion="polite"
+    >
+      <T variant="subhead" weight="600" tone="accent" numberOfLines={1}>
+        {name}
+      </T>
+      <T variant="footnote" tone="ink2" numberOfLines={1}>
+        {[meta, how].filter(Boolean).join('. ')}
+      </T>
+    </Animated.View>
+  );
 }
 
 /**
@@ -233,6 +282,7 @@ function HoursRow({
 }) {
   const day = useDay(date);
   const hours = hobbyHours(day, category);
+  const meta = useHabitMeta(date, category);
   const set = (h: number) => {
     haptic.select();
     useJournal.getState().updateDay(date, (d) => {
@@ -244,11 +294,11 @@ function HoursRow({
   return (
     <Animated.View entering={enterSoft} exiting={exitSoft} layout={layoutMove} style={[styles.card, styles.hoursRow]}>
       <View style={styles.flex}>
-        <T variant="footnote" tone="ink2">
-          Time today
-        </T>
-        <T variant="subhead" weight="600" numberOfLines={1}>
+        <T variant="subhead" weight="600" style={styles.hobbyName} numberOfLines={1}>
           {name}
+        </T>
+        <T variant="footnote" tone="ink2" numberOfLines={1}>
+          {meta ? `Time today, ${meta}` : 'Time today'}
         </T>
       </View>
       <Press
@@ -305,7 +355,7 @@ export function JournalGroup({
       <Animated.View layout={layoutMove} style={styles.bare}>
         <View>
           {/* How the day felt: one colour, one name. The scale opens only to choose or change it. */}
-          {/* How the day felt is chosen in Close the day, once; here it is only shown. */}
+          {/* How the day felt is chosen in the journal, once; here it is only shown. */}
           {f && locked ? (
             <View style={styles.feelingRow} accessible accessibilityLabel={`Felt ${f.score}, ${f.name}`}>
               <View style={[styles.swatch, { backgroundColor: f.color }]} />
@@ -375,7 +425,7 @@ export function JournalGroup({
                 <Press
                   feedback="highlight"
                   onPress={write}
-                  accessibilityLabel={isToday ? 'Close the day' : 'Write about this day'}
+                  accessibilityLabel={isToday ? 'Write today’s journal' : 'Write about this day'}
                 >
                   <View style={styles.writeRow}>
                     <View style={styles.writeIcon}>
@@ -383,7 +433,7 @@ export function JournalGroup({
                     </View>
                     <View style={styles.flex}>
                       <T variant="headline" tone="accent">
-                        {isToday ? 'Close the day' : 'Write about this day'}
+                        {isToday ? 'Write today’s journal' : 'Write about this day'}
                       </T>
                       <T variant="footnote" tone="ink2">
                         One line, a few words, a photo or a recording
@@ -405,29 +455,12 @@ export function JournalGroup({
 
 export function WeekGroup({ date, locked }: { date: ISODate; locked?: boolean }) {
   const week = weekOf(date);
-  const rec = useWeek(week);
-  const days = useJournal((s) => s.days);
-  const doneSet = useMemo(() => new Set(weekDates(week).flatMap((d) => days[d]?.prioritiesDone ?? [])), [days, week]);
-  const hasChecks = !!useMonth(monthOfWeek(week)).setup;
-  // One count for all the week's commitments: its priorities and the month's weekly checks.
-  const total = rec.priorities.length + (hasChecks ? CHECK_KEYS.length : 0);
-  const done =
-    rec.priorities.filter((p) => doneSet.has(p.text)).length +
-    (hasChecks ? CHECK_KEYS.filter((k) => rec.checks[k]).length : 0);
-
   return (
     <View style={styles.group}>
-      <GroupHeader
-        title="This week"
-        trailing={
-          <T variant="subhead" tone="ink2" style={styles.tabular}>
-            {`Week ${weekIndexInMonth(week)}${total ? `, ${done} of ${total} done` : ''}`}
-          </T>
-        }
-      />
+      <GroupHeader title="This week’s commitments" />
       <Animated.View layout={layoutMove} style={styles.card}>
         <View style={styles.clip}>
-          <WeekItems week={week} date={date} interactive={!locked} padded />
+          <WeekItems week={week} date={date} interactive={!locked} padded labelled={false} />
         </View>
       </Animated.View>
     </View>
@@ -450,9 +483,11 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   tabular: { fontVariant: ['tabular-nums'] },
   group: { gap: space.m },
-  board: { gap: space.xl },
-  hint: { textAlign: 'center' },
+  board: { gap: space.m },
   tip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs },
+  tipText: { flexShrink: 1, textAlign: 'center' },
+  info: { alignItems: 'center', gap: 1 },
+  hobbyName: { color: colors.hobby },
   card: { borderRadius: radius.section, backgroundColor: colors.surface, ...elevation.card },
   /**
    * Content that belongs to the page sits on it, without a box: rows reach out to the screen

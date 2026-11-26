@@ -77,7 +77,7 @@ export default function CloseDaySheet() {
   return (
     <View style={styles.fill}>
       <ModalHeader
-        title={date === today ? 'Close the day' : 'This day'}
+        title={date === today ? 'Journal' : 'This day'}
         subtitle={formatLong(date)}
         onClose={() => router.back()}
       />

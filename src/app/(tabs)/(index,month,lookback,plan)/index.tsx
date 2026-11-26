@@ -1,14 +1,14 @@
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActionSheetIOS, AppState, Pressable, StyleSheet, View } from 'react-native';
+import { ActionSheetIOS, Pressable, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { formatTitle, monthOf } from '@/domain/dates';
 import { unjudgedMisogi } from '@/domain/misogi';
 import { misogiOf, NAMES } from '@/domain/names';
-import { JournalGroup, NoSetupNote, TodayGroup, WeekGroup } from '@/features/day/day-layout';
+import { JournalGroup, NoSetupNote, TodayGroup, useActiveChallenges, WeekGroup } from '@/features/day/day-layout';
+import { ChallengeStack } from '@/features/day/today-board';
 import { DayWash } from '@/features/day/day-wash';
-import { useDay, useMonth, usePrompts, useStreaks, useToday } from '@/features/hooks';
+import { useMonth, usePrompts, useStreaks, useToday } from '@/features/hooks';
 import { PromptCard, UpkeepRow } from '@/features/prompts/prompt-card';
 import { judgeMisogi } from '@/features/year/commit';
 import { useJournal } from '@/state/journal';
@@ -108,39 +108,17 @@ function DayMenu() {
 }
 
 /**
- * Today: the date is the title. Below it: what is due (a prompt card, only when something is), the
- * journal entry, today's goals and hobbies, then the week.
+ * Today, in the order a day is lived and looked at: what is due (a prompt card, only when
+ * something is), the eight goal and hobby circles in one line, the challenges under way, the
+ * journal, then this week's commitments.
  */
-/** From 5 pm until the new day starts (04:00 by default), the day is closing. */
-function isEvening(hour: number): boolean {
-  return hour >= 17 || hour < 4;
-}
-
-/** The current hour, checked again every few minutes and whenever the app comes back. */
-function useHour(): number {
-  const [hour, setHour] = useState(() => new Date().getHours());
-  useEffect(() => {
-    const tick = () => setHour(new Date().getHours());
-    const t = setInterval(tick, 5 * 60 * 1000);
-    const sub = AppState.addEventListener('change', (st) => st === 'active' && tick());
-    return () => {
-      clearInterval(t);
-      sub.remove();
-    };
-  }, []);
-  return hour;
-}
-
 export default function TodayScreen() {
   const today = useToday();
   const prompts = usePrompts();
   const { current } = useStreaks();
   const month = useMonth(monthOf(today));
   const setupSkipped = !month.setup && !prompts.some((p) => p.kind === 'setup');
-  const day = useDay(today);
-  const written = !!(day.title || day.writing || day.media.length || day.feeling != null);
-  const hour = useHour();
-  const evening = written || isEvening(hour);
+  const challenges = useActiveChallenges();
 
   return (
     <Screen topInset>
@@ -156,15 +134,11 @@ export default function TodayScreen() {
       />
       <PromptCard prompts={prompts} />
       {setupSkipped ? <NoSetupNote date={today} /> : null}
-      {/*
-        What comes first follows the day: in daytime the quick ticks lead and the day's entry waits
-        at the end; from late afternoon, or once the day is written, its entry leads.
-      */}
       <View style={styles.groups}>
-        {evening ? <JournalGroup date={today} isToday titled={false} /> : null}
         <TodayGroup date={today} />
+        {challenges.length ? <ChallengeStack active={challenges} /> : null}
+        <JournalGroup date={today} isToday />
         <WeekGroup date={today} />
-        {evening ? null : <JournalGroup date={today} isToday titled={false} />}
         <UpkeepRow prompts={prompts} />
       </View>
     </Screen>

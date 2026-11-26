@@ -73,7 +73,7 @@ xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
 xcrun simctl launch "$UDID" "$BUNDLE" -LTScroll 520 >/dev/null
 sleep 6; xcrun simctl io "$UDID" screenshot "$OUT/29-today-lists.png" >/dev/null; echo "  29-today-lists"
 xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
-xcrun simctl launch "$UDID" "$BUNDLE" -LTOpen hours,challenge -LTScroll 400 >/dev/null
+xcrun simctl launch "$UDID" "$BUNDLE" -LTOpen hours,challenge >/dev/null
 sleep 7; xcrun simctl io "$UDID" screenshot "$OUT/30-today-lists-end.png" >/dev/null; echo "  30-today-lists-end"
 if xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BUNDLE"; then echo "  lists: app still running"; else echo "  lists: APP NOT RUNNING"; fi
 

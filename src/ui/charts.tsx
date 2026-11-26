@@ -25,11 +25,14 @@ export function Ring({
   size = 72,
   stroke = 7,
   label,
+  color = 'accent',
 }: {
   percent: number;
   size?: number;
   stroke?: number;
   label?: string;
+  /** The arc's colour: pen blue for goals, plum for hobbies. */
+  color?: 'accent' | 'hobby';
 }) {
   const reduced = useReducedMotion();
   // SVG needs plain colour strings: pick them from the palette of the current appearance.
@@ -64,7 +67,7 @@ export function Ring({
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke={p.accent}
+          stroke={p[color]}
           strokeWidth={stroke}
           strokeLinecap="round"
           fill="none"

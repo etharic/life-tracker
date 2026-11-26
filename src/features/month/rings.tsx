@@ -12,7 +12,6 @@ import { Icon } from '@/ui/icon';
 import { Section } from '@/ui/layout';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
-import { GroupHeader } from '@/ui/group';
 import { enterRow, exitSoft, layoutMove } from '@/ui/motion';
 import { colors, radius, space } from '@/ui/theme';
 
@@ -84,7 +83,24 @@ function RingDetail({ setup, stat }: { setup: MonthSetup; stat: RingStat }) {
   );
 }
 
-export function RingGroup({ label, setup, stats }: { label: string; setup: MonthSetup; stats: RingStat[] }) {
+/**
+ * The four goals or the four hobbies of a month on one coloured band (pen blue for goals, plum for
+ * hobbies), named by a word turned on its side at the band's left edge, so no line is spent on a
+ * title. Tap a ring for its days.
+ */
+export function RingGroup({
+  label,
+  kind,
+  setup,
+  stats,
+}: {
+  label: string;
+  kind: 'goal' | 'hobby';
+  setup: MonthSetup;
+  stats: RingStat[];
+}) {
+  const tint = kind === 'goal' ? colors.accent : colors.hobby;
+  const soft = kind === 'goal' ? colors.accentSoft : colors.hobbySoft;
   const [open, setOpen] = useState<string | null>(null);
   const [rowWidth, setRowWidth] = useState(0);
   const selected = stats.find((s) => s.category === open);
@@ -93,48 +109,55 @@ export function RingGroup({ label, setup, stats }: { label: string; setup: Month
   const ringSize = column ? Math.max(48, Math.min(66, Math.floor(column - 14))) : 66;
   return (
     <View style={styles.group}>
-      <GroupHeader title={label} />
-      <View style={styles.rings} onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}>
-        {stats.map((s) => {
-          const choice = choiceOf(setup, s);
-          const starred = s.category === setup.priority || s.category === setup.skill;
-          const isOpen = s.category === open;
-          return (
-            <Press
-              key={s.category}
-              onPress={() => {
-                haptic.select();
-                setOpen(isOpen ? null : s.category);
-              }}
-              accessibilityState={{ expanded: isOpen }}
-              accessibilityHint="Shows its days"
-              accessibilityLabel={`${choice.text}, ${CATEGORY_LABEL[s.category]}${starred ? ', starred' : ''}, ${s.hours != null ? `${s.hours} hours` : `${s.percent} percent`}, ${s.ticked} of ${s.passed} days`}
-              containerStyle={styles.ringColumn}
-              style={[styles.ringCell, isOpen && styles.ringOpen]}
-            >
-              <Ring
-                percent={s.percent}
-                size={ringSize}
-                stroke={ringSize > 58 ? 6.5 : 5.5}
-                label={s.hours != null ? `${Number.isInteger(s.hours) ? s.hours : s.hours.toFixed(1)}h` : undefined}
-              />
-              <View style={styles.ringLabel}>
-                {starred ? <Icon name="star.fill" size={10} color={colors.accent} /> : null}
-                <T
-                  variant="footnote"
-                  weight={starred ? '600' : '400'}
-                  tone={starred ? 'ink' : 'ink2'}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  chrome
-                  style={styles.shrink}
-                >
-                  {s.category in setup.goals ? CATEGORY_LABEL[s.category] : choice.text}
-                </T>
-              </View>
-            </Press>
-          );
-        })}
+      <View style={[styles.band, { backgroundColor: soft }]} accessibilityRole="header" accessibilityLabel={label}>
+        <View style={styles.side} importantForAccessibility="no-hide-descendants">
+          <T variant="caption" weight="700" chrome numberOfLines={1} style={[styles.sideText, { color: tint }]}>
+            {label}
+          </T>
+        </View>
+        <View style={styles.rings} onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}>
+          {stats.map((s) => {
+            const choice = choiceOf(setup, s);
+            const starred = s.category === setup.priority || s.category === setup.skill;
+            const isOpen = s.category === open;
+            return (
+              <Press
+                key={s.category}
+                onPress={() => {
+                  haptic.select();
+                  setOpen(isOpen ? null : s.category);
+                }}
+                accessibilityState={{ expanded: isOpen }}
+                accessibilityHint="Shows its days"
+                accessibilityLabel={`${choice.text}, ${CATEGORY_LABEL[s.category]}${starred ? ', starred' : ''}, ${s.hours != null ? `${s.hours} hours` : `${s.percent} percent`}, ${s.ticked} of ${s.passed} days`}
+                containerStyle={styles.ringColumn}
+                style={[styles.ringCell, isOpen && styles.ringOpen]}
+              >
+                <Ring
+                  color={kind === 'goal' ? 'accent' : 'hobby'}
+                  percent={s.percent}
+                  size={ringSize}
+                  stroke={ringSize > 58 ? 6.5 : 5.5}
+                  label={s.hours != null ? `${Number.isInteger(s.hours) ? s.hours : s.hours.toFixed(1)}h` : undefined}
+                />
+                <View style={styles.ringLabel}>
+                  {starred ? <Icon name="star.fill" size={10} color={tint} /> : null}
+                  <T
+                    variant="footnote"
+                    weight={starred ? '600' : '400'}
+                    tone={starred ? 'ink' : 'ink2'}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    chrome
+                    style={styles.shrink}
+                  >
+                    {s.category in setup.goals ? CATEGORY_LABEL[s.category] : choice.text}
+                  </T>
+                </View>
+              </Press>
+            );
+          })}
+        </View>
       </View>
       {selected ? (
         <Animated.View key={selected.category} entering={enterRow} exiting={exitSoft} layout={layoutMove}>
@@ -152,7 +175,7 @@ const styles = StyleSheet.create({
   shrink: { flexShrink: 1 },
   tabular: { fontVariant: ['tabular-nums'] },
   group: { gap: space.m },
-  rings: { flexDirection: 'row', gap: RING_GAP },
+  rings: { flex: 1, flexDirection: 'row', gap: RING_GAP },
   // The touch area is the column: equal width, never stretched by its title.
   ringColumn: { flex: 1, flexBasis: 0, minWidth: 0 },
   ringCell: {
@@ -162,7 +185,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     borderRadius: radius.section,
   },
-  ringOpen: { backgroundColor: colors.accentSoft },
+  ringOpen: { backgroundColor: colors.surface },
+  band: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    borderRadius: radius.section,
+    paddingVertical: space.xs,
+    paddingRight: space.xs,
+  },
+  // The band's name, turned to read upwards, in a narrow column at its left edge.
+  side: { width: 22, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
+  sideText: { width: 90, textAlign: 'center', transform: [{ rotate: '-90deg' }], letterSpacing: 0.6 },
   ringLabel: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, alignSelf: 'stretch' },
   detail: { gap: space.m },
   detailTop: { flexDirection: 'row', alignItems: 'center', gap: space.m },
