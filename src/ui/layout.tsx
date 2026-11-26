@@ -33,12 +33,11 @@ export function Screen({ children, topInset, footer, contentContainerStyle, ...r
     const v: unknown = Settings.get('LTScroll');
     const y = Number(v);
     if (v !== 'end' && !y) return;
-    const t = setTimeout(
-      () =>
-        v === 'end' ? ref.current?.scrollToEnd({ animated: false }) : ref.current?.scrollTo({ y, animated: false }),
-      2000,
-    );
-    return () => clearTimeout(t);
+    const go = () =>
+      v === 'end' ? ref.current?.scrollToEnd({ animated: false }) : ref.current?.scrollTo({ y, animated: false });
+    // Twice: a page whose lower parts appear a moment later is still scrolled to its real end.
+    const t = [setTimeout(go, 2000), setTimeout(go, 4500)];
+    return () => t.forEach(clearTimeout);
   }, []);
   return (
     <View style={styles.screen}>

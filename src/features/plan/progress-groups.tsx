@@ -100,7 +100,7 @@ export function HowItsGoing() {
 
 const styles = StyleSheet.create({
   part: { gap: space.xs, paddingTop: space.s },
-  label: { paddingHorizontal: space.xs },
+  label: { paddingHorizontal: space.l },
   row: { gap: space.s, paddingVertical: space.m, paddingHorizontal: space.l },
   line: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   flex: { flex: 1 },
