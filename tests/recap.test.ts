@@ -51,7 +51,7 @@ describe('recap cards', () => {
     expect(by.best.big).toBe('Hike');
     expect(by.best.feeling).toBe(9);
     expect(by.goals.big).toBe('3');
-    expect(by.goals.line).toMatch(/Health, 2 days/);
+    expect(by.goals.line).toMatch(/Healthy, 2 days/);
     expect(by.hobbies.big).toBe('2.5 hours');
   });
 

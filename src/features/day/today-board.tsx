@@ -182,6 +182,12 @@ export function HoldDot({
           color={checked ? p.onAccent : tint}
           weight={checked ? 'semibold' : 'medium'}
         />
+        {/* The priority goal and the skill hobby keep their small star, as on the rings before. */}
+        {star ? (
+          <View style={[styles.star, { backgroundColor: p.bg }]}>
+            <Icon name="star.fill" size={9} color={tint} />
+          </View>
+        ) : null}
         {selected ? <View style={[styles.selected, { backgroundColor: tint }]} /> : null}
       </Animated.View>
     </Pressable>
@@ -320,4 +326,14 @@ const styles = StyleSheet.create({
   dotFace: { position: 'absolute', borderRadius: 999 },
   dotPressed: { opacity: 0.85 },
   selected: { position: 'absolute', bottom: -7, width: 4, height: 4, borderRadius: 2 },
+  star: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

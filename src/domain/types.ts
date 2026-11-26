@@ -16,10 +16,10 @@ export type CheckKey = (typeof CHECK_KEYS)[number];
 export type BankKind = 'goals' | 'hobbies';
 
 export const CATEGORY_LABEL: Record<Category, string> = {
-  health: 'Health',
-  wealth: 'Wealth',
+  health: 'Healthy',
+  wealth: 'Wealthy',
   wise: 'Wise',
-  versatility: 'Versatility',
+  versatility: 'Versatile',
   intellectual: 'Intellectual',
   physical: 'Physical',
   creative: 'Creative',

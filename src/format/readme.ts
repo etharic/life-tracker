@@ -36,7 +36,7 @@ version of this layout. Dates are written YYYY-MM-DD.
 THE METHOD
 
 The month is the unit. At the start of each month four daily goals are chosen
-(Health, Wealth, Wise, Versatility), one of them the priority goal, which is
+(Healthy, Wealthy, Wise, Versatile), one of them the priority goal, which is
 either being built or broken. Four hobbies are chosen (Intellectual, Physical,
 Creative, Social), one of them the skill being built. Three other commitments
 get one box per week. The outlook lists what the month is for, one item per
