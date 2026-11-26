@@ -127,6 +127,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="close-day/[date]" options={modal} />
+        <Stack.Screen name="challenges" options={modal} />
         <Stack.Screen name="record/[date]" options={modal} />
         <Stack.Screen name="setup/[month]" options={{ ...modal, presentation: 'fullScreenModal' }} />
         <Stack.Screen name="week-close/[week]" options={modal} />

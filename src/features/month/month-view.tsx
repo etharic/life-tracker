@@ -244,12 +244,13 @@ export function MonthView({ month }: { month: MonthId }) {
   return (
     <View style={styles.groups}>
       <Waiting month={month} />
-      <View style={styles.bands}>
+      {/* Every ribbon lies on the next, a hairline of paper between them: no gaps. */}
+      <View style={styles.ribbons}>
         <RingGroup label="Goals" kind="goal" setup={rec.setup} stats={rings.goals} />
         <RingGroup label="Hobbies" kind="hobby" setup={rec.setup} stats={rings.hobbies} />
+        <PlanGroup month={month} />
+        <WeeksGroup month={month} />
       </View>
-      <PlanGroup month={month} />
-      <WeeksGroup month={month} />
     </View>
   );
 }
@@ -259,8 +260,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   tabular: { fontVariant: ['tabular-nums'] },
   groups: { gap: space.xxl },
-  // The goal and hobby ribbons lie one on the other, two stripes across the page.
-  bands: { gap: 0 },
+  ribbons: { gap: 2 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end' },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   planRow: { gap: space.xs, paddingHorizontal: space.l, paddingVertical: space.m + 2 },

@@ -1,4 +1,4 @@
-import { router, type Href } from 'expo-router';
+import { router, Stack, type Href } from 'expo-router';
 import type { SFSymbol } from 'expo-symbols';
 import { useMemo, useRef } from 'react';
 import { ActionSheetIOS, StyleSheet, View } from 'react-native';
@@ -7,7 +7,7 @@ import Animated, { LayoutAnimationConfig } from 'react-native-reanimated';
 import { formatFull } from '@/domain/dates';
 import { challengeCounts, type ChallengeItem, type ChallengeKind, type ChallengeOutcome } from '@/domain/types';
 import { useJournal } from '@/state/journal';
-import { Button } from '@/ui/controls';
+import { AddButton } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
 import { Divider, Empty, Explainer, Screen, Section, SectionLabel } from '@/ui/layout';
@@ -372,7 +372,11 @@ export function ChallengeList({ kind }: { kind: ChallengeKind }) {
       {/* The full explanation while the list is new; one line once it is in use. */}
       <Explainer>{items.length < 3 ? copy.explainer : copy.hint}</Explainer>
       <Totals kind={kind} list={items} />
-      <Button title={copy.add} icon="plus" onPress={() => router.push(`/challenge/${kind}/new`)} />
+      <Stack.Screen
+        options={{
+          headerRight: () => <AddButton onPress={() => router.push(`/challenge/${kind}/new`)} label={copy.add} />,
+        }}
+      />
       {items.length ? (
         <>
           <Block label="Active" items={groups.active} kind={kind} />

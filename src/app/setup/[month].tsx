@@ -21,7 +21,7 @@ import { useDayLookup, useMonthsMap } from '@/features/hooks';
 import { askList } from '@/features/list-question';
 import { runHint, usageCounts, usageLabel } from '@/features/setup/usage';
 import { useJournal } from '@/state/journal';
-import { Button, Field, Segmented } from '@/ui/controls';
+import { AddButton, Button, Field, Segmented } from '@/ui/controls';
 import { haptic } from '@/ui/haptics';
 import { Icon } from '@/ui/icon';
 import { Divider, Screen, Section } from '@/ui/layout';
@@ -168,6 +168,12 @@ function ChoiceList({
                         {usageLabel(counts.get(e.id) ?? 0)}
                       </T>
                     </View>
+                    {i === entries.length - 1 && !adding ? (
+                      <AddButton
+                        onPress={() => setAdding(true)}
+                        label={`New ${CATEGORY_LABEL[category].toLowerCase()} idea`}
+                      />
+                    ) : null}
                   </View>
                 </Press>
               </View>
@@ -175,10 +181,14 @@ function ChoiceList({
           })}
         </Section>
       ) : (
-        <T
-          variant="subhead"
-          tone="ink2"
-        >{`Your bank has no ${CATEGORY_LABEL[category].toLowerCase()} ideas yet. Add the first one.`}</T>
+        <View style={styles.emptyLine}>
+          <T variant="subhead" tone="ink2" style={styles.flex}>
+            {`Your bank has no ${CATEGORY_LABEL[category].toLowerCase()} ideas yet. Add the first one.`}
+          </T>
+          {adding ? null : (
+            <AddButton onPress={() => setAdding(true)} label={`New ${CATEGORY_LABEL[category].toLowerCase()} idea`} />
+          )}
+        </View>
       )}
       {adding ? (
         <View style={styles.newIdea}>
@@ -196,16 +206,7 @@ function ChoiceList({
             maxLength={60}
           />
         </View>
-      ) : (
-        <Press
-          onPress={() => setAdding(true)}
-          style={styles.dashed}
-          accessibilityLabel={`New ${CATEGORY_LABEL[category].toLowerCase()} idea`}
-        >
-          <Icon name="plus" size={15} color={colors.ink2} weight="semibold" />
-          <T variant="body" weight="500" tone="ink2">{`New ${CATEGORY_LABEL[category].toLowerCase()} idea`}</T>
-        </Press>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -566,18 +567,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   radioOn: { borderColor: colors.accent },
+  emptyLine: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.accent },
-  dashed: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: space.s,
-    minHeight: TARGET + 10,
-    borderRadius: radius.section,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: colors.boxBorder,
-  },
   newIdea: {
     backgroundColor: colors.surface,
     borderRadius: radius.section,

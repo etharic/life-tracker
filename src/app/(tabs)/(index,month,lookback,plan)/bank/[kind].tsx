@@ -13,6 +13,7 @@ import {
 import { useMonthsMap } from '@/features/hooks';
 import { usageCounts, usageLabel } from '@/features/setup/usage';
 import { useJournal } from '@/state/journal';
+import { AddButton } from '@/ui/controls';
 import { Icon } from '@/ui/icon';
 import { Divider, Explainer, Screen, Section, SectionLabel } from '@/ui/layout';
 import { Press } from '@/ui/press';
@@ -122,10 +123,23 @@ function CategoryBlock({
         {active.map((e, i) => (
           <View key={e.id}>
             {i > 0 ? <Divider /> : null}
-            {row(e)}
+            {/* The + sits at the end of the last idea's line, not on a line of its own. */}
+            {i === active.length - 1 && !adding ? (
+              <View style={styles.line}>
+                <View style={styles.flex}>{row(e)}</View>
+                <View style={styles.plusEnd}>
+                  <AddButton
+                    onPress={() => setAdding(true)}
+                    label={`Add a ${CATEGORY_LABEL[category].toLowerCase()} idea`}
+                  />
+                </View>
+              </View>
+            ) : (
+              row(e)
+            )}
           </View>
         ))}
-        {active.length ? <Divider /> : null}
+        {active.length && adding ? <Divider /> : null}
         {adding ? (
           <View style={styles.row}>
             <EditLine
@@ -137,19 +151,13 @@ function CategoryBlock({
               }}
             />
           </View>
-        ) : (
-          <Press
-            feedback="highlight"
-            onPress={() => setAdding(true)}
-            accessibilityLabel={`Add a ${CATEGORY_LABEL[category].toLowerCase()} idea`}
-          >
-            <View style={styles.row}>
-              <Icon name="plus" size={16} color={colors.accent} weight="semibold" />
-              <T variant="body" tone="accent">
-                New idea
-              </T>
-            </View>
-          </Press>
+        ) : active.length ? null : (
+          <View style={styles.row}>
+            <T variant="body" tone="ink2" style={styles.flex}>
+              No ideas yet
+            </T>
+            <AddButton onPress={() => setAdding(true)} label={`Add a ${CATEGORY_LABEL[category].toLowerCase()} idea`} />
+          </View>
         )}
         {retired.length ? (
           <>
@@ -213,4 +221,6 @@ const styles = StyleSheet.create({
     minHeight: TARGET + 8,
   },
   input: { ...type.body, flex: 1, color: colors.ink, minHeight: TARGET },
+  line: { flexDirection: 'row', alignItems: 'center' },
+  plusEnd: { paddingRight: space.l },
 });

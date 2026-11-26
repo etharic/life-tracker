@@ -35,15 +35,15 @@ export function WeekItems({
   date,
   interactive,
   padded,
-  labelled = true,
+  label = 'Commitments',
 }: {
   week: WeekId;
   date: ISODate;
   interactive: boolean;
   /** Inside a card of its own: the run carries the card's padding. */
   padded?: boolean;
-  /** Under a title that already names the list, the small label is left out. */
-  labelled?: boolean;
+  /** The small title inside the card, over the list. */
+  label?: string;
 }) {
   const rec = useWeek(week);
   const setup = useMonth(monthOfWeek(week)).setup;
@@ -144,11 +144,9 @@ export function WeekItems({
 
   return (
     <View style={padded ? styles.listPadded : styles.list}>
-      {labelled ? (
-        <View style={padded ? styles.labelPadded : undefined}>
-          <SubLabel>Commitments</SubLabel>
-        </View>
-      ) : null}
+      <View style={padded ? styles.labelPadded : undefined}>
+        <SubLabel>{label}</SubLabel>
+      </View>
       {/*
         A checklist, as in Things: the box springs and ticks; a ticked line stays a moment, then
         folds into "n done" at the end, so the list shows only what is left this week. The week's

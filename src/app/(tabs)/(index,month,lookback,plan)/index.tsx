@@ -6,7 +6,7 @@ import { formatTitle, monthOf } from '@/domain/dates';
 import { unjudgedMisogi } from '@/domain/misogi';
 import { misogiOf, NAMES } from '@/domain/names';
 import { JournalGroup, NoSetupNote, TodayGroup, useActiveChallenges, WeekGroup } from '@/features/day/day-layout';
-import { ChallengesTile } from '@/features/day/challenges-tile';
+import { ChallengesRow } from '@/features/day/challenges-tile';
 import { useMonth, usePrompts, useStreaks, useToday } from '@/features/hooks';
 import { PromptCard, UpkeepRow } from '@/features/prompts/prompt-card';
 import { judgeMisogi } from '@/features/year/commit';
@@ -108,8 +108,8 @@ function DayMenu() {
 
 /**
  * Today, in the order a day is lived and looked at: what is due (a prompt card, only when
- * something is), the eight goal and hobby circles in one line, the challenges folded to one
- * line, the journal row, then this week's commitments.
+ * something is), the eight goal and hobby circles in one line, the challenges row and the
+ * journal row (each opens its own screen), then this week's commitments.
  */
 export default function TodayScreen() {
   const today = useToday();
@@ -134,7 +134,7 @@ export default function TodayScreen() {
       {setupSkipped ? <NoSetupNote date={today} /> : null}
       <View style={styles.groups}>
         <TodayGroup date={today} />
-        <ChallengesTile active={challenges} />
+        <ChallengesRow active={challenges} />
         {/* The row itself says "Write today’s journal": no title over it. */}
         <JournalGroup date={today} isToday titled={false} />
         <WeekGroup date={today} />

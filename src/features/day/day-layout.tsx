@@ -481,10 +481,9 @@ export function WeekGroup({ date, locked }: { date: ISODate; locked?: boolean })
   const week = weekOf(date);
   return (
     <View style={styles.group}>
-      <GroupHeader title="This week’s commitments" />
       <Animated.View layout={layoutMove} style={styles.card}>
         <View style={styles.clip}>
-          <WeekItems week={week} date={date} interactive={!locked} padded labelled={false} />
+          <WeekItems week={week} date={date} interactive={!locked} padded label="This week’s commitments" />
         </View>
       </Animated.View>
     </View>
