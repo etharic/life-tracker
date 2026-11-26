@@ -43,6 +43,7 @@ import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { colors, elevation, radius, space, TARGET } from '@/ui/theme';
 import { GroupHeader } from '@/ui/group';
+import { Ribbon } from '@/ui/ribbon';
 
 import { AllDone } from './all-done';
 import { MediaStrip } from './media';
@@ -442,9 +443,6 @@ export function JournalGroup({
                       <T variant="headline" tone="accent">
                         {isToday ? 'Write today’s journal' : 'Write about this day'}
                       </T>
-                      <T variant="footnote" tone="ink2">
-                        One line, a few words, a photo or a recording
-                      </T>
                     </View>
                     <Icon name="chevron.right" size={13} color={colors.ink3} weight="semibold" />
                   </View>
@@ -481,11 +479,9 @@ export function WeekGroup({ date, locked }: { date: ISODate; locked?: boolean })
   const week = weekOf(date);
   return (
     <View style={styles.group}>
-      <Animated.View layout={layoutMove} style={styles.card}>
-        <View style={styles.clip}>
-          <WeekItems week={week} date={date} interactive={!locked} padded label="This week’s commitments" />
-        </View>
-      </Animated.View>
+      <Ribbon label="This week’s commitments" tint={colors.ink2} soft={colors.fill}>
+        <WeekItems week={week} date={date} interactive={!locked} padded label={null} />
+      </Ribbon>
     </View>
   );
 }

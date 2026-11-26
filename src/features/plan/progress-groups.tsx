@@ -7,10 +7,10 @@ import { CATEGORY_LABEL, HOBBY_CATEGORIES } from '@/domain/types';
 import { useToday } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
 import { Bar } from '@/ui/bar';
-import { Group } from '@/ui/group';
-import { Divider, Section } from '@/ui/layout';
+import { Ribbon } from '@/ui/ribbon';
+import { Divider } from '@/ui/layout';
 import { T } from '@/ui/text';
-import { space } from '@/ui/theme';
+import { colors, space } from '@/ui/theme';
 
 /** Hobby bars wait for a few ticked days, so one tick never reads as a verdict. */
 export const HOBBY_MIN_DAYS = 3;
@@ -53,13 +53,13 @@ export function HowItsGoing() {
   const showHobbies = tickedDays >= HOBBY_MIN_DAYS && max > 0;
   if (!rates.length && !showHobbies) return null;
   return (
-    <Group title="How it’s going">
+    <Ribbon label="How it’s going" tint={colors.ink2} soft={colors.fill}>
       {rates.length ? (
         <View style={styles.part}>
           <T variant="subhead" weight="600" tone="ink2" style={styles.label}>
             Weekly checks, last 12 weeks
           </T>
-          <Section flush>
+          <View>
             {rates.map((r, i) => (
               <View key={r.label}>
                 {i > 0 ? <Divider /> : null}
@@ -71,7 +71,7 @@ export function HowItsGoing() {
                 />
               </View>
             ))}
-          </Section>
+          </View>
         </View>
       ) : null}
       {showHobbies ? (
@@ -79,7 +79,7 @@ export function HowItsGoing() {
           <T variant="subhead" weight="600" tone="ink2" style={styles.label}>
             Hobby hours this month
           </T>
-          <Section flush>
+          <View>
             {HOBBY_CATEGORIES.map((c, i) => (
               <View key={c}>
                 {i > 0 ? <Divider /> : null}
@@ -91,15 +91,15 @@ export function HowItsGoing() {
                 />
               </View>
             ))}
-          </Section>
+          </View>
         </View>
       ) : null}
-    </Group>
+    </Ribbon>
   );
 }
 
 const styles = StyleSheet.create({
-  part: { gap: space.s },
+  part: { gap: space.xs, paddingTop: space.s },
   label: { paddingHorizontal: space.xs },
   row: { gap: space.s, paddingVertical: space.m, paddingHorizontal: space.l },
   line: { flexDirection: 'row', alignItems: 'center', gap: space.m },

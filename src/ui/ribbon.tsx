@@ -54,6 +54,6 @@ const styles = StyleSheet.create({
   },
   // The name, turned to read upwards, in a narrow column at the ribbon's left end.
   side: { width: 22, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
-  sideText: { width: 90, textAlign: 'center', transform: [{ rotate: '-90deg' }], letterSpacing: 0.6 },
+  sideText: { width: 240, textAlign: 'center', transform: [{ rotate: '-90deg' }], letterSpacing: 0.6 },
   body: { flex: 1, minWidth: 0, paddingLeft: space.xs },
 });

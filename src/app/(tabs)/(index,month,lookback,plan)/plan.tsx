@@ -11,9 +11,9 @@ import { MisogiLine } from '@/features/year/plan-line';
 import { useSync } from '@/sync/scheduler';
 import { useJournal } from '@/state/journal';
 import { Icon } from '@/ui/icon';
-import { Row, Rows, Screen, Section, TopBar } from '@/ui/layout';
+import { Row, Rows, Screen, TopBar } from '@/ui/layout';
+import { Ribbon } from '@/ui/ribbon';
 import { colors, space } from '@/ui/theme';
-import { Group } from '@/ui/group';
 
 const HOURS = [2, 3, 4, 5, 6];
 const hour = (h: number) => `${String(h).padStart(2, '0')}:00`;
@@ -62,8 +62,9 @@ export default function PlanScreen() {
       <TopBar title="Plan" />
       <View style={styles.groups}>
         <MisogiLine />
-        <Group title="Months">
-          <Section flush>
+        {/* Every group a ribbon, one on the next, each named on its side. */}
+        <View style={styles.ribbons}>
+          <Ribbon label="Months" tint={colors.ink2} soft={colors.fill}>
             <Rows inset={INSET}>
               <Row
                 leading={icon('calendar')}
@@ -78,13 +79,11 @@ export default function PlanScreen() {
                 onPress={() => router.push(`/setup/${next}`)}
               />
             </Rows>
-          </Section>
-        </Group>
+          </Ribbon>
 
-        <HowItsGoing />
+          <HowItsGoing />
 
-        <Group title="Ideas">
-          <Section flush>
+          <Ribbon label="Ideas" tint={colors.ink2} soft={colors.fill}>
             <Rows inset={INSET}>
               <Row
                 leading={icon('lightbulb')}
@@ -99,11 +98,9 @@ export default function PlanScreen() {
                 onPress={() => router.push('/bank/hobbies')}
               />
             </Rows>
-          </Section>
-        </Group>
+          </Ribbon>
 
-        <Group title="Keep it safe">
-          <Section flush>
+          <Ribbon label="Keep it safe" tint={colors.ink2} soft={colors.fill}>
             <Rows inset={INSET}>
               <Row
                 leading={icon('arrow.triangle.2.circlepath')}
@@ -126,11 +123,9 @@ export default function PlanScreen() {
                 onPress={() => router.push('/backup')}
               />
             </Rows>
-          </Section>
-        </Group>
+          </Ribbon>
 
-        <Group title="Settings">
-          <Section flush>
+          <Ribbon label="Settings" tint={colors.ink2} soft={colors.fill}>
             <Rows inset={INSET}>
               <Row
                 leading={icon('moon.stars')}
@@ -154,8 +149,8 @@ export default function PlanScreen() {
               />
               <Row leading={icon('folder')} title="Your files" onPress={() => router.push('/files')} />
             </Rows>
-          </Section>
-        </Group>
+          </Ribbon>
+        </View>
       </View>
     </Screen>
   );
@@ -163,4 +158,5 @@ export default function PlanScreen() {
 
 const styles = StyleSheet.create({
   groups: { gap: space.xxl },
+  ribbons: { gap: 2 },
 });

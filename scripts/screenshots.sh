@@ -54,7 +54,7 @@ for r in "year-review/$YEAR:31-year-review" "past/year/$LAST:32-year-last" "past
 done
 if xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BUNDLE"; then echo "  year screens: app still running"; else echo "  year screens: APP NOT RUNNING"; fi
 # 1.18: reminders, the backup screen, and search across every kind of entry.
-for r in "reminders:39-reminders" "backup?due=full:40-backup" "past/writing:42-writing" "crash-check:43-crash"; do
+for r in "reminders:39-reminders" "backup?due=full:40-backup" "crash-check:43-crash"; do
   fresh "${r%%:*}"; shot "${r#*:}" 4
 done
 xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
@@ -83,6 +83,12 @@ sleep 7; xcrun simctl io "$UDID" screenshot "$OUT/48-today-end.png" >/dev/null; 
 xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
 xcrun simctl launch "$UDID" "$BUNDLE" -LTRoute "/(tabs)/(month)/month" -LTScroll end >/dev/null
 sleep 8; xcrun simctl io "$UDID" screenshot "$OUT/49-month-end.png" >/dev/null; echo "  49-month-end"
+xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
+xcrun simctl launch "$UDID" "$BUNDLE" -LTRoute "/(tabs)/(lookback)/lookback" -LTScroll end >/dev/null
+sleep 8; xcrun simctl io "$UDID" screenshot "$OUT/51-lookback-end.png" >/dev/null; echo "  51-lookback-end"
+xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
+xcrun simctl launch "$UDID" "$BUNDLE" -LTRoute "/(tabs)/(plan)/plan" -LTScroll end >/dev/null
+sleep 8; xcrun simctl io "$UDID" screenshot "$OUT/52-plan-end.png" >/dev/null; echo "  52-plan-end"
 
 # The same main screens at night.
 xcrun simctl ui "$UDID" appearance dark || true

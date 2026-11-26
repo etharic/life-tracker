@@ -10,12 +10,12 @@ import { useToday } from '@/features/hooks';
 import { SearchResults } from '@/features/past/search-results';
 import { Insights } from '@/features/past/insights';
 import { GoodDays, OnThisDay } from '@/features/past/remember';
-import { Weekdays, Writing } from '@/features/past/stats';
+import { Weekdays } from '@/features/past/stats';
 import { useJournal } from '@/state/journal';
 import { Icon } from '@/ui/icon';
-import { Row, Rows, Screen, Section, TopBar } from '@/ui/layout';
+import { Row, Rows, Screen, TopBar } from '@/ui/layout';
+import { Ribbon } from '@/ui/ribbon';
 import { colors, radius, space, type } from '@/ui/theme';
-import { Group } from '@/ui/group';
 import { NAMES } from '@/domain/names';
 
 type Item = { title: string; href: Href; icon: SFSymbol; value: string };
@@ -131,7 +131,7 @@ function useArchive(): { title: string; items: Item[] }[] {
   }, [days, months, years, achievements, challenges, today]);
 }
 
-/** Look back: one search over everything written, three numbers, and the archive by how often it grows. */
+/** Look back: one search over everything written, the run, the weekdays, and the archive by how often it grows. */
 export default function LookBackHub() {
   // Simulator screenshots fill the field with the launch argument `-LTSearch <words>`. Unused on a phone.
   const [query, setQuery] = useState(() => {
@@ -166,11 +166,11 @@ export default function LookBackHub() {
           <Insights />
           <OnThisDay />
           <GoodDays />
-          <Weekdays />
-          <Writing />
-          {groups.map((g) => (
-            <Group key={g.title} title={g.title}>
-              <Section flush>
+          {/* The weekdays and the archive as ribbons, one on the next, each named on its side. */}
+          <View style={styles.ribbons}>
+            <Weekdays />
+            {groups.map((g) => (
+              <Ribbon key={g.title} label={g.title} tint={colors.ink2} soft={colors.fill}>
                 <Rows inset={space.l + 18 + space.m}>
                   {g.items.map((it) => (
                     <Row
@@ -182,9 +182,9 @@ export default function LookBackHub() {
                     />
                   ))}
                 </Rows>
-              </Section>
-            </Group>
-          ))}
+              </Ribbon>
+            ))}
+          </View>
         </View>
       )}
     </Screen>
@@ -193,6 +193,7 @@ export default function LookBackHub() {
 
 const styles = StyleSheet.create({
   groups: { gap: space.xxl },
+  ribbons: { gap: 2 },
   search: {
     flexDirection: 'row',
     alignItems: 'center',
