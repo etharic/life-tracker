@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActionSheetIOS, StyleSheet, useColorScheme, View } from 'react-native';
 
-import { toISO } from '@/domain/dates';
+import { formatFull, toISO } from '@/domain/dates';
 import type { ChallengeKind, ISODate } from '@/domain/types';
 import { CHALLENGE_COPY } from '@/features/past/challenges';
 import { useToday } from '@/features/hooks';
@@ -17,14 +17,20 @@ import { colors, palette, space, TARGET } from '@/ui/theme';
 
 type Status = 'todo' | 'active' | 'failed' | 'succeeded';
 
+const NOTES_HINT: Record<ChallengeKind, string> = {
+  rejections: 'Who you asked, what you said, what you learned.',
+  bucket: 'Why it matters, what it takes, how it went.',
+  experiments: 'What you are testing, and what you notice day by day.',
+};
+
 const toDate = (iso: ISODate) =>
   new Date(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
 const fromDate = (d: Date) => toISO(d.getFullYear(), d.getMonth() + 1, d.getDate());
 
 /** One item on a challenge list: what it is, when (optional), where it stands, and notes (optional). */
 export default function ChallengeEditor() {
-  const params = useLocalSearchParams<{ kind: string; id: string }>();
-  const kind: ChallengeKind = params.kind === 'bucket' ? 'bucket' : 'rejections';
+  const params = useLocalSearchParams<{ kind: string; id: string; start?: string }>();
+  const kind: ChallengeKind = params.kind === 'bucket' || params.kind === 'experiments' ? params.kind : 'rejections';
   const copy = CHALLENGE_COPY[kind];
   const today = useToday();
   const scheme = useColorScheme();
@@ -32,7 +38,15 @@ export default function ChallengeEditor() {
   const [title, setTitle] = useState(existing?.title ?? '');
   const [date, setDate] = useState<ISODate | null>(existing?.date ?? null);
   const [status, setStatus] = useState<Status>(
-    !existing ? 'todo' : existing.outcome !== 'open' ? existing.outcome : existing.started ? 'active' : 'todo',
+    !existing
+      ? params.start
+        ? 'active'
+        : 'todo'
+      : existing.outcome !== 'open'
+        ? existing.outcome
+        : existing.started
+          ? 'active'
+          : 'todo',
   );
   const [notes, setNotes] = useState(existing?.notes ?? '');
 
@@ -116,17 +130,29 @@ export default function ChallengeEditor() {
             onChange={setStatus}
           />
         </View>
+        {kind === 'experiments' ? (
+          <View style={styles.labelRow}>
+            <T variant="subhead" weight="600" tone="ink2" style={styles.flex}>
+              Observations
+            </T>
+            {/* Each observation starts with its day, so the notes read as a log of the experiment. */}
+            <TextAction
+              title="Add today’s"
+              onPress={() => {
+                haptic.select();
+                const stamp = `${formatFull(today)}: `;
+                setNotes((n) => (n.trim() ? `${n.replace(/\s+$/, '')}\n\n${stamp}` : stamp));
+              }}
+            />
+          </View>
+        ) : null}
         <Field
-          label="Notes"
+          label={kind === 'experiments' ? undefined : 'Notes'}
           value={notes}
           onChangeText={setNotes}
           multiline
           minHeight={160}
-          placeholder={
-            kind === 'bucket'
-              ? 'Why it matters, what it takes, how it went.'
-              : 'Who you asked, what you said, what you learned.'
-          }
+          placeholder={NOTES_HINT[kind]}
           autoCapitalize="sentences"
         />
         {existing ? (
@@ -143,5 +169,6 @@ const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   gap: { gap: space.s },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: space.m, minHeight: TARGET },
 });

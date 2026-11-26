@@ -263,12 +263,13 @@ export const useJournal = create<JournalState>()((set, get) => ({
   },
 
   saveChallenge(kind, r) {
+    const ID_PREFIX = { rejections: 'r', bucket: 'b', experiments: 'e' } as const;
     const list = clone(get().challenges[kind]);
     const i = r.id ? list.findIndex((x) => x.id === r.id) : -1;
     let id = r.id ?? '';
     if (i >= 0) list[i] = { ...list[i], ...r, id: list[i].id };
     else {
-      id = newId(kind === 'bucket' ? 'b' : 'r', new Set(list.map((x) => x.id)));
+      id = newId(ID_PREFIX[kind], new Set(list.map((x) => x.id)));
       list.push({ ...r, id, added: get().today });
     }
     set({ challenges: { ...get().challenges, [kind]: list } });

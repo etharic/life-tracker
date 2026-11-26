@@ -15,6 +15,7 @@ import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { colors, radius, space } from '@/ui/theme';
 import { Group, Panel } from '@/ui/group';
+import { Ribbon } from '@/ui/ribbon';
 
 import { DoneStamp, STAMP_ROOM } from './done-stamp';
 import { RingGroup } from './rings';
@@ -23,7 +24,7 @@ import { RingGroup } from './rings';
  * A month, from the summary down to the detail:
  *   Goals, Hobbies   the eight rings, on an ember and a sage band
  *   (untitled)       the extreme thing, and the outlook as a checklist ticked off during the month
- *   Weeks            one strip of weeks, each with its score
+ *   Weeks            one ribbon of weeks, each with its score
  * Prompts that were skipped wait at the top, because they want something done.
  */
 
@@ -158,32 +159,30 @@ function WeeksGroup({ month }: { month: MonthId }) {
   const current = weekOf(today);
 
   return (
-    <Group title="Weeks">
-      <Panel>
-        <View style={styles.weekPills}>
-          {weeks.map((wk) => {
-            const score = weekScore(wk, today, lookup, rec.weeks[wk], skill);
-            const on = wk === current;
-            const color = on ? colors.bg : score == null ? colors.ink3 : colors.ink;
-            return (
-              <View
-                key={wk}
-                style={[styles.flex, styles.weekPill, on ? styles.weekPillOn : styles.weekPillOff]}
-                accessible
-                accessibilityLabel={`Week ${weekIndexInMonth(wk)}${score == null ? ', not started' : `, ${score} percent`}`}
-              >
-                <T variant="footnote" weight="600" chrome style={{ color }}>
-                  {`W${weekIndexInMonth(wk)}`}
-                </T>
-                <T variant="headline" chrome style={[styles.tabular, { color }]}>
-                  {score == null ? '–' : `${score}%`}
-                </T>
-              </View>
-            );
-          })}
-        </View>
-      </Panel>
-    </Group>
+    <Ribbon label="Weeks" tint={colors.ink2} soft={colors.fill}>
+      <View style={styles.weekPills}>
+        {weeks.map((wk) => {
+          const score = weekScore(wk, today, lookup, rec.weeks[wk], skill);
+          const on = wk === current;
+          const color = on ? colors.bg : score == null ? colors.ink3 : colors.ink;
+          return (
+            <View
+              key={wk}
+              style={[styles.flex, styles.weekPill, on ? styles.weekPillOn : styles.weekPillOff]}
+              accessible
+              accessibilityLabel={`Week ${weekIndexInMonth(wk)}${score == null ? ', not started' : `, ${score} percent`}`}
+            >
+              <T variant="footnote" weight="600" chrome style={{ color }}>
+                {`W${weekIndexInMonth(wk)}`}
+              </T>
+              <T variant="headline" chrome style={[styles.tabular, { color }]}>
+                {score == null ? '–' : `${score}%`}
+              </T>
+            </View>
+          );
+        })}
+      </View>
+    </Ribbon>
   );
 }
 
@@ -246,14 +245,15 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   tabular: { fontVariant: ['tabular-nums'] },
   groups: { gap: space.xxl },
-  bands: { gap: space.s },
+  // The goal and hobby ribbons lie one on the other, two stripes across the page.
+  bands: { gap: 0 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end' },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   planRow: { gap: space.xs, paddingHorizontal: space.l, paddingVertical: space.m + 2 },
-  weekPills: { flexDirection: 'row', gap: space.xs, padding: space.s },
+  weekPills: { flexDirection: 'row', gap: space.xs },
   weekPill: { alignItems: 'center', gap: 5, paddingVertical: space.s, borderRadius: radius.control },
   weekPillOn: { backgroundColor: colors.ink },
-  weekPillOff: { backgroundColor: colors.fill },
+  weekPillOff: { backgroundColor: colors.surface },
   // Rows reach the card's edges: the box lines up with the label above it.
   outlook: { marginHorizontal: -space.l },
 });

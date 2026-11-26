@@ -9,6 +9,7 @@ import { useItemStreak } from '@/features/hooks';
 import { Bar, DayStrip, Ring } from '@/ui/charts';
 import { haptic } from '@/ui/haptics';
 import { Section } from '@/ui/layout';
+import { Ribbon } from '@/ui/ribbon';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { enterRow, exitSoft, layoutMove } from '@/ui/motion';
@@ -83,9 +84,8 @@ function RingDetail({ setup, stat }: { setup: MonthSetup; stat: RingStat }) {
 }
 
 /**
- * The four goals or the four hobbies of a month on one coloured band (ember for goals, sage for
- * hobbies), named by a word turned on its side at the band's left edge, so no line is spent on a
- * title. Tap a ring for its days.
+ * The four goals or the four hobbies of a month on one ribbon (ember for goals, sage for hobbies).
+ * Tap a ring for its days.
  */
 export function RingGroup({
   label,
@@ -108,12 +108,7 @@ export function RingGroup({
   const ringSize = column ? Math.max(48, Math.min(66, Math.floor(column - 14))) : 66;
   return (
     <View style={styles.group}>
-      <View style={[styles.band, { backgroundColor: soft }]} accessibilityRole="header" accessibilityLabel={label}>
-        <View style={styles.side} importantForAccessibility="no-hide-descendants">
-          <T variant="caption" weight="700" chrome numberOfLines={1} style={[styles.sideText, { color: tint }]}>
-            {label}
-          </T>
-        </View>
+      <Ribbon label={label} tint={tint} soft={soft}>
         <View style={styles.rings} onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}>
           {stats.map((s) => {
             const choice = choiceOf(setup, s);
@@ -156,7 +151,7 @@ export function RingGroup({
             );
           })}
         </View>
-      </View>
+      </Ribbon>
       {selected ? (
         <Animated.View key={selected.category} entering={enterRow} exiting={exitSoft} layout={layoutMove}>
           <RingDetail setup={setup} stat={selected} />
@@ -184,16 +179,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.section,
   },
   ringOpen: { backgroundColor: colors.surface },
-  band: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    borderRadius: radius.section,
-    paddingVertical: space.xs,
-    paddingRight: space.xs,
-  },
-  // The band's name, turned to read upwards, in a narrow column at its left edge.
-  side: { width: 22, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
-  sideText: { width: 90, textAlign: 'center', transform: [{ rotate: '-90deg' }], letterSpacing: 0.6 },
   ringLabel: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, alignSelf: 'stretch' },
   detail: { gap: space.m },
   detailTop: { flexDirection: 'row', alignItems: 'center', gap: space.m },

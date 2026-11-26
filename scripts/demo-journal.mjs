@@ -240,6 +240,15 @@ const BUCKET = [
   ['Write a short story and send it out', addDays(today, -20), true, 'failed', ''],
 ];
 const NL = String.fromCharCode(10);
+const EXPERIMENTS = [
+  ['No phone for the first hour of the day', addDays(today, -9), true, 'open', `${addDays(today, -9)}: Restless by 8.
+
+${addDays(today, -4)}: Read 30 pages before work instead.`],
+  ['Cold shower every morning for two weeks', addDays(today, -30), true, 'succeeded', 'Woke up faster; kept it.'],
+  ['Only coffee before noon', addDays(today, -50), true, 'failed', 'Slept no better.'],
+  ['Write by hand for a week', null, false, 'open', ''],
+];
+
 function challengeFile(items, prefix) {
   const out = ['---', 'format: journal-v1', 'items:'];
   items.forEach(([title, date, started, outcome, notes], i) => {
@@ -279,6 +288,7 @@ function challengeFile(items, prefix) {
 }
 write('challenges/rejections.md', challengeFile(REJ, 'r'));
 write('challenges/bucket-list.md', challengeFile(BUCKET, 'b'));
+write('challenges/experiments.md', challengeFile(EXPERIMENTS, 'e'));
 console.log(`demo journal written to ${out}`);
 
 /** A small landscape, drawn for the demo. */

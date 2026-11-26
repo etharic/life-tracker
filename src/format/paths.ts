@@ -9,6 +9,7 @@ export const SETTINGS = 'settings.md';
 export const CHALLENGE_FILES = {
   rejections: 'challenges/rejections.md',
   bucket: 'challenges/bucket-list.md',
+  experiments: 'challenges/experiments.md',
 } as const;
 export const README = 'README.txt';
 export const VIEWER = 'viewer.html';
@@ -41,7 +42,7 @@ export type JournalFile =
   | { type: 'bank' }
   | { type: 'achievements' }
   | { type: 'settings' }
-  | { type: 'challenges'; kind: 'rejections' | 'bucket' }
+  | { type: 'challenges'; kind: 'rejections' | 'bucket' | 'experiments' }
   | { type: 'other' };
 
 export function classify(path: string): JournalFile {
@@ -50,6 +51,7 @@ export function classify(path: string): JournalFile {
   if (path === SETTINGS) return { type: 'settings' };
   if (path === CHALLENGE_FILES.rejections) return { type: 'challenges', kind: 'rejections' };
   if (path === CHALLENGE_FILES.bucket) return { type: 'challenges', kind: 'bucket' };
+  if (path === CHALLENGE_FILES.experiments) return { type: 'challenges', kind: 'experiments' };
   let m = /^(\d{4})\/year\.md$/.exec(path);
   if (m) return { type: 'year', year: m[1] };
   m = /^(\d{4})\/(\d{4}-\d{2})\/month\.md$/.exec(path);

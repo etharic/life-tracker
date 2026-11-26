@@ -132,7 +132,7 @@ export interface MonthRecord {
 
 /** A link from a misogi or Kevin's Rule to the challenge-list item it came from. */
 export interface ListLink {
-  kind: ChallengeKind;
+  kind: 'rejections' | 'bucket';
   id: string;
   /** The one-tap "Mark it active?" question: answered yes, no, or not asked yet. */
   confirmed: boolean | null;
@@ -210,8 +210,8 @@ export interface Achievement {
 }
 
 /** The lists under Look back > Challenges. */
-export type ChallengeKind = 'rejections' | 'bucket';
-export const CHALLENGE_KINDS: readonly ChallengeKind[] = ['rejections', 'bucket'];
+export type ChallengeKind = 'rejections' | 'bucket' | 'experiments';
+export const CHALLENGE_KINDS: readonly ChallengeKind[] = ['rejections', 'bucket', 'experiments'];
 
 /** open: not concluded yet; failed: rejected (or did not happen); succeeded: accepted (or done). */
 export type ChallengeOutcome = 'open' | 'failed' | 'succeeded';
@@ -245,7 +245,7 @@ export function challengeCounts(list: ChallengeItem[]): {
 }
 
 export function emptyChallenges(): Record<ChallengeKind, ChallengeItem[]> {
-  return { rejections: [], bucket: [] };
+  return { rejections: [], bucket: [], experiments: [] };
 }
 
 /** A daily reminder to write, at a local time ("21:00"). */

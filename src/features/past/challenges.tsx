@@ -66,12 +66,34 @@ export const CHALLENGE_COPY: Record<
     empty: 'Nothing on the list yet',
     emptyBody: 'Places to see, things to learn, things to try once.',
   },
+  experiments: {
+    title: 'Experiments',
+    icon: 'flask',
+    noun: 'experiment',
+    add: 'Start an experiment',
+    failed: 'Failed',
+    succeeded: 'Worked',
+    question: 'What are you trying on yourself?',
+    placeholder: 'No phone for the first hour of the day',
+    explainer:
+      'Try something on yourself and see what happens. Tap the box when it begins, add what you notice along the way, then swipe: right if it worked, left if it failed.',
+    hint: 'Tap the box to start one. Swipe right if it worked, left if it failed.',
+    empty: 'No experiments yet',
+    emptyBody: 'A new habit for two weeks, a diet, a way of working: anything you want to test.',
+  },
 };
 
 /** Where each list lives. A new list needs a kind, its words above, a file and this route. */
 export const CHALLENGE_ROUTE: Record<ChallengeKind, Href> = {
   rejections: '/past/rejections',
   bucket: '/past/bucket',
+  experiments: '/past/experiments',
+};
+
+const ENDED_LABEL: Record<ChallengeKind, string> = {
+  rejections: 'Answered',
+  bucket: 'Finished',
+  experiments: 'Concluded',
 };
 
 /** Newest first: by the date given, or the day it was logged. */
@@ -103,7 +125,7 @@ function Totals({ kind, list }: { kind: ChallengeKind; list: ChallengeItem[] }) 
     <Section>
       <View style={styles.totals}>
         <View style={styles.stats}>
-          <Stat value={total} label={kind === 'bucket' ? 'On the list' : 'Logged'} color={colors.ink} />
+          <Stat value={total} label={kind === 'rejections' ? 'Logged' : 'On the list'} color={colors.ink} />
           <View style={styles.rule} />
           <Stat value={active} label="Active" color={colors.ink} />
           <View style={styles.rule} />
@@ -355,7 +377,7 @@ export function ChallengeList({ kind }: { kind: ChallengeKind }) {
         <>
           <Block label="Active" items={groups.active} kind={kind} />
           <Block label="Not started" items={groups.todo} kind={kind} />
-          <Block label={kind === 'bucket' ? 'Finished' : 'Answered'} items={groups.ended} kind={kind} />
+          <Block label={ENDED_LABEL[kind]} items={groups.ended} kind={kind} />
         </>
       ) : (
         <Empty title={copy.empty} body={copy.emptyBody} />

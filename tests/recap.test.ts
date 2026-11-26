@@ -3,7 +3,7 @@ import { emptyDay, emptyMonth, type ChallengeItem, type DayEntry, type ISODate }
 
 const day = (date: ISODate, patch: Partial<DayEntry> = {}): DayEntry => ({ ...emptyDay(date), ...patch });
 const byDate = (list: DayEntry[]) => Object.fromEntries(list.map((d) => [d.date, d]));
-const none = { rejections: [] as ChallengeItem[], bucket: [] as ChallengeItem[] };
+const none = { rejections: [] as ChallengeItem[], bucket: [] as ChallengeItem[], experiments: [] as ChallengeItem[] };
 const item = (patch: Partial<ChallengeItem>): ChallengeItem => ({
   id: Math.random().toString(36).slice(2),
   title: 'x',
@@ -74,6 +74,7 @@ describe('recap cards', () => {
         item({ outcome: 'open', date: '2026-07-01' }),
       ],
       bucket: [item({ outcome: 'succeeded', date: '2026-08-01', title: 'Marathon' })],
+      experiments: [],
     };
     const s = recapSlides({ kind: 'year', year: '2026' }, { days, months: {}, challenges, today: '2026-12-25' });
     const c = s.find((x) => x.key === 'challenges')!;

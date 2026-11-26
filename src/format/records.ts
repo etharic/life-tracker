@@ -227,6 +227,7 @@ export function serializeSettings(s: Settings): string {
 const CHALLENGE_NOTE: Record<ChallengeKind, string> = {
   rejections: 'Rejection list: things done expecting to be turned down.',
   bucket: 'Bucket list: things to do in a lifetime.',
+  experiments: 'Experiments: things tried on oneself, with dated observations in the notes.',
 };
 
 export function parseChallenges(text: string): ChallengeItem[] {

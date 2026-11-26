@@ -1,4 +1,4 @@
-import { challengeCounts, type ChallengeItem } from '../src/domain/types';
+import { challengeCounts, emptyChallenges, type ChallengeItem } from '../src/domain/types';
 import { CHALLENGE_FILES, classify } from '../src/format/paths';
 import { parseChallenges, serializeChallenges } from '../src/format/records';
 
@@ -75,5 +75,24 @@ describe('challenge lists', () => {
       ['b', true, 'failed'],
       ['c', true, 'succeeded'],
     ]);
+  });
+});
+
+describe('experiments list', () => {
+  it('has its own file, read and written like the other lists', () => {
+    expect(classify('challenges/experiments.md')).toEqual({ type: 'challenges', kind: 'experiments' });
+    const list: ChallengeItem[] = [
+      {
+        id: 'e1',
+        title: 'No phone for the first hour',
+        date: null,
+        started: true,
+        outcome: 'open',
+        notes: '24 November 2026: slept better',
+        added: '2026-11-24',
+      },
+    ];
+    expect(parseChallenges(serializeChallenges('experiments', list))).toEqual(list);
+    expect(emptyChallenges().experiments).toEqual([]);
   });
 });
