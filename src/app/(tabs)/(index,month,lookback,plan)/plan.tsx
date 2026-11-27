@@ -7,7 +7,7 @@ import { backupLine } from '@/domain/prompts';
 import { GOAL_CATEGORIES, HOBBY_CATEGORIES, type Reminder } from '@/domain/types';
 import { useMonth, usePromptInput, useToday } from '@/features/hooks';
 import { HowItsGoing } from '@/features/plan/progress-groups';
-import { MisogiLine } from '@/features/year/plan-line';
+import { MisogiRibbon } from '@/features/year/plan-line';
 import { useSync } from '@/sync/scheduler';
 import { useJournal } from '@/state/journal';
 import { Icon } from '@/ui/icon';
@@ -61,9 +61,9 @@ export default function PlanScreen() {
     <Screen topInset>
       <TopBar title="Plan" />
       <View style={styles.groups}>
-        <MisogiLine />
         {/* Every group a ribbon, one on the next, each named on its side. */}
         <View style={styles.ribbons}>
+          <MisogiRibbon />
           <Ribbon label="Months" tint={colors.ink2} soft={colors.fill}>
             <Rows inset={INSET}>
               <Row

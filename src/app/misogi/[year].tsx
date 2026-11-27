@@ -15,8 +15,8 @@ import { T } from '@/ui/text';
 import { colors } from '@/ui/theme';
 
 /**
- * The misogi set at year `year`'s review, for the year after: set or changed from Look back
- * (during the edit window, or as the safety net when the sitting ran without it).
+ * The misogi for the year after `year` (kept on `year`'s record, as it is chosen at that review):
+ * set or changed at any time, from Plan or the year page.
  */
 export default function SetMisogi() {
   const params = useLocalSearchParams<{ year: string }>();
@@ -47,7 +47,7 @@ export default function SetMisogi() {
     <View style={styles.fill}>
       <ModalHeader title="" onClose={() => router.back()} />
       <Screen footer={<Button title="Save" disabled={!text.trim()} onPress={() => void save()} />}>
-        <ScreenHeader overline={`Set at the review of ${y}`} title={misogiOf(next)} />
+        <ScreenHeader overline="One hard thing for the year" title={misogiOf(next)} />
         <T variant="body">{`One hard thing to do in ${next}. Plan shows it all year.`}</T>
         <SuggestPicker
           label="The challenge"

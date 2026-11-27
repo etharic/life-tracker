@@ -134,9 +134,8 @@ export default function YearPage() {
             <Group
               title={misogiOf(next)}
               trailing={
-                rec.nextMisogi && windowOpen ? (
-                  <TextAction title="Change" onPress={() => router.push(`/misogi/${y}`)} />
-                ) : undefined
+                // The misogi can be changed at any time, not only during the review window.
+                rec.nextMisogi ? <TextAction title="Change" onPress={() => router.push(`/misogi/${y}`)} /> : undefined
               }
             >
               {rec.nextMisogi ? (
