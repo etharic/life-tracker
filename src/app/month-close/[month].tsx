@@ -25,6 +25,7 @@ import { ModalHeader } from '@/ui/modal';
 import { Press } from '@/ui/press';
 import { T } from '@/ui/text';
 import { colors, space, TARGET } from '@/ui/theme';
+import { launchStep } from '@/ui/launch';
 
 function KeepCard({
   label,
@@ -77,9 +78,9 @@ export default function CloseMonth() {
   const next = addMonths(month || '2000-01', 1);
   const name = monthName(month || '2000-01');
 
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(() => launchStep() ?? 1);
   // The month in a few cards first; the questions come after.
-  const [recap, setRecap] = useState(true);
+  const [recap, setRecap] = useState(() => launchStep() == null);
   const challenges = useJournal((s) => s.challenges);
   const allDays = useJournal((s) => s.days);
   const allMonths = useJournal((s) => s.months);

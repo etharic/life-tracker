@@ -76,6 +76,16 @@ xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
 xcrun simctl launch "$UDID" "$BUNDLE" -LTOpen hours >/dev/null
 sleep 7; xcrun simctl io "$UDID" screenshot "$OUT/30-today-lists-end.png" >/dev/null; echo "  30-today-lists-end"
 if xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BUNDLE"; then echo "  lists: app still running"; else echo "  lists: APP NOT RUNNING"; fi
+# 1.27: every step of the step-by-step rituals, past their recap cards (-LTStep), so each one is
+# seen in the current look before it is used: month setup, Close month and the year review.
+step() {
+  xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
+  xcrun simctl launch "$UDID" "$BUNDLE" -LTRoute "/$1" -LTStep "$2" >/dev/null
+  sleep 6; xcrun simctl io "$UDID" screenshot "$OUT/$3.png" >/dev/null; echo "  $3"
+}
+for n in 1 2 3 4 5 6; do step "month-close/$PREV" "$n" "6$n-month-close-step$n"; done
+for n in 0 1 2 3 4 5; do step "year-review/$YEAR" "$n" "7$n-year-review-step$n"; done
+for n in 0 1 2 3 4 5 6; do step "setup/$NEXT" "$n" "8$n-setup-step$n"; done
 # 1.24: the foot of Today and of Month, scrolled to the end: no dead space above the tab bar.
 xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
 xcrun simctl launch "$UDID" "$BUNDLE" -LTScroll end >/dev/null

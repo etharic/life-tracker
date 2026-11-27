@@ -24,6 +24,7 @@ import { StepHead } from '@/ui/steps';
 import { SuggestPicker } from '@/ui/suggest-picker';
 import { T } from '@/ui/text';
 import { colors, space } from '@/ui/theme';
+import { launchStep } from '@/ui/launch';
 
 type Step = SittingStep | 'end';
 
@@ -49,9 +50,9 @@ export default function YearReview() {
 
   // The steps are fixed when the sitting opens, so answering one never moves the dots.
   const [steps] = useState<Step[]>(() => [...sittingSteps(years, y, today), 'end']);
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() => Math.min(launchStep() ?? 0, steps.length - 1));
   // The year in a few cards first; the questions come after.
-  const [recap, setRecap] = useState(true);
+  const [recap, setRecap] = useState(() => launchStep() == null);
   const challenges = useJournal((s) => s.challenges);
   const slides = useMemo(
     () => recapSlides({ kind: 'year', year: y || '2000' }, { days, months, challenges, today }),

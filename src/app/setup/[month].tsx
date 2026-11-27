@@ -30,6 +30,7 @@ import { Press } from '@/ui/press';
 import { SuggestPicker } from '@/ui/suggest-picker';
 import { T } from '@/ui/text';
 import { colors, radius, space, TARGET, type } from '@/ui/theme';
+import { launchStep } from '@/ui/launch';
 
 type Draft = {
   goals: Partial<Record<GoalCategory, Choice>>;
@@ -283,7 +284,7 @@ export default function SetupFlow() {
     ],
     [challenges],
   );
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() => launchStep() ?? 0);
   const page = PAGES[index];
   const name = monthName(month);
   const editing = !!rec?.setup;
