@@ -124,10 +124,10 @@ export default function DriveScreen() {
           <Section>
             <View style={styles.gap}>
               <Field
-                label="Google client ID"
+                accessibilityLabel="Google client ID"
                 value={clientId}
                 onChangeText={setClientId}
-                placeholder="1234567890-abc123.apps.googleusercontent.com"
+                placeholder="Google client ID"
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="url"

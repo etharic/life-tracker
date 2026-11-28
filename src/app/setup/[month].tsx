@@ -445,10 +445,10 @@ export default function SetupFlow() {
           {CHECK_KEYS.map((k, i) => (
             <Field
               key={k}
-              label={`Check ${i + 1}`}
+              accessibilityLabel={`Weekly check ${i + 1}`}
               value={draft.weeklyChecks[k]}
               onChangeText={(t) => setDraft((d) => ({ ...d, weeklyChecks: { ...d.weeklyChecks, [k]: t } }))}
-              placeholder={['Travel somewhere', 'Read a novel', 'A memory activity'][i]}
+              placeholder={`Weekly check ${i + 1}`}
               maxLength={60}
               returnKeyType="next"
             />

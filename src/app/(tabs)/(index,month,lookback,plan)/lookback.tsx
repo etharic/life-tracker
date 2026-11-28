@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Settings, StyleSheet, TextInput, View } from 'react-native';
 
 import { monthOf } from '@/domain/dates';
+import { monthHighlightRows } from '@/domain/lists';
 import { CHALLENGE_KINDS } from '@/domain/types';
 import { CHALLENGE_COPY, CHALLENGE_ROUTE } from '@/features/past/challenges';
 import { useToday } from '@/features/hooks';
@@ -93,7 +94,7 @@ function useArchive(): { title: string; items: Item[] }[] {
             href: '/past/month-highlights',
             icon: 'sparkles',
             // Good or bad: the closing highlight and the extreme incident count together.
-            value: n(monthList.reduce((k, m) => k + (m.highlight ? 1 : 0) + (m.extremeIncident ? 1 : 0), 0)),
+            value: n(monthHighlightRows(monthList).length),
           },
           {
             title: 'Kevin’s Rules',

@@ -146,9 +146,9 @@ function PlanGroup({ month }: { month: MonthId }) {
         )}
       </Ribbon>
       {inc ? (
-        <Ribbon label="Incident" tint={colors.ink2} soft={colors.fill}>
+        <Ribbon label="Highlight" tint={colors.ink2} soft={colors.fill}>
           <PlanRow
-            label={`Extreme incident, ${inc.mark}`}
+            label={`The day that stood out, ${inc.mark}`}
             text={inc.title || formatFull(inc.date)}
             note={formatFull(inc.date)}
             onPress={() => router.push(`/day/${inc.date}`)}
@@ -262,7 +262,6 @@ const styles = StyleSheet.create({
   groups: { gap: space.xxl },
   ribbons: { gap: 2 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end' },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   planRow: { gap: space.xs, paddingHorizontal: space.l, paddingVertical: space.m + 2 },
   weekPills: { flexDirection: 'row', gap: space.xs },
   weekPill: { alignItems: 'center', gap: 5, paddingVertical: space.s, borderRadius: radius.control },

@@ -60,43 +60,51 @@ export function sittingSteps(years: Years, y: string, today: ISODate): SittingSt
   return out;
 }
 
-export interface PlanLine {
+export interface MisogiRow {
   /** The year the misogi belongs to. */
   year: string;
   text: string;
   /**
-   *   upcoming  committed, starts 1 January
-   *   active    during its year, not yet done
-   *   ask       its year is ending or over and it is not judged
-   *   done      marked done (until its year ends)
+   *   active         during its year, not yet judged (until 25 December)
+   *   ask            from 26 December, or after its year, and not judged
+   *   done           marked done
+   *   not-this-time  judged not done
+   *   upcoming       next year's, chosen at this year's review
    */
-  state: 'upcoming' | 'active' | 'ask' | 'done';
-  daysLeft: number;
+  status: 'active' | 'ask' | 'done' | 'not-this-time' | 'upcoming';
+  /** Days left in its year (active), or until it starts (upcoming); 0 otherwise. */
+  days: number;
 }
 
 /**
- * The misogi line on Plan. Only one line shows. While the year-close card is showing it is
- * hidden, so one question is never asked in two places. Once judged and its year over, it goes.
+ * The Misogi ribbon on Plan, shown all year: this year's misogi (or none yet), last year's while
+ * it is still not judged, and next year's once it is chosen.
  */
-export function planLine(years: Years, today: ISODate, yearCardShowing: boolean): PlanLine | null {
-  if (yearCardShowing) return null;
+export function misogiRibbon(
+  years: Years,
+  today: ISODate,
+): { year: string; current: MisogiRow | null; last: MisogiRow | null; upcoming: MisogiRow | null } {
   const Y = today.slice(0, 4);
-  // Last year's, still unjudged after its year ended (a skipped or late review).
-  const last = misogiFor(years, prev(Y));
-  if (last && last.done === null) return { year: prev(Y), text: last.text, state: 'ask', daysLeft: 0 };
-
   const cur = misogiFor(years, Y);
-  const upcoming = years[Y]?.nextMisogi ?? null;
-  if (cur) {
-    if (cur.done === null && today >= `${Y}-12-26`) return { year: Y, text: cur.text, state: 'ask', daysLeft: 0 };
-    if (cur.done === true && !(upcoming && today >= `${Y}-12-25`))
-      return { year: Y, text: cur.text, state: 'done', daysLeft: 0 };
-    if (cur.done === null && !(upcoming && today >= `${Y}-12-25`))
-      return { year: Y, text: cur.text, state: 'active', daysLeft: daysBetween(today, `${Y}-12-31`) + 1 };
-  }
-  if (upcoming)
-    return { year: next(Y), text: upcoming.text, state: 'upcoming', daysLeft: daysBetween(today, `${next(Y)}-01-01`) };
-  return null;
+  const old = misogiFor(years, prev(Y));
+  const nxt = years[Y]?.nextMisogi ?? null;
+  const current: MisogiRow | null = cur
+    ? {
+        year: Y,
+        text: cur.text,
+        status:
+          cur.done === true ? 'done' : cur.done === false ? 'not-this-time' : today >= `${Y}-12-26` ? 'ask' : 'active',
+        days: cur.done === null && today < `${Y}-12-26` ? daysBetween(today, `${Y}-12-31`) + 1 : 0,
+      }
+    : null;
+  return {
+    year: Y,
+    current,
+    last: old && old.done === null ? { year: prev(Y), text: old.text, status: 'ask', days: 0 } : null,
+    upcoming: nxt
+      ? { year: next(Y), text: nxt.text, status: 'upcoming', days: daysBetween(today, `${next(Y)}-01-01`) }
+      : null,
+  };
 }
 
 /** This year's misogi, when it can still be marked done today (Today's ••• menu, Plan's "Done it?"). */

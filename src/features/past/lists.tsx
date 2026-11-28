@@ -14,6 +14,7 @@ import { T } from '@/ui/text';
 import { colors, space, TARGET } from '@/ui/theme';
 import { misogiFor } from '@/domain/misogi';
 import { misogiOf, NAMES } from '@/domain/names';
+import { monthHighlightRows } from '@/domain/lists';
 
 export function sortedMonths(months: Record<string, MonthRecord>): MonthRecord[] {
   return Object.values(months).sort((a, b) => (a.month < b.month ? 1 : -1));
@@ -237,39 +238,35 @@ export function ExtremesList() {
 export function MonthHighlightsList() {
   const months = useJournal((s) => s.months);
   const days = useJournal((s) => s.days);
-  const items = sortedMonths(months).filter((m) => m.highlight || m.extremeIncident);
+  const rows = monthHighlightRows(Object.values(months));
   return (
     <ListScreen
       explainer="Each month’s highlights, good or bad: the line chosen when it closes, and the day that stood out most."
-      empty={items.length ? null : 'No month highlights yet'}
+      empty={rows.length ? null : 'No month highlights yet'}
     >
-      {byYear(items).map(([year, ms]) => (
+      {byYear(rows).map(([year, rs]) => (
         <Group key={year} label={year}>
-          {ms.flatMap((m) => {
-            const inc = m.extremeIncident;
-            return [
-              m.highlight ? (
-                <Line
-                  key={`${m.month}/h`}
-                  serif
-                  over={monthName(m.month)}
-                  title={m.highlight}
-                  sub={m.highlightFromWeek ? `From week ${weekIndexInMonth(m.highlightFromWeek)}` : undefined}
-                />
-              ) : null,
-              inc ? (
-                <Line
-                  key={`${m.month}/i`}
-                  serif
-                  over={`${monthName(m.month)}, the day that stood out, ${inc.mark}`}
-                  title={inc.title || formatShort(inc.date)}
-                  sub={formatShort(inc.date)}
-                  color={feeling(days[inc.date]?.feeling)?.color ?? null}
-                  onPress={() => router.push(`/day/${inc.date}`)}
-                />
-              ) : null,
-            ].filter(Boolean);
-          })}
+          {rs.map((r) =>
+            r.kind === 'highlight' ? (
+              <Line
+                key={`${r.month}/h`}
+                serif
+                over={monthName(r.month)}
+                title={r.text}
+                sub={r.fromWeek ? `From week ${weekIndexInMonth(r.fromWeek)}` : undefined}
+              />
+            ) : (
+              <Line
+                key={`${r.month}/i`}
+                serif
+                over={`${monthName(r.month)}, the day that stood out, ${r.incident.mark}`}
+                title={r.incident.title || formatShort(r.incident.date)}
+                sub={formatShort(r.incident.date)}
+                color={feeling(days[r.incident.date]?.feeling)?.color ?? null}
+                onPress={() => router.push(`/day/${r.incident.date}`)}
+              />
+            ),
+          )}
         </Group>
       ))}
     </ListScreen>

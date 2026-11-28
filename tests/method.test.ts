@@ -10,7 +10,7 @@ import {
   isSealed,
   misogiFor,
   outcomeQuestion,
-  planLine,
+  misogiRibbon,
   sittingSteps,
   unjudgedMisogi,
   unsealDate,
@@ -232,37 +232,43 @@ describe('the sitting', () => {
   });
 });
 
-describe('the Plan line', () => {
+describe('the Misogi ribbon on Plan', () => {
   const years = { '2026': reviewed2026() };
 
-  it('says the misogi starts on 1 January before its year', () => {
-    expect(planLine(years, '2026-12-28', false)).toMatchObject({ year: '2027', state: 'upcoming', daysLeft: 4 });
+  it('shows next year’s misogi as upcoming, counting the days to 1 January', () => {
+    const r = misogiRibbon(years, '2026-12-28');
+    expect(r.current).toBeNull();
+    expect(r.upcoming).toMatchObject({ year: '2027', status: 'upcoming', days: 4 });
   });
 
-  it('counts the days left during its year', () => {
-    expect(planLine(years, '2027-12-20', false)).toMatchObject({ year: '2027', state: 'active', daysLeft: 12 });
-    expect(planLine(years, '2027-01-01', false)).toMatchObject({ state: 'active', daysLeft: 365 });
+  it('counts the days left during its year, the last day included', () => {
+    expect(misogiRibbon(years, '2027-12-20').current).toMatchObject({ year: '2027', status: 'active', days: 12 });
+    expect(misogiRibbon(years, '2027-01-01').current).toMatchObject({ status: 'active', days: 365 });
+    expect(misogiRibbon(years, '2027-12-25').current).toMatchObject({ status: 'active', days: 7 });
   });
 
-  it('asks from 26 December when not judged, and stays hidden while the year card shows', () => {
-    expect(planLine(years, '2027-12-26', false)).toMatchObject({ state: 'ask' });
-    expect(planLine(years, '2027-12-26', true)).toBeNull();
+  it('asks from 26 December while it is not judged', () => {
+    expect(misogiRibbon(years, '2027-12-26').current).toMatchObject({ status: 'ask', days: 0 });
   });
 
-  it('keeps asking after its year when the review was skipped', () => {
-    expect(planLine(years, '2028-01-10', false)).toMatchObject({ year: '2027', state: 'ask' });
+  it('keeps asking about last year’s after its year when the review was skipped', () => {
+    const r = misogiRibbon(years, '2028-01-10');
+    expect(r.current).toBeNull();
+    expect(r.last).toMatchObject({ year: '2027', status: 'ask' });
   });
 
-  it('reads done once marked early, and goes once judged and over', () => {
+  it('reads done, or not this time, once judged, and drops last year’s once judged', () => {
     const done = { '2026': reviewed2026({ nextMisogi: { text: 'x', link: null, done: true, doneOn: '2027-06-01' } }) };
-    expect(planLine(done, '2027-07-01', false)).toMatchObject({ state: 'done' });
-    expect(planLine(done, '2028-01-10', false)).toBeNull();
+    expect(misogiRibbon(done, '2027-07-01').current).toMatchObject({ status: 'done', days: 0 });
+    expect(misogiRibbon(done, '2028-01-10').last).toBeNull();
+    const not = { '2026': reviewed2026({ nextMisogi: { text: 'x', link: null, done: false, doneOn: null } }) };
+    expect(misogiRibbon(not, '2027-07-01').current).toMatchObject({ status: 'not-this-time' });
     expect(unjudgedMisogi(done, '2027-07-01')).toBeNull();
     expect(unjudgedMisogi(years, '2027-07-01')?.year).toBe('2027');
   });
 
-  it('shows nothing without a misogi', () => {
-    expect(planLine({}, '2027-03-01', false)).toBeNull();
+  it('has nothing to show without a misogi (the ribbon then offers its +)', () => {
+    expect(misogiRibbon({}, '2027-03-01')).toEqual({ year: '2027', current: null, last: null, upcoming: null });
   });
 });
 

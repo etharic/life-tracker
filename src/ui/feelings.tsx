@@ -4,19 +4,6 @@ import { feeling, FEELINGS } from '../domain/feelings';
 import { T } from './text';
 import { colors, radius, space } from './theme';
 
-/** "7 · Good" with its swatch: colour is never the only signal. */
-export function FeelingLabel({ score, size = 'large' }: { score: number; size?: 'large' | 'small' }) {
-  const f = feeling(score);
-  if (!f) return null;
-  const sw = size === 'large' ? 22 : 14;
-  return (
-    <View style={styles.label}>
-      <View style={[styles.swatch, { width: sw, height: sw, backgroundColor: f.color }]} />
-      <T variant={size === 'large' ? 'title3' : 'subhead'} weight="600">{`${f.name} (${f.score})`}</T>
-    </View>
-  );
-}
-
 /**
  * A day's box in the week, month and year views. Empty days: dashed outline.
  * Shows its number when there is room; the accessibility label always says it.

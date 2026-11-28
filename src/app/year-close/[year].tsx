@@ -108,7 +108,6 @@ export default function DefiningMoment() {
         <Section>
           <View style={styles.gap}>
             <Field
-              label="Notes"
               value={notes}
               onChangeText={setNotes}
               multiline

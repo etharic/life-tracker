@@ -86,10 +86,10 @@ export default function ChallengeEditor() {
       <Screen footer={<Button title="Save" onPress={save} disabled={!title.trim()} />}>
         <ScreenHeader overline={copy.title} title={existing ? `Edit ${copy.noun}` : `New ${copy.noun}`} />
         <Field
-          label={copy.question}
           value={title}
           onChangeText={setTitle}
-          placeholder={copy.placeholder}
+          placeholder={copy.question}
+          accessibilityLabel={copy.question}
           autoCapitalize="sentences"
           autoFocus={!existing}
           returnKeyType="done"
@@ -147,7 +147,6 @@ export default function ChallengeEditor() {
           </View>
         ) : null}
         <Field
-          label={kind === 'experiments' ? undefined : 'Notes'}
           value={notes}
           onChangeText={setNotes}
           multiline

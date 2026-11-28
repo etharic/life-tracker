@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { logicalDate, monthDates, monthOf, monthOfWeek, weekOf } from '../domain/dates';
+import { logicalDate, monthOf, monthOfWeek } from '../domain/dates';
 import { currentStreak, longestStreak, ringStat, runEndingToday, isTicked, type RingStat } from '../domain/progress';
 import { duePrompts, type PromptInput } from '../domain/prompts';
 import {
@@ -120,19 +120,4 @@ export function useItemStreak(category: Category, bankId: string | undefined) {
       return choice?.bankId === bankId && isTicked(days[d], category);
     });
   }, [days, months, today, category, bankId]);
-}
-
-export function useWeekOf(date: ISODate): WeekId {
-  return useMemo(() => weekOf(date), [date]);
-}
-
-export function useMonthDays(month: MonthId) {
-  const days = useJournal((s) => s.days);
-  return useMemo(
-    () =>
-      monthDates(month)
-        .map((d) => days[d])
-        .filter((d): d is DayEntry => !!d),
-    [days, month],
-  );
 }

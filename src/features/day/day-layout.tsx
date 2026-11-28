@@ -21,7 +21,6 @@ import {
   type GoalCategory,
   type HobbyCategory,
   type ISODate,
-  CHALLENGE_KINDS,
 } from '@/domain/types';
 import {
   orderedGoals,
@@ -33,6 +32,7 @@ import {
   useStreaks,
   useToday,
 } from '@/features/hooks';
+import { activeChallenges } from '@/domain/lists';
 import { ringStat } from '@/domain/progress';
 import { useJournal } from '@/state/journal';
 import { haptic } from '@/ui/haptics';
@@ -487,13 +487,7 @@ export function WeekGroup({ date, locked }: { date: ISODate; locked?: boolean })
 /** Every active challenge, from every list there is, newest first. */
 export function useActiveChallenges(): ActiveChallenge[] {
   const challenges = useJournal((s) => s.challenges);
-  return useMemo(
-    () =>
-      CHALLENGE_KINDS.flatMap((kind) =>
-        challenges[kind].filter((it) => it.started && it.outcome === 'open').map((item) => ({ kind, item })),
-      ).sort((a, b) => ((a.item.date ?? a.item.added) < (b.item.date ?? b.item.added) ? 1 : -1)),
-    [challenges],
-  );
+  return useMemo(() => activeChallenges(challenges), [challenges]);
 }
 
 const styles = StyleSheet.create({
@@ -511,12 +505,6 @@ const styles = StyleSheet.create({
    * gutter so their text lines up with the titles and pills above.
    */
   bare: { marginHorizontal: -space.l },
-  clip: {
-    borderRadius: radius.section,
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.hairline,
-  },
   feelingRow: { flexDirection: 'row', alignItems: 'center', gap: space.m, padding: space.l, minHeight: TARGET + 16 },
   swatch: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.edge },
   entry: { gap: space.s, padding: space.l },
@@ -531,7 +519,6 @@ const styles = StyleSheet.create({
   },
   note: { padding: space.l, gap: space.xs },
   ember: { position: 'absolute', width: 32, height: 32, borderRadius: 16, backgroundColor: colors.accent },
-  trail: { flexDirection: 'row', alignItems: 'center', gap: space.s },
   hoursRow: { flexDirection: 'row', alignItems: 'center', gap: space.m, padding: space.m, paddingLeft: space.l },
   close: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   stepper: {

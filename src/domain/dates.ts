@@ -100,10 +100,6 @@ export function addMonths(month: MonthId, n: number): MonthId {
   return `${pad(Math.floor(idx / 12), 4)}-${pad((idx % 12) + 1)}`;
 }
 
-export function compareMonths(a: MonthId, b: MonthId): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
 /** ISO 8601 week id of a date: weeks run Monday to Sunday. */
 export function weekOf(date: ISODate): WeekId {
   const thursday = addDays(date, 4 - dayOfWeek(date));

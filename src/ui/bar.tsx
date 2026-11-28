@@ -1,10 +1,8 @@
-import type { ReactNode } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { barNeedsOutline } from '@/domain/contrast';
 
-import { T } from './text';
-import { radius, space, usePalette } from './theme';
+import { radius, usePalette } from './theme';
 
 /**
  * A bar, as DESIGN.md (Bars) sets it: 6 pt tall, the `fill` track, ember unless it shows a
@@ -27,66 +25,10 @@ export function Bar({ share, color }: { share: number; color?: string }) {
   );
 }
 
-/** Large accessibility text sizes stack a bar row instead of squeezing it. */
+/** Above this font scale (accessibility text sizes) a row that would squeeze wraps instead. */
 export const STACK_SCALE = 1.35;
-
-/**
- * A labelled bar row: name, value and bar on one line, or name and value above a full-width bar
- * at accessibility text sizes.
- */
-export function BarRow({
-  name,
-  value,
-  share,
-  color,
-  label,
-}: {
-  name: ReactNode;
-  value: string;
-  share: number;
-  color?: string;
-  label: string;
-}) {
-  const { fontScale } = useWindowDimensions();
-  const stacked = fontScale > STACK_SCALE;
-  return (
-    <View style={[styles.row, stacked && styles.stacked]} accessible accessibilityLabel={label}>
-      {stacked ? (
-        <>
-          <View style={styles.line}>
-            <T variant="body" style={styles.flex}>
-              {name}
-            </T>
-            <T variant="body" tone="ink2">
-              {value}
-            </T>
-          </View>
-          <Bar share={share} color={color} />
-        </>
-      ) : (
-        <>
-          <T variant="body" style={styles.name} numberOfLines={1}>
-            {name}
-          </T>
-          <View style={styles.flex}>
-            <Bar share={share} color={color} />
-          </View>
-          <T variant="body" tone="ink2" style={styles.value}>
-            {value}
-          </T>
-        </>
-      )}
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   track: { height: 6, borderRadius: radius.s, overflow: 'hidden' },
   fill: { height: 6, borderRadius: radius.s },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.m, minHeight: 44, paddingHorizontal: space.l },
-  stacked: { flexDirection: 'column', alignItems: 'stretch', gap: space.s, paddingVertical: space.m },
-  line: { flexDirection: 'row', alignItems: 'center', gap: space.m },
-  flex: { flex: 1 },
-  name: { width: 104 },
-  value: { minWidth: 52, textAlign: 'right', fontVariant: ['tabular-nums'] },
 });

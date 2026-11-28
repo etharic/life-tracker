@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { T } from './text';
-import { colors, elevation, radius, space } from './theme';
+import { space } from './theme';
 
 /**
  * The building blocks of every main screen: a group is a plain title on the paper (no box, said once),
@@ -29,15 +29,6 @@ export function Group({ title, trailing, children }: { title?: string; trailing?
   );
 }
 
-/** One flat card holding a group’s content. */
-export function Panel({ children }: { children: ReactNode }) {
-  return (
-    <View style={styles.panelCard}>
-      <View style={styles.panelClip}>{children}</View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: {
@@ -48,11 +39,4 @@ const styles = StyleSheet.create({
     marginTop: space.xs,
   },
   group: { gap: space.m },
-  panelCard: { borderRadius: radius.section, backgroundColor: colors.surface, ...elevation.card },
-  panelClip: {
-    borderRadius: radius.section,
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.hairline,
-  },
 });

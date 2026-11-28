@@ -74,7 +74,7 @@ export function yearSuggestions(
       out.push({
         key: `incident:${m.month}`,
         text: m.extremeIncident.title.trim(),
-        sub: `Extreme incident, ${formatShort(m.extremeIncident.date)}`,
+        sub: `Highlight, ${formatShort(m.extremeIncident.date)}`,
         color: f?.color ?? null,
         ...(f ? { spoken: `felt ${f.name}` } : {}),
       });

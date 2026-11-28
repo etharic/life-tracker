@@ -3,6 +3,7 @@ import { ActionSheetIOS, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { LayoutAnimationConfig } from 'react-native-reanimated';
 
 import { monthOfWeek, weekDates } from '@/domain/dates';
+import { plusPlace } from '@/domain/lists';
 import { CHECK_KEYS, type ISODate, type WeekId } from '@/domain/types';
 import { useMonth, useWeek } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
@@ -140,7 +141,7 @@ export function WeekItems({
   const folded = fold ? rows.filter((r) => r.checked && !lingering.has(r.key)) : [];
   // The "+" takes no line of its own: it sits at the end of the "n done" line, or of the last item.
   const plus = interactive && !adding ? <AddButton onPress={() => setAdding(true)} label="Add a commitment" /> : null;
-  const plusOnLast = plus && !folded.length;
+  const place = plusPlace({ interactive, adding, shown: shown.length, folded: folded.length });
 
   return (
     <View style={padded ? styles.listPadded : styles.list}>
@@ -173,7 +174,7 @@ export function WeekItems({
                   star={r.star}
                 />
               </View>
-              {plusOnLast && i === shown.length - 1 ? <View style={styles.plusEnd}>{plus}</View> : null}
+              {place === 'last-item' && i === shown.length - 1 ? <View style={styles.plusEnd}>{plus}</View> : null}
             </View>
           </Animated.View>
         ))}
@@ -199,11 +200,11 @@ export function WeekItems({
                 {`${folded.length} done`}
               </T>
             </Press>
-            {plus ? <View style={styles.plusEnd}>{plus}</View> : null}
+            {place === 'done-line' ? <View style={styles.plusEnd}>{plus}</View> : null}
           </View>
         </>
       ) : null}
-      {interactive && (adding || (!shown.length && !folded.length)) ? (
+      {place === 'own-line' ? (
         <>
           {shown.length || folded.length ? <Divider inset={INSET} /> : null}
           {adding ? (

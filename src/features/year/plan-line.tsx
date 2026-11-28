@@ -1,8 +1,7 @@
 import { router } from 'expo-router';
 import { ActionSheetIOS, StyleSheet, View } from 'react-native';
 
-import { daysBetween } from '@/domain/dates';
-import { misogiFor } from '@/domain/misogi';
+import { misogiRibbon } from '@/domain/misogi';
 import { misogiOf } from '@/domain/names';
 import { useToday } from '@/features/hooks';
 import { useJournal } from '@/state/journal';
@@ -30,27 +29,23 @@ const prev = (y: string) => String(Number(y) - 1);
 export function MisogiRibbon() {
   const today = useToday();
   const years = useJournal((s) => s.years);
-  const Y = today.slice(0, 4);
-  const cur = misogiFor(years, Y);
-  const last = misogiFor(years, prev(Y));
-  const upcoming = years[Y]?.nextMisogi ?? null;
-
+  const { year: Y, current: cur, last, upcoming } = misogiRibbon(years, today);
   const edit = (forYear: string) => router.push(`/misogi/${prev(forYear)}`);
   const status = !cur
     ? ''
-    : cur.done === true
-      ? 'Done'
-      : cur.done === false
-        ? 'Not this time'
-        : today >= `${Y}-12-26`
-          ? 'Did you do it?'
-          : `${days(daysBetween(today, `${Y}-12-31`) + 1)} left`;
+    : cur.status === 'done'
+      ? 'done'
+      : cur.status === 'not-this-time'
+        ? 'not this time'
+        : cur.status === 'ask'
+          ? 'did you do it?'
+          : `${days(cur.days)} left`;
 
   const open = () => {
     if (!cur) return edit(Y);
     type Action = { label: string; run: () => void };
     const actions: Action[] = [];
-    if (cur.done === null)
+    if (cur.status === 'active' || cur.status === 'ask')
       actions.push({
         label: 'Done it',
         run: () => {
@@ -85,8 +80,8 @@ export function MisogiRibbon() {
         >
           <View style={styles.flex}>
             <T variant="journalTitle">{cur.text}</T>
-            <T variant="footnote" tone={status === 'Did you do it?' ? 'accent' : 'ink2'}>
-              {`${Y}, ${status.charAt(0).toLowerCase()}${status.slice(1)}`}
+            <T variant="footnote" tone={cur.status === 'ask' ? 'accent' : 'ink2'}>
+              {`${Y}, ${status}`}
             </T>
           </View>
           <Icon name="chevron.right" size={13} color={colors.ink3} weight="semibold" />
@@ -99,7 +94,7 @@ export function MisogiRibbon() {
           <AddButton onPress={() => edit(Y)} label={`Set the misogi for ${Y}`} />
         </View>
       )}
-      {last && last.done === null ? (
+      {last ? (
         <>
           <Divider inset={space.s} />
           <Press

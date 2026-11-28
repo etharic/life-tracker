@@ -48,11 +48,12 @@ export function SuggestPicker({
   const match = (t: string) => items.find((i) => i.text.trim() === t.trim()) ?? null;
   return (
     <View style={styles.wrap}>
+      {/* The field's name sits inside it, as its placeholder: no line spent on a label. */}
       <Field
-        label={label}
         value={value}
         onChangeText={(t) => onChange(t, match(t))}
-        placeholder={placeholder}
+        placeholder={label || placeholder}
+        accessibilityLabel={label || placeholder}
         multiline={multiline}
         minHeight={multiline ? 70 : undefined}
         limit={multiline ? undefined : 140}
